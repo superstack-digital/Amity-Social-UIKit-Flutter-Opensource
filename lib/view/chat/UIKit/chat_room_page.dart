@@ -5,9 +5,11 @@ import 'package:animation_wrappers/animations/faded_slide_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final String channelId;
+
   const ChatRoomPage({
     super.key,
     required this.channelId,
@@ -18,19 +20,30 @@ class ChatRoomPage extends StatefulWidget {
 }
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
+
+  ChatRoomVM? provider;
+
   @override
   void initState() {
     Provider.of<ChatRoomVM>(context, listen: false)
         .initSingleChannel(widget.channelId);
+
     super.initState();
   }
 
+  final startTimeFormat = DateFormat('dd MMM, hh:mma');
+
   @override
   Widget build(BuildContext context) {
+    final metadata = Provider
+        .of<ChatRoomVM>(context)
+        .channel
+        ?.metadata;
     final myAppBar = AppBar(
       automaticallyImplyLeading: false,
       elevation: 0,
-      backgroundColor: Provider.of<AmityUIConfiguration>(context)
+      backgroundColor: Provider
+          .of<AmityUIConfiguration>(context)
           .messageRoomConfig
           .backgroundColor,
       leadingWidth: 0,
@@ -44,7 +57,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               },
               child: Icon(Icons.chevron_left,
                   color:
-                      Provider.of<AmityUIConfiguration>(context).primaryColor,
+                  Provider
+                      .of<AmityUIConfiguration>(context)
+                      .primaryColor,
                   size: 30)),
           Container(
             height: 45,
@@ -53,12 +68,43 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              Provider.of<ChatRoomVM>(context).channel == null
-                  ? ""
-                  : Provider.of<ChatRoomVM>(context).channel!.displayName!,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Row(children: [if(metadata?["avatar"] != null)
+              ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.network(
+                      metadata?["avatar"],
+                      height: 32, width: 32)),
+              SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    Provider
+                        .of<ChatRoomVM>(context)
+                        .channel == null
+                        ? ""
+                        : Provider
+                        .of<ChatRoomVM>(context)
+                        .channel!
+                        .displayName!,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    metadata?["playerCount"] == null
+                        ? ""
+                        : "${metadata!["playerCount"]!
+                        .toString()} players - ${metadata?['startTime'] != null
+                        ? startTimeFormat.format(
+                        DateTime.parse(metadata?['startTime'])).toLowerCase()
+                        : ""}",
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w400, color: Colors.black54),
+                  ),
+                ],
+              )
+            ]),
           ),
         ],
       ),
@@ -80,22 +126,29 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               beginOffset: const Offset(0, 0.3),
               endOffset: const Offset(0, 0),
               slideCurve: Curves.linearToEaseOut,
-              child: Provider.of<ChatRoomVM>(context).channel == null
+              child: Provider
+                  .of<ChatRoomVM>(context)
+                  .channel == null
                   ? const SizedBox()
                   : SingleChildScrollView(
-                      reverse: true,
-                      controller:
-                          Provider.of<ChatRoomVM>(context).scrollcontroller,
-                      child: MessageComponent(
-                        bheight: bHeight - textfielHeight,
-                        theme: theme,
-                        mediaQuery: mediaQuery,
-                        channelId: Provider.of<ChatRoomVM>(context)
-                            .channel!
-                            .channelId!,
-                        channel: Provider.of<ChatRoomVM>(context).channel!,
-                      ),
-                    ),
+                reverse: true,
+                controller:
+                Provider
+                    .of<ChatRoomVM>(context)
+                    .scrollcontroller,
+                child: MessageComponent(
+                  bheight: bHeight - textfielHeight,
+                  theme: theme,
+                  mediaQuery: mediaQuery,
+                  channelId: Provider
+                      .of<ChatRoomVM>(context)
+                      .channel!
+                      .channelId!,
+                  channel: Provider
+                      .of<ChatRoomVM>(context)
+                      .channel!,
+                ),
+              ),
             ),
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -148,7 +201,8 @@ class ChatTextFieldComponent extends StatelessWidget {
           SizedBox(
             width: mediaQuery.size.width * 0.7,
             child: TextField(
-              controller: Provider.of<ChatRoomVM>(context, listen: false)
+              controller: Provider
+                  .of<ChatRoomVM>(context, listen: false)
                   .textEditingController,
               decoration: const InputDecoration(
                 hintText: "Write your message",
@@ -165,7 +219,9 @@ class ChatTextFieldComponent extends StatelessWidget {
             },
             child: Icon(
               Icons.send,
-              color: Provider.of<AmityUIConfiguration>(context).primaryColor,
+              color: Provider
+                  .of<AmityUIConfiguration>(context)
+                  .primaryColor,
               size: 22,
             ),
           ),
@@ -200,14 +256,11 @@ class MessageComponent extends StatelessWidget {
     if (msg.editedAt == null) {
       return '';
     }
-    String hour = msg.editedAt!.hour.toString();
-    String minute = "";
-    if (msg.editedAt!.minute > 9) {
-      minute = msg.editedAt!.minute.toString();
-    } else {
-      minute = "0${msg.editedAt!.minute}";
-    }
-    return "$hour:$minute";
+    var timeFormat = DateFormat('hh:mm a');
+
+    DateTime? localEditTime = msg.editedAt!.toLocal();
+
+    return timeFormat.format(localEditTime).toLowerCase();
   }
 
   @override
@@ -221,9 +274,13 @@ class MessageComponent extends StatelessWidget {
           itemCount: vm.amitymessage.length,
           itemBuilder: (context, index) {
             var data = vm.amitymessage[index].data;
+            var user = vm.amitymessage[index].user;
 
             bool isSendbyCurrentUser = vm.amitymessage[index].userId !=
-                AmityCoreClient.getCurrentUser().userId;
+                AmityCoreClient
+                    .getCurrentUser()
+                    .userId;
+
             return Column(
               crossAxisAlignment: isSendbyCurrentUser
                   ? CrossAxisAlignment.start
@@ -234,13 +291,24 @@ class MessageComponent extends StatelessWidget {
                       ? MainAxisAlignment.start
                       : MainAxisAlignment.end,
                   children: [
-                    if (!isSendbyCurrentUser)
-                      Text(
-                        getTimeStamp(vm.amitymessage[index]),
-                        style: const TextStyle(color: Colors.grey, fontSize: 8),
-                      ),
-                    vm.amitymessage[index].type != AmityMessageDataType.TEXT
-                        ? Container(
+                    if(isSendbyCurrentUser && user?.avatarCustomUrl != null)
+                      ClipRRect(borderRadius: BorderRadius.circular(20),
+                          child: Image.network(
+                              user!.avatarCustomUrl!, height: 40, width: 40)),
+
+                    Column(mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: isSendbyCurrentUser
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.end,
+                        children: [
+                          if(isSendbyCurrentUser)
+                            Padding(padding: EdgeInsets.only(left: 10, top: 12),
+                                child: Text(user?.displayName ?? "", style: TextStyle(
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black54,
+                                    fontSize: 13))),
+                          vm.amitymessage[index].type != AmityMessageDataType.TEXT
+                              ? Container(
                             margin: const EdgeInsets.fromLTRB(10, 4, 10, 4),
                             padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                             decoration: BoxDecoration(
@@ -249,23 +317,24 @@ class MessageComponent extends StatelessWidget {
                             child: const Text("Unsupport type message😰",
                                 style: TextStyle(color: Colors.white)),
                           )
-                        : Flexible(
+                              : Flexible(
                             child: Container(
                               constraints: BoxConstraints(
                                   maxWidth: mediaQuery.size.width * 0.7),
                               margin: const EdgeInsets.fromLTRB(10, 4, 10, 4),
-                              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 color: isSendbyCurrentUser
                                     ? const Color(0xfff1f1f1)
-                                    : Provider.of<AmityUIConfiguration>(context)
-                                        .primaryColor,
+                                    : Provider
+                                    .of<AmityUIConfiguration>(context)
+                                    .primaryColor,
                               ),
                               child: Text(
                                 (vm.amitymessage[index].data!
-                                            as MessageTextData)
-                                        .text ??
+                                as MessageTextData)
+                                    .text ??
                                     "N/A",
                                 style: theme.textTheme.bodyLarge!.copyWith(
                                     fontSize: 14.7,
@@ -275,11 +344,12 @@ class MessageComponent extends StatelessWidget {
                               ),
                             ),
                           ),
-                    if (isSendbyCurrentUser)
-                      Text(
-                        getTimeStamp(vm.amitymessage[index]),
-                        style: TextStyle(color: Colors.grey[500], fontSize: 8),
-                      ),
+
+                          Padding(padding: EdgeInsets.only(
+                              left: 10, right: isSendbyCurrentUser ? 0 : 10), child: Text(
+                              getTimeStamp(vm.amitymessage[index]),
+                              style: TextStyle(color: Colors.grey[500], fontSize: 12))),
+                        ]),
                   ],
                 ),
                 if (index + 1 == vm.amitymessage.length)
