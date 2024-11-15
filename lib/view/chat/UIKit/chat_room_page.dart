@@ -94,9 +94,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     metadata?["playerCount"] == null
                         ? ""
                         : "${metadata!["playerCount"]!
+
                         .toString()} players - ${metadata?['startTime'] != null
                         ? startTimeFormat.format(
-                        DateTime.parse(metadata?['startTime'])).toLowerCase()
+                        DateTime.parse(metadata?['startTime']).toLocal()).toLowerCase()
                         : ""}",
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
