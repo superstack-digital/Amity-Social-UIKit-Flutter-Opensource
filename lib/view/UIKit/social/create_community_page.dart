@@ -1,6 +1,6 @@
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/view/UIKit/social/category_list.dart';
-import 'package:amity_uikit_beta_service/view/social/community_feed.dart';
+import 'package:amity_uikit_beta_service/view/social/community_feedV2.dart';
 import 'package:amity_uikit_beta_service/view/social/select_user_page.dart';
 import 'package:amity_uikit_beta_service/viewmodel/category_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/community_feed_viewmodel.dart';
@@ -10,6 +10,13 @@ import 'package:amity_uikit_beta_service/viewmodel/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/features/booking/presentation/screens/search_location_screen.dart';
+import 'package:mobile_app_padel/features/booking/data/models/court.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/select_club_screen.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:mobile_app_padel/shared/functions.dart';
+
 
 enum CommunityListType { my, recommend, trending }
 
@@ -28,11 +35,15 @@ class CreateCommunityPage extends StatefulWidget {
 class _CreateCommunityPageState extends State<CreateCommunityPage> {
   CommunityType communityType = CommunityType.public;
   final TextEditingController _communityNameController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _aboutController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _clubsController = TextEditingController();
+
   bool _isPublic = true;
   bool _isCreatingCommunity = false;
+  RxList<int> selectedClubs = <int>[].obs;
 
   @override
   void initState() {
@@ -56,7 +67,10 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
-          Provider.of<AmityUIConfiguration>(context).appColors.baseBackground,
+      Provider
+          .of<AmityUIConfiguration>(context)
+          .appColors
+          .baseBackground,
       appBar: AppBar(
         elevation: 0.0,
         backgroundColor: Colors.transparent,
@@ -79,28 +93,37 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
         child: ListView(
           children: [
             GestureDetector(
-              onTap: Provider.of<CommunityVM>(context, listen: false).addFile,
+              onTap: Provider
+                  .of<CommunityVM>(context, listen: false)
+                  .addFile,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Container(
                     width: double.infinity,
-                    height: MediaQuery.of(context).size.width * 0.7,
+                    height: MediaQuery
+                        .of(context)
+                        .size
+                        .width * 0.7,
                     decoration: BoxDecoration(
-                      color: Provider.of<AmityUIConfiguration>(context)
+                      color: Provider
+                          .of<AmityUIConfiguration>(context)
                           .appColors
                           .primaryShade3,
-                      image: Provider.of<CommunityVM>(context).pickedFile !=
-                              null
+                      image: Provider
+                          .of<CommunityVM>(context)
+                          .pickedFile !=
+                          null
                           ? DecorationImage(
-                              image: FileImage(Provider.of<CommunityVM>(context)
-                                  .pickedFile!),
-                              fit: BoxFit.cover,
-                            )
+                        image: FileImage(Provider
+                            .of<CommunityVM>(context)
+                            .pickedFile!),
+                        fit: BoxFit.cover,
+                      )
                           : const DecorationImage(
-                              image: AssetImage("assets/images/IMG_5637.JPG",
-                                  package: 'amity_uikit_beta_service'),
-                              fit: BoxFit.cover),
+                          image: AssetImage("assets/images/IMG_5637.JPG",
+                              package: 'amity_uikit_beta_service'),
+                          fit: BoxFit.cover),
                     ),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -115,7 +138,7 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                       color: Colors.transparent,
                       border: Border.all(color: Colors.white),
                       borderRadius:
-                          BorderRadius.circular(5.0), // Adding rounded corners
+                      BorderRadius.circular(5.0), // Adding rounded corners
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize
@@ -127,7 +150,7 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                         ), // Adding a camera icon
                         SizedBox(
                             width:
-                                8.0), // Adding some space between the icon and the text
+                            8.0), // Adding some space between the icon and the text
                         Text(
                           'Upload image',
                           style: TextStyle(
@@ -162,6 +185,60 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                   ),
+                  buildTextFieldWithCounter(
+                      controller: _locationController,
+                      title: 'Location',
+                      showChevron: true,
+                      showCount: false,
+                      maxCharacters: 30,
+                      hintText: 'Select location',
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                            const SearchLocationScreen(title: 'Location'),
+                          ),
+                        ).then((result) {
+                          if (result != null) {
+                            _locationController.text = result.mainText;
+                          }
+                        });
+                      }
+                  ),
+                  buildTextFieldWithCounter(
+                      controller: _clubsController,
+                      title: 'Link clubs',
+                      showChevron: true,
+                      showCount: false,
+                      maxCharacters: 30,
+                      hintText: 'Link clubs to show their matches',
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      onTap: () {
+                        if(_locationController.text.isEmpty) {
+                          showStyledSnackBar('Please select location first', SnackBarType.error);
+                          return;
+                        }
+                        Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SelectClubScreen(isMultiSelect: true,
+                                      selectedClubIds: selectedClubs.toList(),
+                                      cityName: _locationController.text,
+                                      onResult: (result) {
+                                        if (result != null) {
+                                          _clubsController.text =
+                                          "${result.length} clubs selected";
+                                          selectedClubs.assignAll(
+                                              result.map((e) => e).toList());
+                                        }
+                                      }
+                                  ),
+                            ));
+                      }
+                  ),
                   const SizedBox(height: 16.0),
                   buildTextFieldWithCounter(
                     controller: _categoryController,
@@ -171,9 +248,10 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                     maxCharacters: 30,
                     onTap: () async {
                       String? category =
-                          await Navigator.of(context).push<String>(
+                      await Navigator.of(context).push<String>(
                         MaterialPageRoute(
-                            builder: (context) => CategoryList(
+                            builder: (context) =>
+                                CategoryList(
                                   categoryTextController: _categoryController,
                                 )),
                       );
@@ -238,39 +316,40 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                   _isPublic
                       ? Container()
                       : ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
+                    contentPadding: EdgeInsets.zero,
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Divider(
+                          color: Colors.grey[300],
+                          thickness: 1,
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        RichText(
+                          text: TextSpan(
+                            text: 'Add members',
+                            style: Provider
+                                .of<AmityUIConfiguration>(
+                                context,
+                                listen: false)
+                                .titleTextStyle,
+                            children: const [
+                              TextSpan(
+                                text: ' *',
+                                style: TextStyle(color: Colors.red),
                               ),
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              RichText(
-                                text: TextSpan(
-                                  text: 'Add members',
-                                  style: Provider.of<AmityUIConfiguration>(
-                                          context,
-                                          listen: false)
-                                      .titleTextStyle,
-                                  children: const [
-                                    TextSpan(
-                                      text: ' *',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              const MemberSection()
                             ],
                           ),
-                        )
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        const MemberSection()
+                      ],
+                    ),
+                  )
                 ],
               ),
             ),
@@ -281,7 +360,7 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
             Center(
               child: Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: ElevatedButton(
                   onPressed: () async {
                     // Collect necessary data
@@ -291,23 +370,25 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                     final name = _communityNameController.text;
                     final description = _aboutController.text;
                     final imageAvatar =
-                        Provider.of<CommunityVM>(context, listen: false)
+                        Provider
+                            .of<CommunityVM>(context, listen: false)
                             .amityImages;
 
                     final isPublic = _isPublic;
                     final categoryId =
-                        Provider.of<CategoryVM>(context, listen: false)
-                            .getSelectedCategory();
+                    Provider.of<CategoryVM>(context, listen: false)
+                        .getSelectedCategory();
                     final List<String> userIds = [];
-                    for (var user in Provider.of<UserVM>(context, listen: false)
+                    for (var user in Provider
+                        .of<UserVM>(context, listen: false)
                         .selectedCommunityUsers) {
                       userIds.add(user.userId!);
                     }
 
                     // Call the createCommunity method from your ViewModel
                     final createdCommunity =
-                        await Provider.of<CommunityVM>(context, listen: false)
-                            .createCommunity(
+                    await Provider.of<CommunityVM>(context, listen: false)
+                        .createCommunity(
                       context: context,
                       name: name,
                       description: description,
@@ -315,22 +396,25 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                       categoryIds: categoryId,
                       isPublic: isPublic,
                       userIds: userIds,
+                      clubIds: selectedClubs?.map((e) => e).toList() ?? [],
+                      location: _locationController.text,
                     );
                     if (createdCommunity != null) {
                       print(
                           "print create dcommunity page ${createdCommunity.displayName}");
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => ChangeNotifierProvider(
-                            create: (context) => CommuFeedVM(),
-                            child: Builder(
-                              builder: (context) {
-                                return CommunityScreen(
-                                  community: createdCommunity,
-                                );
-                              },
-                            ),
-                          ),
+                          builder: (context) =>
+                              ChangeNotifierProvider(
+                                create: (context) => CommuFeedVM(),
+                                child: Builder(
+                                  builder: (context) {
+                                    return CommunityScreen(
+                                      community: createdCommunity,
+                                    );
+                                  },
+                                ),
+                              ),
                         ),
                       );
                     }
@@ -339,8 +423,9 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Provider.of<AmityUIConfiguration>(context,
-                            listen: false)
+                    backgroundColor: Provider
+                        .of<AmityUIConfiguration>(context,
+                        listen: false)
                         .primaryColor,
                     minimumSize: const Size(10, 50),
                   ),
@@ -348,27 +433,27 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: _isCreatingCommunity
                         ? [
-                            const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          ]
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    ]
                         : [
-                            const Icon(
-                              Icons.add,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'Create Community',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
+                      const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Create Community',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -389,6 +474,7 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
     TextInputType keyboardType = TextInputType.text,
     int? maxLines,
     void Function()? onTap,
+    bool? showChevron
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +485,8 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
             RichText(
               text: TextSpan(
                 text: title,
-                style: Provider.of<AmityUIConfiguration>(context, listen: false)
+                style: Provider
+                    .of<AmityUIConfiguration>(context, listen: false)
                     .titleTextStyle,
                 children: [
                   TextSpan(
@@ -411,34 +498,39 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
             ),
             showCount
                 ? Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 8.0), // Adding vertical padding for symmetry
-                    child: Text(
-                      '${controller.text.length}/$maxCharacters',
-                      style: const TextStyle(
-                          fontSize: 13.4), // Setting font size to 13.4
-                    ),
-                  )
+              padding: const EdgeInsets.symmetric(
+                  vertical: 8.0), // Adding vertical padding for symmetry
+              child: Text(
+                '${controller.text.length}/$maxCharacters',
+                style: const TextStyle(
+                    fontSize: 13.4), // Setting font size to 13.4
+              ),
+            )
                 : Container(), // Updated here to show the current character count
           ],
         ),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            border: InputBorder.none, // This line removes the underline
-            hintText: hintText,
-            counterText:
+        Row(
+          children: [
+            Expanded(child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                border: InputBorder.none, // This line removes the underline
+                hintText: hintText,
+                counterText:
                 "", // Added this line to remove the counter below the TextField
-          ),
-          maxLength: maxCharacters,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          onTap: onTap,
-          readOnly: onTap != null,
-          onChanged: (text) {
-            // Added onChanged to update the UI whenever the text changes
-            setState(() {});
-          },
+              ),
+              maxLength: maxCharacters,
+              keyboardType: keyboardType,
+              maxLines: maxLines,
+              onTap: onTap,
+              readOnly: onTap != null,
+              onChanged: (text) {
+                // Added onChanged to update the UI whenever the text changes
+                setState(() {});
+              },
+            )),
+            if(showChevron == true) Icon(Icons.chevron_right)
+          ],
         ),
         Divider(
           color: Colors.grey[200],
@@ -461,25 +553,29 @@ class MemberSection extends StatelessWidget {
       runSpacing: 4.0, // gap between lines
       children: [
         // Insert selected user chips here
-        for (var user in Provider.of<UserVM>(context).selectedCommunityUsers)
+        for (var user in Provider
+            .of<UserVM>(context)
+            .selectedCommunityUsers)
           Chip(
             backgroundColor: Colors.grey[280],
             avatar: CircleAvatar(
-              backgroundColor: Provider.of<AmityUIConfiguration>(context)
+              backgroundColor: Provider
+                  .of<AmityUIConfiguration>(context)
                   .appColors
                   .primaryShade3,
               backgroundImage:
-                  user.avatarUrl == null ? null : NetworkImage(user.avatarUrl!),
+              user.avatarUrl == null ? null : NetworkImage(user.avatarUrl!),
               child: user.avatarUrl != null
                   ? null
                   : const Icon(Icons.person,
-                      size: 13,
-                      color: Colors
-                          .white), // Adjust to use the correct attribute for avatar URL
+                  size: 13,
+                  color: Colors
+                      .white), // Adjust to use the correct attribute for avatar URL
             ),
 
             label: Text(user.displayName ??
-                ""), // Display user's name, replace 'name' with the appropriate attribute for the user's name
+                ""),
+            // Display user's name, replace 'name' with the appropriate attribute for the user's name
             onDeleted: () {
               // Handle the logic to remove the user when "X" is tapped
               Provider.of<UserVM>(context, listen: false)
@@ -498,7 +594,7 @@ class MemberSection extends StatelessWidget {
             height: 40,
             width: 40,
             decoration:
-                BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle),
+            BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle),
             child: const Icon(Icons.add),
           ),
         ),

@@ -7,11 +7,17 @@ import 'package:amity_uikit_beta_service/viewmodel/community_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/configuration_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // For using File class
+import 'package:mobile_app_padel/features/booking/presentation/screens/search_location_screen.dart';
+import 'package:mobile_app_padel/features/booking/data/models/court.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/select_club_screen.dart';
+import 'package:get/get.dart';
+
 
 enum CommunityType { public, private }
 
 class AmityEditCommunityScreen extends StatefulWidget {
   final AmityCommunity community;
+
   const AmityEditCommunityScreen(this.community, {Key? key}) : super(key: key);
 
   @override
@@ -24,7 +30,14 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _clubsController = TextEditingController();
+
+
   bool _isPublic = true;
+  RxList<int> selectedClubs = <int>[].obs;
+  String clubIds = "";
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +46,14 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
     communityProvider.pickedFile = null;
     _displayNameController.text = widget.community.displayName ?? "";
     _descriptionController.text = widget.community.description ?? "";
+    _locationController.text = widget.community.metadata?["location"] ?? "";
+    _clubsController.text =
+    "${widget.community.metadata?["club_ids"]?.length.toString() ?? "0"} clubs selected";
+    selectedClubs.value =
+        ((widget.community.metadata?["club_ids"] ?? [] )as List<dynamic>).map((item) =>
+            int.parse(item.toString())).toList() ?? [];
+
+
     var category = widget.community.categories!;
     var categories = widget.community.categories;
     if (categories != null && categories.isNotEmpty) {
@@ -52,24 +73,28 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
         builder: (context, snapshot) {
           var community = snapshot.data ?? widget.community;
           return Scaffold(
-            backgroundColor: Provider.of<AmityUIConfiguration>(context)
+            backgroundColor: Provider
+                .of<AmityUIConfiguration>(context)
                 .appColors
                 .baseBackground,
             appBar: AppBar(
               title: Text(
                 "Edit Community",
-                style: Provider.of<AmityUIConfiguration>(context)
+                style: Provider
+                    .of<AmityUIConfiguration>(context)
                     .titleTextStyle
                     .copyWith(
-                        color: Provider.of<AmityUIConfiguration>(context)
-                            .appColors
-                            .base),
+                    color: Provider
+                        .of<AmityUIConfiguration>(context)
+                        .appColors
+                        .base),
               ),
               backgroundColor: Colors.transparent,
               leading: IconButton(
                 onPressed: () => Navigator.of(context).pop(),
                 icon: Icon(Icons.chevron_left,
-                    color: Provider.of<AmityUIConfiguration>(context)
+                    color: Provider
+                        .of<AmityUIConfiguration>(context)
                         .appColors
                         .base,
                     size: 30),
@@ -79,26 +104,29 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                   onPressed: () async {
                     AmityLoadingDialog.showLoadingDialog();
                     var imageProvider =
-                        Provider.of<CommunityVM>(context, listen: false);
+                    Provider.of<CommunityVM>(context, listen: false);
                     await imageProvider.uploadSelectedFileToAmity();
                     await Provider.of<CommunityVM>(context, listen: false)
                         .updateCommunity(
-                            community.communityId ?? "",
-                            imageProvider.amityImages ?? community.avatarImage,
-                            _displayNameController.text,
-                            _descriptionController.text,
-                            Provider.of<CategoryVM>(context, listen: false)
-                                .getSelectedCategory(),
-                            communityType == CommunityType.public
-                                ? true
-                                : false);
+                        community.communityId ?? "",
+                        imageProvider.amityImages ?? community.avatarImage,
+                        _displayNameController.text,
+                        _descriptionController.text,
+                        Provider.of<CategoryVM>(context, listen: false)
+                            .getSelectedCategory(),
+                        communityType == CommunityType.public
+                            ? true
+                            : false,
+                      selectedClubs?.map((e) => e).toList() ?? [],
+                      _locationController.text, community.metadata?["channel_id"]);
                     AmityLoadingDialog.hideLoadingDialog();
                     Navigator.of(context).pop();
                   },
                   child: Text(
                     "Save",
                     style: TextStyle(
-                      color: Provider.of<AmityUIConfiguration>(context)
+                      color: Provider
+                          .of<AmityUIConfiguration>(context)
                           .appColors
                           .primary,
                       fontWeight: FontWeight.bold,
@@ -121,9 +149,13 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                       children: [
                         Container(
                           width: double.infinity,
-                          height: MediaQuery.of(context).size.width * 0.7,
+                          height: MediaQuery
+                              .of(context)
+                              .size
+                              .width * 0.7,
                           decoration: BoxDecoration(
-                              color: Provider.of<AmityUIConfiguration>(context)
+                              color: Provider
+                                  .of<AmityUIConfiguration>(context)
                                   .appColors
                                   .primaryShade3,
                               image: DecorationImage(
@@ -157,7 +189,7 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                               ), // Adding a camera icon
                               SizedBox(
                                   width:
-                                      8.0), // Adding some space between the icon and the text
+                                  8.0), // Adding some space between the icon and the text
                               Text(
                                 'Upload image',
                                 style: TextStyle(
@@ -192,6 +224,59 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                         ),
                         const SizedBox(height: 16.0),
                         TextFieldWithCounter(
+                            isRequired: false,
+                            controller: _locationController,
+                            title: 'Location',
+                            showChevron: true,
+                            hintText: 'Select location',
+                            maxCharacters: 180,
+                            showCount: false,
+                            keyboardType: TextInputType.multiline,
+                            maxLines: null,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                  const SearchLocationScreen(title: 'Location'),
+                                ),
+                              ).then((result) {
+                                if (result != null) {
+                                  _locationController.text = result.mainText;
+                                }
+                              });
+                            }
+                        ),
+                        const SizedBox(height: 16.0),
+                        TextFieldWithCounter(
+                            isRequired: false,
+                            controller: _clubsController,
+                            title: 'Link clubs',
+                            showChevron: true,
+                            showCount: false,
+                            hintText: 'Link clubs to show their matches',
+                            maxCharacters: 180,
+                            keyboardType: TextInputType.multiline,
+                            maxLines: null,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SelectClubScreen(isMultiSelect: true,
+                                            selectedClubIds: selectedClubs.toList(),
+                                            onResult: (result) {
+                                              if (result != null) {
+                                                _clubsController.text =
+                                                "${result.length} clubs selected";
+                                                selectedClubs.assignAll(
+                                                    result.map((e) => e).toList());
+                                              }
+                                            }
+                                        ),
+                                  ));
+                            }
+                        ),
+                        const SizedBox(height: 16.0),
+                        TextFieldWithCounter(
                           controller: _categoryController,
                           title: 'Category',
                           hintText: 'Select category',
@@ -199,11 +284,12 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                           maxCharacters: 30,
                           onTap: () async {
                             String? category =
-                                await Navigator.of(context).push<String>(
+                            await Navigator.of(context).push<String>(
                               MaterialPageRoute(
-                                  builder: (context) => CategoryList(
+                                  builder: (context) =>
+                                      CategoryList(
                                         categoryTextController:
-                                            _categoryController,
+                                        _categoryController,
                                       )),
                             );
                             if (category != null) {
@@ -227,24 +313,27 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                               title: Text(
                                 'Public',
                                 style: TextStyle(
-                                    color: Provider.of<AmityUIConfiguration>(
-                                            context)
+                                    color: Provider
+                                        .of<AmityUIConfiguration>(
+                                        context)
                                         .appColors
                                         .base),
                               ),
                               subtitle: Text(
                                 'Anyone can join, view and search this community',
                                 style: TextStyle(
-                                    color: Provider.of<AmityUIConfiguration>(
-                                            context)
+                                    color: Provider
+                                        .of<AmityUIConfiguration>(
+                                        context)
                                         .appColors
                                         .base),
                               ),
                               trailing: Radio(
                                 activeColor:
-                                    Provider.of<AmityUIConfiguration>(context)
-                                        .appColors
-                                        .primary,
+                                Provider
+                                    .of<AmityUIConfiguration>(context)
+                                    .appColors
+                                    .primary,
                                 value: true,
                                 groupValue: _isPublic,
                                 onChanged: (bool? value) {
@@ -270,24 +359,27 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                               title: Text(
                                 'Private',
                                 style: TextStyle(
-                                    color: Provider.of<AmityUIConfiguration>(
-                                            context)
+                                    color: Provider
+                                        .of<AmityUIConfiguration>(
+                                        context)
                                         .appColors
                                         .base),
                               ),
                               subtitle: Text(
                                 'Only members invited by the moderators can join, view and search this community',
                                 style: TextStyle(
-                                    color: Provider.of<AmityUIConfiguration>(
-                                            context)
+                                    color: Provider
+                                        .of<AmityUIConfiguration>(
+                                        context)
                                         .appColors
                                         .base),
                               ),
                               trailing: Radio(
                                 activeColor:
-                                    Provider.of<AmityUIConfiguration>(context)
-                                        .appColors
-                                        .primary,
+                                Provider
+                                    .of<AmityUIConfiguration>(context)
+                                    .appColors
+                                    .primary,
                                 value: true,
                                 groupValue: !_isPublic,
                                 onChanged: (bool? value) {
@@ -314,7 +406,9 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
     var imageProvider = Provider.of<CommunityVM>(context, listen: true);
 
     if ((imageProvider.pickedFile != null)) {
-      return FileImage(Provider.of<CommunityVM>(context).pickedFile!);
+      return FileImage(Provider
+          .of<CommunityVM>(context)
+          .pickedFile!);
     }
     if (url != null) {
       return NetworkImage(url);

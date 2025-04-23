@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 
 import '../../components/custom_user_avatar.dart';
 import '../../viewmodel/follower_following_viewmodel.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+
 
 class AmityFollowerScreen extends StatefulWidget {
   final String userId;
@@ -79,18 +81,19 @@ class _AmityFollowerScreenState extends State<AmityFollowerScreen> {
                               builder: (context, snapshot) {
                                 return ListTile(
                                   onTap: () async {
+                                    if(int.tryParse(snapshot
+                                        .data!
+                                        .sourceUserId!) != null)
                                     Navigator.of(context).push(
                                         MaterialPageRoute(
                                             builder: (context) =>
                                                 ChangeNotifierProvider(
                                                     create: (context) =>
                                                         UserFeedVM(),
-                                                    child: UserProfileScreen(
-                                                        amityUser: snapshot
-                                                            .data!.sourceUser!,
-                                                        amityUserId: snapshot
+                                                    child: PeopleProfileScreen(
+                                                        userId: int.parse(snapshot
                                                             .data!
-                                                            .sourceUserId!))));
+                                                            .sourceUserId!)))));
                                   },
                                   trailing: GestureDetector(
                                       onTap: () {
@@ -108,7 +111,9 @@ class _AmityFollowerScreenState extends State<AmityFollowerScreen> {
                                         child: getAvatarImage(vm
                                             .getFollowerList[index]
                                             .sourceUser!
-                                            .avatarUrl),
+                                            .avatarUrl, fullName: vm
+                                            .getFollowerList[index]
+                                            .sourceUser!.displayName),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),

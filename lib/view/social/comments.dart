@@ -18,18 +18,22 @@ import 'package:provider/provider.dart';
 import '../../components/custom_user_avatar.dart';
 import '../../viewmodel/configuration_viewmodel.dart';
 import '../../viewmodel/post_viewmodel.dart';
+import 'package:mobile_app_padel/features/profile/data/match.dart';
+
 
 class CommentScreen extends StatefulWidget {
   final AmityPost amityPost;
   final ThemeData theme;
   final bool isFromFeed;
   final FeedType feedType;
+  final IMatch? match;
   const CommentScreen({
     Key? key,
     required this.amityPost,
     required this.theme,
     required this.isFromFeed,
     required this.feedType,
+    this.match
   }) : super(key: key);
 
   @override
@@ -289,10 +293,12 @@ class CommentScreenState extends State<CommentScreen> {
                                           theme: theme,
                                           postIndex: 0,
                                           isFromFeed: false,
+                                          match: widget.match,
                                         ),
 
-                                        const Divider(
-                                          height: 0,
+                                         Divider(
+                                          color: Colors.grey.withValues(alpha: 0.2),
+                                          height: 1,
                                         ),
                                         CommentComponent(
                                           postId: widget.amityPost.postId!,
@@ -394,18 +400,13 @@ class CommentTextField extends StatelessWidget {
           color: Provider.of<AmityUIConfiguration>(context)
               .appColors
               .baseBackground,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.grey,
-              blurRadius: 0.8,
-              spreadRadius: 0.5,
-            ),
-          ]),
+          border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)))
+         ),
       child: ListTile(
           horizontalTitleGap: 0,
           contentPadding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           leading: getAvatarImage(
-              Provider.of<AmityVM>(context).currentamityUser?.avatarUrl),
+              Provider.of<AmityVM>(context).currentamityUser?.avatarUrl, fullName: Provider.of<AmityVM>(context).currentamityUser?.displayName),
           title: ConstrainedBox(
             constraints: const BoxConstraints(
               maxHeight: 200.0, // Maximum height for the text field
@@ -804,7 +805,7 @@ class _CommentComponentState extends State<CommentComponent> {
                                           ),
                                           child: CustomListTile(
                                               avatarUrl:
-                                                  comments.user!.avatarUrl,
+                                                  comments.user!.avatarUrl ?? comments.user!.avatarCustomUrl ,
                                               displayName:
                                                   comments.user!.displayName!,
                                               createdAt: comments.createdAt!,
@@ -1168,8 +1169,9 @@ class _CommentComponentState extends State<CommentComponent> {
                                       )
                                     ],
                                   ),
-                                  const Divider(
-                                    height: 0,
+                                   Divider(
+                                    height: 1,
+                                    color: Colors.grey.withValues(alpha: 0.2),
                                   ),
                                 ],
                               );
@@ -1371,7 +1373,7 @@ class ReplyCommentComponent extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         CustomListTile(
-                            avatarUrl: comments.user!.avatarUrl,
+                            avatarUrl: comments.user!.avatarUrl ?? comments.user!.avatarCustomUrl,
                             displayName: comments.user!.displayName!,
                             createdAt: comments.createdAt!,
                             editedAt: comments.editedAt!,

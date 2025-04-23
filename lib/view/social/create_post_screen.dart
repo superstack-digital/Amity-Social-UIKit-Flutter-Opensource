@@ -68,7 +68,9 @@ class CreatePostScreen2State extends State<CreatePostScreen2> {
                       alignment: Alignment.topLeft,
                       child: getAvatarImage(Provider.of<AmityVM>(context)
                           .currentamityUser
-                          ?.avatarUrl)),
+                          ?.avatarUrl,fullName: Provider.of<AmityVM>(context)
+                          .currentamityUser
+                          ?.displayName)),
                   const SizedBox(
                     height: 10,
                   ),

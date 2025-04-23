@@ -2,6 +2,7 @@ import 'package:amity_sdk/amity_sdk.dart';
 import 'package:flutter/material.dart';
 
 class ExplorePageVM with ChangeNotifier {
+  bool isLoading = false;
   List<AmityCommunity> _recommendedCommunities = [];
   List<AmityCommunity> _trendingCommunities = [];
 

@@ -77,7 +77,7 @@ class CommentItem extends BaseElement {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(32),
               child: AmityNetworkImage(
-                  imageUrl: comment.user?.avatarUrl,
+                  imageUrl: comment.user?.avatarUrl  ?? comment.user?.avatarCustomUrl,
                   placeHolderPath:
                       "assets/Icons/amity_ic_user_avatar_placeholder.svg"),
             ),
@@ -114,16 +114,18 @@ class CommentItem extends BaseElement {
                                       padding: const EdgeInsets.only(bottom: 4),
                                       child: GestureDetector(
                                         onTap: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  UserProfileScreen(
-                                                amityUserId:
-                                                    comment.user?.userId ?? '',
-                                                amityUser: null,
+                                          if(int.tryParse(comment.user?.userId ?? "") != null){
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PeopleProfileScreen(
+                                                      userId:
+                                                      int.parse(comment.user?.userId!),
+                                                    ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          }
+
                                         },
                                         child: Text(
                                           comment.user?.displayName ?? "",
@@ -272,7 +274,7 @@ class CommentItem extends BaseElement {
                                             contentPadding:
                                                 const EdgeInsets.symmetric(
                                                     horizontal: 0, vertical: 0),
-                                            hintText: 'Say something nice...',
+                                            hintText: 'Say something nice... ',
                                             border: InputBorder.none,
                                             hintStyle: TextStyle(
                                               color: theme.baseColor,

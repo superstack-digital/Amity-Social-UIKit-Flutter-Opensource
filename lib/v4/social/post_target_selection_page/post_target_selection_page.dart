@@ -114,7 +114,7 @@ class PostTargetSelectionPage extends NewBasePage {
                           borderRadius: BorderRadius.circular(40),
                           child: AmityNetworkImage(
                               imageUrl:
-                                  AmityCoreClient.getCurrentUser().avatarUrl,
+                                  AmityCoreClient.getCurrentUser().avatarUrl ??  AmityCoreClient.getCurrentUser().avatarCustomUrl,
                               placeHolderPath:
                                   "assets/Icons/amity_ic_user_avatar_placeholder.svg"),
                         ),

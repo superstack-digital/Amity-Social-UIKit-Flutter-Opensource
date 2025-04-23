@@ -5,6 +5,7 @@ import 'package:amity_uikit_beta_service/viewmodel/community_feed_viewmodel.dart
 import 'package:amity_uikit_beta_service/viewmodel/community_member_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/configuration_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/create_postV2_viewmodel.dart';
+
 // import 'package:amity_uikit_beta_service/viewmodel/create_post_viewmodel.dart';
 // import 'package:amity_uikit_beta_service/viewmodel/media_viewmodel.dart';
 
@@ -12,18 +13,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../social/global_feed.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mobile_app_padel/shared/asset_keys.dart';
+import 'package:mobile_app_padel/features/community/widgets/share_match_modal.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
+import 'package:mobile_app_padel/features/play/presentation/widgets/court_match_item.dart';
+import 'package:get/get.dart';
 
 class AmityCreatePostV2Screen extends StatefulWidget {
   final AmityCommunity? community;
   final AmityUser? amityUser;
   final bool isFromPostToPage;
   final FeedType? feedType;
-  const AmityCreatePostV2Screen(
-      {super.key,
-      this.community,
-      this.amityUser,
-      this.isFromPostToPage = false,
-      this.feedType});
+
+  const AmityCreatePostV2Screen({super.key,
+    this.community,
+    this.amityUser,
+    this.isFromPostToPage = false,
+    this.feedType});
 
   @override
   State<AmityCreatePostV2Screen> createState() =>
@@ -47,7 +54,10 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
     return Consumer<CreatePostVMV2>(builder: (consumerContext, vm, _) {
       return Scaffold(
         backgroundColor:
-            Provider.of<AmityUIConfiguration>(context).appColors.baseBackground,
+        Provider
+            .of<AmityUIConfiguration>(context)
+            .appColors
+            .baseBackground,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -55,17 +65,22 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
             widget.community != null
                 ? widget.community?.displayName ?? "Community"
                 : "My Feed",
-            style: Provider.of<AmityUIConfiguration>(context)
+            style: Provider
+                .of<AmityUIConfiguration>(context)
                 .titleTextStyle
                 .copyWith(
-                    color: Provider.of<AmityUIConfiguration>(context)
-                        .appColors
-                        .base),
+                color: Provider
+                    .of<AmityUIConfiguration>(context)
+                    .appColors
+                    .base),
           ),
           leading: IconButton(
             icon: Icon(Icons.chevron_left,
                 color:
-                    Provider.of<AmityUIConfiguration>(context).appColors.base),
+                Provider
+                    .of<AmityUIConfiguration>(context)
+                    .appColors
+                    .base),
             onPressed: () {
               if (hasContent) {
                 ConfirmationDialog().show(
@@ -87,69 +102,70 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
             TextButton(
               onPressed: hasContent
                   ? () async {
-                      if (vm.isUploadComplete) {
-                        if (widget.community == null) {
-                          //creat post in user Timeline
-                          await vm.createPost(context,
-                              callback: (isSuccess, error) {
-                            if (isSuccess) {
+                if (vm.isUploadComplete) {
+                  if (widget.community == null) {
+                    //creat post in user Timeline
+                    await vm.createPost(context,
+                        callback: (isSuccess, error) {
+                          if (isSuccess) {
+                            Navigator.of(context).pop();
+                            if (widget.isFromPostToPage) {
                               Navigator.of(context).pop();
-                              if (widget.isFromPostToPage) {
-                                Navigator.of(context).pop();
-                              }
-                            } else {}
-                          });
-                        } else {
-                          //create post in Community
-                          await vm.createPost(context,
-                              communityId: widget.community?.communityId!,
-                              callback: (isSuccess, error) async {
-                            if (isSuccess) {
-                              var roleVM = Provider.of<MemberManagementVM>(
-                                  context,
-                                  listen: false);
-                              roleVM.checkCurrentUserRole(
-                                  widget.community!.communityId!);
-
-                              if (widget.community!.isPostReviewEnabled!) {
-                                if (!widget.community!.hasPermission(
-                                    AmityPermission.REVIEW_COMMUNITY_POST)) {
-                                  await AmityDialog().showAlertErrorDialog(
-                                      title: "Post submitted",
-                                      message:
-                                          "Your post has been submitted to the pending list. It will be reviewed by community moderator");
-                                }
-                              }
-                              Navigator.of(context).pop();
-                              if (widget.isFromPostToPage) {
-                                Navigator.of(context).pop();
-                              }
-                              if (widget.community!.isPostReviewEnabled!) {
-                                Provider.of<CommuFeedVM>(context, listen: false)
-                                    .initAmityPendingCommunityFeed(
-                                        widget.community!.communityId!,
-                                        AmityFeedType.REVIEWING);
-                              }
-
-                              // Navigator.of(context).push(MaterialPageRoute(
-                              //     builder: (context) => ChangeNotifierProvider(
-                              //           create: (context) => CommuFeedVM(),
-                              //           child: CommunityScreen(
-                              //             isFromFeed: true,
-                              //             community: widget.community!,
-                              //           ),
-                              //         )));
                             }
-                          });
-                        }
-                      }
-                    }
+                          } else {}
+                        });
+                  } else {
+                    //create post in Community
+                    await vm.createPost(context,
+                        communityId: widget.community?.communityId!,
+                        callback: (isSuccess, error) async {
+                          if (isSuccess) {
+                            var roleVM = Provider.of<MemberManagementVM>(
+                                context,
+                                listen: false);
+                            roleVM.checkCurrentUserRole(
+                                widget.community!.communityId!);
+
+                            if (widget.community!.isPostReviewEnabled!) {
+                              if (!widget.community!.hasPermission(
+                                  AmityPermission.REVIEW_COMMUNITY_POST)) {
+                                await AmityDialog().showAlertErrorDialog(
+                                    title: "Post submitted",
+                                    message:
+                                    "Your post has been submitted to the pending list. It will be reviewed by community moderator");
+                              }
+                            }
+                            Navigator.of(context).pop();
+                            if (widget.isFromPostToPage) {
+                              Navigator.of(context).pop();
+                            }
+                            if (widget.community!.isPostReviewEnabled!) {
+                              Provider.of<CommuFeedVM>(context, listen: false)
+                                  .initAmityPendingCommunityFeed(
+                                  widget.community!.communityId!,
+                                  AmityFeedType.REVIEWING);
+                            }
+
+                            // Navigator.of(context).push(MaterialPageRoute(
+                            //     builder: (context) => ChangeNotifierProvider(
+                            //           create: (context) => CommuFeedVM(),
+                            //           child: CommunityScreen(
+                            //             isFromFeed: true,
+                            //             community: widget.community!,
+                            //           ),
+                            //         )));
+                          }
+                        });
+                  }
+                }
+              }
                   : null,
               child: Text("Post",
                   style: TextStyle(
                       color: vm.isPostValid
-                          ? Provider.of<AmityUIConfiguration>(context)
-                              .primaryColor
+                          ? Provider
+                          .of<AmityUIConfiguration>(context)
+                          .primaryColor
                           : Colors.grey)),
             ),
           ],
@@ -165,7 +181,8 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                       children: [
                         TextField(
                           style: TextStyle(
-                              color: Provider.of<AmityUIConfiguration>(context)
+                              color: Provider
+                                  .of<AmityUIConfiguration>(context)
                                   .appColors
                                   .base),
                           onChanged: (value) => vm.updatePostValidity(),
@@ -177,16 +194,30 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                             hintText: "Write something to post",
                             hintStyle: TextStyle(
                                 color:
-                                    Provider.of<AmityUIConfiguration>(context)
-                                        .appColors
-                                        .userProfileTextColor),
+                                Provider
+                                    .of<AmityUIConfiguration>(context)
+                                    .appColors
+                                    .userProfileTextColor),
                           ),
                           // style: t/1heme.textTheme.bodyText1.copyWith(color: Colors.grey),
                         ),
                         Consumer<CreatePostVMV2>(
                           builder: (context, vm, _) =>
                               PostMedia(files: vm.files),
+                        ),
+                        Consumer<CreatePostVMV2>(
+                          builder: (context, vm, _) =>
+                          vm.match != null
+                              ?
+                          CourtMatchItem(match: vm.match!,
+                              onInvitePlayer: () {},
+                              onRemovePress: (){
+                                vm.removeMatch();
+                              },
+                              showRemoveButton: true)
+                              : SizedBox(),
                         )
+
                       ],
                     ),
                   ),
@@ -201,7 +232,7 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                     _iconButton(
                       Icons.camera_alt_outlined,
                       isEnable:
-                          vm.availableFileSelectionOptions()[MyFileType.image]!,
+                      vm.availableFileSelectionOptions()[MyFileType.image]!,
                       label: "Photo",
                       // debugingText:
                       //     "${vm2.isNotSelectVideoYet()}&& ${vm2.isNotSelectedFileYet()}",
@@ -213,7 +244,7 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                       Icons.image_outlined,
                       label: "Image",
                       isEnable:
-                          vm.availableFileSelectionOptions()[MyFileType.image]!,
+                      vm.availableFileSelectionOptions()[MyFileType.image]!,
                       onTap: () async {
                         _handleImageTap(context);
                       },
@@ -222,7 +253,7 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                       Icons.play_circle_outline,
                       label: "Video",
                       isEnable:
-                          vm.availableFileSelectionOptions()[MyFileType.video]!,
+                      vm.availableFileSelectionOptions()[MyFileType.video]!,
                       onTap: () async {
                         _handleVideoTap(context);
                       },
@@ -231,7 +262,7 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                       Icons.attach_file_outlined,
                       label: "File",
                       isEnable:
-                          vm.availableFileSelectionOptions()[MyFileType.file]!,
+                      vm.availableFileSelectionOptions()[MyFileType.file]!,
                       onTap: () async {
                         _handleFileTap(context);
                       },
@@ -257,9 +288,9 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
 
   Widget _iconButton(IconData icon,
       {required String label,
-      required VoidCallback onTap,
-      required bool isEnable,
-      String? debugingText}) {
+        required VoidCallback onTap,
+        required bool isEnable,
+        String? debugingText, String? svgAsset}) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -267,7 +298,8 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
         CircleAvatar(
           radius: 16,
           backgroundColor: Colors.grey[200],
-          child: IconButton(
+          child: svgAsset != null ? SvgPicture.asset(
+              svgAsset, height: 16.25, width: 16.25) : IconButton(
             icon: Icon(
               icon,
               size: 18,
@@ -308,20 +340,20 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                     ListTile(
                       leading: _iconButton(Icons.camera_alt_outlined,
                           isEnable: vm.availableFileSelectionOptions()[
-                              MyFileType.image]!,
+                          MyFileType.image]!,
                           label: "Camera",
                           onTap: () {}),
                       title: Text(
                         'Camera',
                         style: TextStyle(
                             color: vm.availableFileSelectionOptions()[
-                                    MyFileType.image]!
+                            MyFileType.image]!
                                 ? Colors.black
                                 : Colors.grey),
                       ),
                       onTap: () {
                         if (vm.availableFileSelectionOptions()[
-                            MyFileType.image]!) {
+                        MyFileType.image]!) {
                           _handleImageTap(context);
                           Navigator.pop(context);
                         }
@@ -330,20 +362,20 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                     ListTile(
                       leading: _iconButton(Icons.image_outlined,
                           isEnable: vm.availableFileSelectionOptions()[
-                              MyFileType.image]!,
+                          MyFileType.image]!,
                           label: "Photo",
                           onTap: () {}),
                       title: Text(
                         'Photo',
                         style: TextStyle(
                             color: vm.availableFileSelectionOptions()[
-                                    MyFileType.image]!
+                            MyFileType.image]!
                                 ? Colors.black
                                 : Colors.grey),
                       ),
                       onTap: () {
                         if (vm.availableFileSelectionOptions()[
-                            MyFileType.image]!) {
+                        MyFileType.image]!) {
                           _handleImageTap(context);
                           Navigator.pop(context);
                         }
@@ -352,20 +384,20 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                     ListTile(
                       leading: _iconButton(Icons.attach_file_rounded,
                           isEnable: vm.availableFileSelectionOptions()[
-                              MyFileType.file]!,
+                          MyFileType.file]!,
                           label: "Attachment",
                           onTap: () {}),
                       title: Text(
                         'Attachment',
                         style: TextStyle(
                             color: vm.availableFileSelectionOptions()[
-                                    MyFileType.file]!
+                            MyFileType.file]!
                                 ? Colors.black
                                 : Colors.grey),
                       ),
                       onTap: () {
                         if (vm.availableFileSelectionOptions()[
-                            MyFileType.file]!) {
+                        MyFileType.file]!) {
                           _handleFileTap(context);
                           Navigator.pop(context);
                         }
@@ -383,16 +415,50 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                         'Video',
                         style: TextStyle(
                             color: vm.availableFileSelectionOptions()[
-                                    MyFileType.video]!
+                            MyFileType.video]!
                                 ? Colors.black
                                 : Colors.grey),
                       ),
                       onTap: () {
                         if (vm.availableFileSelectionOptions()[
-                            MyFileType.video]!) {
+                        MyFileType.video]!) {
                           _handleVideoTap(context);
                           Navigator.pop(context);
                         }
+                      },
+                    ),
+                    ListTile(
+                      leading: _iconButton(
+                          Icons.play_circle_outline_outlined,
+                          isEnable: vm
+                              .availableFileSelectionOptions()[MyFileType.video]!,
+                          label: "Matches",
+                          onTap: () {},
+                          svgAsset: AssetKeys.matchIcon
+                      ),
+                      title: Text(
+                        'Matches',
+                        style: TextStyle(
+                            color: vm.availableFileSelectionOptions()[
+                            MyFileType.video]!
+                                ? Colors.black
+                                : Colors.grey),
+                      ),
+                      onTap: () {
+                        showModalBottomSheet(
+                            context: context,
+                            builder: (modalContext) =>
+                                ShareMatchModal(communityId: '',
+                                    title: "Share Matches",
+                                    onResult: (match) {
+                                      Provider.of<CreatePostVMV2>(context,
+                                          listen: false)
+                                          .addMatch(match);
+                                      Navigator.pop(context);
+                                      Navigator.of(modalContext).pop();
+                                    })).then((val){
+                                      Get.delete<ShareOpenMatchesController>();
+                        });
                       },
                     ),
                   ],
@@ -408,23 +474,24 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
   void _showDiscardDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard Post?'),
-        content: const Text('Do you want to discard your post?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Discard Post?'),
+            content: const Text('Do you want to discard your post?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Discard'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-              Navigator.of(context).pop();
-            },
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
     );
   }
 

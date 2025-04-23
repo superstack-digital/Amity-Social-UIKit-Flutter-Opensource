@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../utils/env_manager.dart';
 import '../viewmodel/configuration_viewmodel.dart';
+import 'package:mobile_app_padel/shared/widgets/initial_avatar.dart';
 
-Widget getAvatarImage(String? url, {double? radius = 20, String? fileId}) {
+Widget getAvatarImage(String? url, {double? radius = 20, String? fileId, String? fullName}) {
   return Builder(builder: (context) {
     return CircleAvatar(
         radius: radius,
@@ -13,11 +14,7 @@ Widget getAvatarImage(String? url, {double? radius = 20, String? fileId}) {
         backgroundImage: url != null ? NetworkImage("$url?size=medium") : null,
         child: url != null
             ? const SizedBox()
-            : Icon(
-                Icons.person,
-                color: Colors.white,
-                size: radius! * 1.5,
-              ));
+            : InitialAvatar(height: 40, width: 40, fullName: fullName ?? ""));
   });
 }
 

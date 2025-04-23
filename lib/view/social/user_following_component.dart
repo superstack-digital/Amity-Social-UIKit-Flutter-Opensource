@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../components/custom_user_avatar.dart';
 import '../../viewmodel/follower_following_viewmodel.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 
 class AmityFollowingScreen extends StatefulWidget {
   final String userId;
@@ -57,15 +58,19 @@ class _AmityFollowingScreenScreenState extends State<AmityFollowingScreen> {
                   stream: vm.getFollowingList[index].listen.stream,
                   initialData: vm.getFollowingList[index],
                   builder: (context, snapshot) {
+                    final userAvatarUrl = vm
+                        .getFollowingList[index].targetUser!.avatarUrl ??vm
+                        .getFollowingList[index].targetUser!.avatarCustomUrl;
                     return ListTile(
                       onTap: () async {
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => ChangeNotifierProvider(
-                                create: (context) => UserFeedVM(),
-                                child: UserProfileScreen(
-                                  amityUser: snapshot.data!.targetUser,
-                                  amityUserId: snapshot.data!.targetUserId!,
-                                ))));
+                       if(int.tryParse(snapshot.data!.targetUserId!) != null){
+                         Navigator.of(context).push(MaterialPageRoute(
+                             builder: (context) => ChangeNotifierProvider(
+                                 create: (context) => UserFeedVM(),
+                                 child: PeopleProfileScreen(
+                                   userId: int.parse(snapshot.data!.targetUserId!),
+                                 ))));
+                       }
                       },
                       trailing: GestureDetector(
                           onTap: () {
@@ -78,8 +83,7 @@ class _AmityFollowingScreenScreenState extends State<AmityFollowingScreen> {
                       title: Row(
                         children: [
                           GestureDetector(
-                            child: getAvatarImage(vm
-                                .getFollowingList[index].targetUser!.avatarUrl),
+                            child: getAvatarImage(userAvatarUrl, fullName: snapshot.data?.sourceUser?.displayName),
                           ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),

@@ -1,6 +1,6 @@
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/view/UIKit/social/my_community_feed.dart';
-import 'package:amity_uikit_beta_service/view/social/community_feed.dart';
+import 'package:amity_uikit_beta_service/view/social/community_feedV2.dart';
 import 'package:amity_uikit_beta_service/view/user/user_profile_v2.dart';
 import 'package:amity_uikit_beta_service/viewmodel/community_feed_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/configuration_viewmodel.dart';
@@ -9,9 +9,13 @@ import 'package:amity_uikit_beta_service/viewmodel/user_feed_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+import 'package:hexcolor/hexcolor.dart';
+
 
 class SearchCommunitiesScreen extends StatefulWidget {
-  const SearchCommunitiesScreen({super.key});
+  const SearchCommunitiesScreen({super.key, this.hideUserTab});
+  final bool? hideUserTab;
 
   @override
   _SearchCommunitiesScreenState createState() =>
@@ -24,6 +28,7 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
     super.initState();
 
     Provider.of<SearchCommunityVM>(context, listen: false).clearSearch();
+    Provider.of<SearchCommunityVM>(context, listen: false).getAllCommunities();
     Provider.of<UserVM>(context, listen: false).clearUserList();
   }
 
@@ -35,39 +40,46 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
       var searchBar = Container(
         color:
             Provider.of<AmityUIConfiguration>(context).appColors.baseBackground,
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.5, vertical: 10),
         child: Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: textcontroller,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: Colors.grey,
-                  ),
-                  hintText: 'Search',
-                  filled: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  fillColor: Colors.grey[3],
-                  focusColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4.0),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onChanged: (value) {
-                  Provider.of<SearchCommunityVM>(context, listen: false)
-                      .initSearchCommunity(value.trim());
-                  Provider.of<UserVM>(context, listen: false)
-                      .initUserList(value.trim());
-                },
+              child: SizedBox(
+                height: 40,
+                child: TextField(
+                    controller: textcontroller,
+                    decoration: InputDecoration(
+                      prefixIcon:  Icon(
+                        Icons.search,
+                        color: HexColor('#3C3C43'),
+                      ),
+                      hintText: 'Search',
+                      hintStyle: TextStyle(
+                        fontSize: 14, height: 1.3, fontWeight: FontWeight.w500
+                      ),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      fillColor: HexColor('#F6F6F6'),
+                      focusColor: Colors.white,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(4.0),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      Provider.of<SearchCommunityVM>(context, listen: false)
+                          .initSearchCommunity(value.trim());
+                      Provider.of<UserVM>(context, listen: false)
+                          .initUserList(value.trim());
+                    },
+                  )
               ),
             ),
+            SizedBox(width: 5),
             GestureDetector(
               onTap: () {
                 Navigator.of(context).pop();
@@ -75,9 +87,9 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  "cancel",
+                  "Cancel",
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                     color: Provider.of<AmityUIConfiguration>(context)
                         .appColors
                         .base,
@@ -89,7 +101,7 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
         ),
       );
       return DefaultTabController(
-        length: 2,
+        length: widget.hideUserTab == true ? 1 : 2,
         child: Scaffold(
           backgroundColor: Provider.of<AmityUIConfiguration>(context)
               .appColors
@@ -98,28 +110,72 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
             child: Stack(
               children: [
                 textcontroller.text.isEmpty
-                    ? const SizedBox()
-                    : TabBarView(
+                    ? ListView.builder(
+                  itemCount: vm.allCommunities.length + 1,
+                  itemBuilder: (context, index) {
+                    // If it's the first item in the list, return the search bar
+                    if (index == 0) {
+                      return SizedBox(height: widget.hideUserTab == true ? 70 : 120);
+                    }
+                    // Otherwise, return the community widget
+                    return CommunityWidget(
+                      community: vm.allCommunities[index - 1],
+                    );
+                  },
+                )
+                    : widget.hideUserTab == true ? vm.amityCommunities.isEmpty
+                    ? Container(
+                  width: MediaQuery.of(context).size.width,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Provider.of<AmityUIConfiguration>(
+                            context)
+                            .appColors
+                            .primary,
+                      ),
+                    ],
+                  ),
+                )
+                    : ListView.builder(
+                  controller: vm.scrollcontroller,
+                  itemCount: vm.amityCommunities.length + 1,
+                  itemBuilder: (context, index) {
+                    // If it's the first item in the list, return the search bar
+                    if (index == 0) {
+                      return SizedBox(height: widget.hideUserTab == true ? 70 : 120);
+                    }
+                    // Otherwise, return the community widget
+                    return CommunityWidget(
+                      community: vm.amityCommunities[index - 1],
+                    );
+                  },
+                )
+          : TabBarView(
                         children: [
-                          vm.amityCommunities.isEmpty
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    CircularProgressIndicator(
-                                      color: Provider.of<AmityUIConfiguration>(
-                                              context)
-                                          .appColors
-                                          .primary,
-                                    ),
-                                  ],
-                                )
+                          !vm.amityCommunities.isEmpty
+                              ? Container(
+                            width: MediaQuery.of(context).size.width,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: Provider.of<AmityUIConfiguration>(
+                                      context)
+                                      .appColors
+                                      .primary,
+                                ),
+                              ],
+                            ),
+                          )
                               : ListView.builder(
                                   controller: vm.scrollcontroller,
                                   itemCount: vm.amityCommunities.length + 1,
                                   itemBuilder: (context, index) {
                                     // If it's the first item in the list, return the search bar
                                     if (index == 0) {
-                                      return const SizedBox(height: 120);
+                                      return  SizedBox(height:widget.hideUserTab == true ? 30 :  120);
                                     }
                                     // Otherwise, return the community widget
                                     return CommunityWidget(
@@ -160,42 +216,32 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
                     searchBar,
                     textcontroller.text.isEmpty
                         ? const SizedBox()
-                        : Container(
+                        : widget.hideUserTab != true ? Container(
                             color: Colors.white,
                             child: TabBar(
-                              dividerColor:
-                                  Provider.of<AmityUIConfiguration>(context)
-                                      .appColors
-                                      .baseBackground,
-                              tabAlignment: TabAlignment.start,
-                              isScrollable:
-                                  true, // Ensure that the TabBar is scrollable
-
-                              labelColor:
-                                  Provider.of<AmityUIConfiguration>(context)
-                                      .appColors
-                                      .primary,
-
-                              indicatorColor:
-                                  Provider.of<AmityUIConfiguration>(context)
-                                      .appColors
-                                      .primary,
-
-                              labelStyle: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'SF Pro Text',
+                              dividerColor: HexColor('#6C727540'),
+                              indicatorColor: HexColor('#141718'),
+                              indicatorWeight: 2,
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              unselectedLabelColor: HexColor('#6C7275'),
+                              labelStyle: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'SF Pro Text',
+                                  color: HexColor('#141718')
                               ),
-                              tabs: const [
+
+                              tabs: [
                                 Tab(
                                   text: "Community",
                                 ),
-                                Tab(
-                                  text: "User",
-                                ),
+                                if(widget.hideUserTab != true)
+                                  Tab(
+                                    text: "User",
+                                  ),
                               ],
                             ),
-                          ),
+                          ) : Container(),
                   ],
                 ),
               ],
@@ -254,7 +300,7 @@ class CommunityWidget extends StatelessWidget {
                         color: Provider.of<AmityUIConfiguration>(context)
                             .appColors
                             .base,
-                        fontWeight: FontWeight.bold),
+                        fontWeight: FontWeight.w500),
                   ),
                   community.isOfficial!
                       ? Padding(
@@ -281,14 +327,10 @@ class CommunityWidget extends StatelessWidget {
               ),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider(
-                    create: (context) => CommuFeedVM(),
-                    child: CommunityScreen(
-                      isFromFeed: true,
-                      community: communityStream,
-                    ),
-                  ),
-                  settings: const RouteSettings(name:CommunityScreen.routeName),
+                  builder: (context) =>
+                      CommunityScreen(community: communityStream),
+                  settings:
+                  const RouteSettings(name: CommunityScreen.routeName),
                 ));
               },
             ),
@@ -304,6 +346,7 @@ class UserWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return StreamBuilder<AmityUser>(
         stream: amityUser.listen.stream,
         builder: (context, snapshot) {
@@ -317,9 +360,12 @@ class UserWidget extends StatelessWidget {
               leading: (userStream.avatarFileId != null)
                   ? CircleAvatar(
                       backgroundColor: Colors.transparent,
-                      backgroundImage: NetworkImage(userStream.avatarUrl!),
+                      backgroundImage: NetworkImage(userStream.avatarUrl ?? userStream.avatarCustomUrl ?? ""),
                     )
-                  : Container(
+                  : userStream.avatarCustomUrl != null ? CircleAvatar(
+                backgroundColor: Colors.transparent,
+                backgroundImage: NetworkImage(userStream.avatarCustomUrl!),
+              ) : Container(
                       height: 40,
                       width: 40,
                       decoration: BoxDecoration(
@@ -350,13 +396,15 @@ class UserWidget extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider(
-                        create: (context) => UserFeedVM(),
-                        child: UserProfileScreen(
-                          amityUser: amityUser,
-                          amityUserId: amityUser.userId!,
-                        ))));
+                if(int.tryParse(amityUser.userId ?? "") != null){
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider(
+                          create: (context) => UserFeedVM(),
+                          child: PeopleProfileScreen(
+                            userId: int.parse(amityUser.userId!),
+                          ))));
+                }
+
               },
             ),
           );

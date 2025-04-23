@@ -7,7 +7,7 @@ import 'package:amity_uikit_beta_service/view/user/user_profile.dart';
 import 'package:amity_uikit_beta_service/view/user/user_profile_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 class PostDisplayName extends StatelessWidget {
   final AmityPost post;
   final AmityThemeColor theme;
@@ -88,14 +88,15 @@ class PostDisplayName extends StatelessWidget {
   Widget DisplayName(BuildContext context, AmityUser? user) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => UserProfileScreen(
-              amityUserId: user?.userId ?? '',
-              amityUser: null,
+        if(int.tryParse(user?.userId ?? '0') != null){
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PeopleProfileScreen(
+                userId: int.parse(user?.userId ?? '0'),
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       child: Text(
         user?.displayName ?? "Unknown",
@@ -133,14 +134,16 @@ class PostDisplayName extends StatelessWidget {
               (post.target as UserTarget).targetUser?.displayName ?? 'Unknown';
         }
         onTap = () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => UserProfileScreen(
-                amityUserId: target.targetUser?.userId ?? '',
-                amityUser: null,
+          if(int.tryParse(target.targetUser?.userId ?? '') != null){
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PeopleProfileScreen(
+                  userId: int.parse(target.targetUser?.userId ?? ''),
+                ),
               ),
-            ),
-          );
+            );
+          }
+
         };
       }
     }

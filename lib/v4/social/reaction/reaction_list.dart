@@ -196,9 +196,8 @@ class AmityReactionListComponent extends NewBaseComponent {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => UserProfileScreen(
-              amityUserId: reaction.creator?.userId ?? '',
-              amityUser: null,
+            builder: (context) => PeopleProfileScreen(
+              userId: reaction.creator?.userId ?? '',
             ),
           ),
         );
@@ -241,7 +240,7 @@ class AmityReactionListComponent extends NewBaseComponent {
           width: 32,
           height: 32,
           child: AmityNetworkImage(
-              imageUrl: reaction.creator?.avatarUrl,
+              imageUrl: reaction.creator?.avatarUrl ?? reaction.creator?.avatarCustomUrl,
               placeHolderPath:
                   "assets/Icons/amity_ic_user_avatar_placeholder.svg"),
         ),

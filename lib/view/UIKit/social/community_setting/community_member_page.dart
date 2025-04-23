@@ -10,13 +10,19 @@ import 'package:amity_uikit_beta_service/viewmodel/configuration_viewmodel.dart'
 import 'package:amity_uikit_beta_service/viewmodel/user_feed_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+import 'package:hexcolor/hexcolor.dart';
+import 'package:mobile_app_padel/shared/widgets/initial_avatar.dart';
+
 
 class MemberManagementPage extends StatefulWidget {
   final String communityId;
+  final String? channelId;
 
   const MemberManagementPage({
     Key? key,
     required this.communityId,
+    this.channelId
   }) : super(key: key);
 
   @override
@@ -62,6 +68,9 @@ class _MemberManagementPageState extends State<MemberManagementPage> {
       );
       Provider.of<MemberManagementVM>(context, listen: false)
           .checkCurrentUserRole(widget.communityId);
+
+      Provider.of<MemberManagementVM>(context, listen: false)
+          .initChannelId(widget.channelId);
     });
 
     super.initState();
@@ -119,6 +128,9 @@ class _MemberManagementPageState extends State<MemberManagementPage> {
                                           communityId: widget.communityId,
                                         );
                                         Navigator.of(context).pop();
+                                        if(widget.channelId != null){
+                                          AmityChatClient.newChannelRepository().addMembers(widget.channelId!, userIds);
+                                        }
                                       } else {
                                         log('Failed to add members');
                                       }
@@ -150,32 +162,21 @@ class _MemberManagementPageState extends State<MemberManagementPage> {
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(
                 48.0), // Provide a height for the AppBar's bottom
-            child: Row(
-              children: [
-                TabBar(
-                  tabAlignment: TabAlignment.start,
-                  isScrollable: true, // Ensure that the TabBar is scrollable
-                  dividerColor: Provider.of<AmityUIConfiguration>(context)
-                      .appColors
-                      .baseBackground,
-                  labelColor: Provider.of<AmityUIConfiguration>(context)
-                      .appColors
-                      .primary,
-
-                  indicatorColor: Provider.of<AmityUIConfiguration>(context)
-                      .appColors
-                      .primary,
-                  labelStyle: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'SF Pro Text',
-                  ),
-
-                  tabs: const [
-                    Tab(text: "Members"),
-                    Tab(text: "Moderators"),
-                  ],
-                ),
+            child: TabBar(
+              dividerColor: HexColor('#6C727540'),
+              indicatorColor: HexColor('#141718'),
+              indicatorWeight: 2,
+              indicatorSize: TabBarIndicatorSize.tab,
+              unselectedLabelColor: HexColor('#6C7275'),
+              labelStyle: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'SF Pro Text',
+                  color: HexColor('#141718')
+              ),
+              tabs: const [
+                Tab(text: "Members"),
+                Tab(text: "Moderators"),
               ],
             ),
           ),
@@ -203,25 +204,29 @@ class MemberList extends StatelessWidget {
           controller: viewModel.scrollController,
           itemCount: viewModel.userList.length,
           itemBuilder: (context, index) {
+            final avatarUrl = viewModel.userList[index].user?.avatarUrl ?? viewModel.userList[index].user?.avatarCustomUrl;
             return ListTile(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider(
-                        create: (context) => UserFeedVM(),
-                        child: UserProfileScreen(
-                          amityUser: viewModel.userList[index].user!,
-                          amityUserId: viewModel.userList[index].user!.userId!,
-                        ))));
+                if(int.tryParse(viewModel.userList[index].user?.userId ?? '0') != null){
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider(
+                          create: (context) => UserFeedVM(),
+                          child: PeopleProfileScreen(
+                            userId: int.parse(viewModel.userList[index].user!.userId!),
+                          ))));
+                }
+
               },
-              leading: CircleAvatar(
+              leading: avatarUrl ==
+                  null ? InitialAvatar(height: 40, width: 40, fullName: viewModel.userList[index].user?.displayName ?? "") : CircleAvatar(
                 backgroundColor: Provider.of<AmityUIConfiguration>(context)
                     .appColors
                     .primaryShade3,
-                backgroundImage: viewModel.userList[index].user?.avatarUrl ==
+                backgroundImage: avatarUrl ==
                         null
                     ? null
-                    : NetworkImage(viewModel.userList[index].user!.avatarUrl!),
-                child: viewModel.userList[index].user?.avatarUrl != null
+                    : NetworkImage(avatarUrl),
+                child: avatarUrl != null
                     ? null
                     : const Icon(Icons.person, size: 20, color: Colors.white),
               ),
@@ -264,25 +269,17 @@ class ModeratorList extends StatelessWidget {
           itemCount: viewModel.moderatorList.length,
           controller: viewModel.scrollControllerForModerator,
           itemBuilder: (context, index) {
+            final avatarUrl =viewModel.moderatorList[index].user?.avatarUrl;
             return ListTile(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider(
-                        create: (context) => UserFeedVM(),
-                        child: UserProfileScreen(
-                          amityUser: viewModel.moderatorList[index].user!,
-                          amityUserId: viewModel.userList[index].user!.userId!,
-                        ))));
+
               },
-              leading: CircleAvatar(
+              leading: avatarUrl == null ? InitialAvatar(height: 40, width: 40, fullName: viewModel.moderatorList[index].user?.displayName ?? "") : CircleAvatar(
                 backgroundColor: Provider.of<AmityUIConfiguration>(context)
                     .appColors
                     .primaryShade3,
                 backgroundImage:
-                    viewModel.moderatorList[index].user?.avatarUrl == null
-                        ? null
-                        : NetworkImage(
-                            viewModel.moderatorList[index].user!.avatarUrl!),
+              NetworkImage(viewModel.moderatorList[index].user!.avatarUrl!),
                 child: viewModel.moderatorList[index].user?.avatarUrl != null
                     ? null
                     : const Icon(Icons.person,
@@ -407,6 +404,9 @@ void _showOptionsBottomSheet(BuildContext context, AmityCommunityMember member,
                           onConfirm: () {
                             viewModel.removeMembers(
                                 viewModel.communityId, [member.userId!]);
+                            if(viewModel.channelId != null){
+                              AmityChatClient.newChannelRepository().removeMembers(viewModel.channelId!, [member.userId!]);
+                            }
                           },
                         );
                         await viewModel.initModerators(

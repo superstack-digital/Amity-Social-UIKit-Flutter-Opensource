@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:mobile_app_padel/features/profile/data/match.dart';
 
 enum FileStatus { uploading, rejected, complete }
 
@@ -44,6 +45,7 @@ class CreatePostVMV2 with ChangeNotifier {
   List<UIKitFileSystem> files = [];
   bool isUploadComplete = false;
   MyFileType? selectedFileType;
+  IMatch? match;
   bool get isPostValid {
     // Check if there are any files
     bool hasFiles = files.isNotEmpty;
@@ -78,6 +80,16 @@ class CreatePostVMV2 with ChangeNotifier {
     files.clear();
     textEditingController.clear();
     selectedFileType = null;
+  }
+
+  void addMatch(IMatch selectMatch) {
+    match = selectMatch;
+    notifyListeners();
+  }
+
+  void removeMatch() {
+    match = null;
+    notifyListeners();
   }
 
   // Function to determine which type of file can be selected
@@ -316,6 +328,7 @@ class CreatePostVMV2 with ChangeNotifier {
 
   // Method to deselect a file
   void deselectFile(UIKitFileSystem file) {
+    files.remove(file);
     notifyListeners();
   }
 
@@ -346,6 +359,8 @@ class CreatePostVMV2 with ChangeNotifier {
         postBuilder = targetBuilder.targetMe();
       }
 
+
+
       // Check for file types and add them to the post
       var images =
           files.where((file) => file.fileType == MyFileType.image).toList();
@@ -354,6 +369,20 @@ class CreatePostVMV2 with ChangeNotifier {
       var otherFiles =
           files.where((file) => file.fileType == MyFileType.file).toList();
 
+      if(match != null){
+        if (textEditingController.text.isNotEmpty) {
+          var readyBuilder = postBuilder.text(textEditingController.text).metadata({
+            "matchId": match!.id,
+          });
+          await readyBuilder.post().then((post) async {
+            handleCreatePost(
+                post: post,
+                isCommunity: isCommunity,
+                context: context,
+                callback: callback);
+          });
+        }
+      } else
       if (images.isNotEmpty) {
         log("image was selected");
         List<AmityImage> images = [];

@@ -6,6 +6,7 @@ import 'package:amity_uikit_beta_service/viewmodel/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/shared/widgets/initial_avatar.dart';
 
 class UserListPage extends StatefulWidget {
   final List<AmityUser>? preSelectMember;
@@ -150,15 +151,12 @@ class _UserListPageState extends State<UserListPage> {
                                                     context)
                                                 .appColors
                                                 .primaryShade3,
-                                        backgroundImage: user.avatarUrl == null
+                                        backgroundImage: (user.avatarUrl ?? user.avatarCustomUrl) == null
                                             ? null
-                                            : NetworkImage(user.avatarUrl!),
-                                        child: user.avatarUrl != null
+                                            : NetworkImage(user.avatarUrl ?? user.avatarCustomUrl ?? ""),
+                                        child: (user.avatarUrl ?? user.avatarCustomUrl) != null
                                             ? null
-                                            : const Icon(Icons.person,
-                                                size: 25,
-                                                color: Colors
-                                                    .white), // Adjust to use the correct attribute for avatar URL
+                                            : InitialAvatar(height: 40, width: 40, fullName: user.displayName ?? ""), // Adjust to use the correct attribute for avatar URL
                                       ),
                                       Positioned(
                                         right: 0,
@@ -243,15 +241,12 @@ class _UserListPageState extends State<UserListPage> {
                                       Provider.of<AmityUIConfiguration>(context)
                                           .appColors
                                           .primaryShade3,
-                                  backgroundImage: user.avatarUrl == null
+                                  backgroundImage: (user.avatarUrl ?? user.avatarCustomUrl) == null
                                       ? null
-                                      : NetworkImage(user.avatarUrl!),
-                                  child: user.avatarUrl != null
+                                      : NetworkImage(user.avatarUrl ?? user.avatarCustomUrl ?? ""),
+                                  child: (user.avatarUrl ?? user.avatarCustomUrl) != null
                                       ? null
-                                      : const Icon(Icons.person,
-                                          size: 25,
-                                          color: Colors
-                                              .white), // Adjust to use the correct attribute for avatar URL
+                                      : InitialAvatar(height: 40, width: 40, fullName: user.displayName ?? ""), // Adjust to use the correct attribute for avatar URL
                                 ),
 
                                 title: Text(

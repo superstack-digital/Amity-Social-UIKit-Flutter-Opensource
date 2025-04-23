@@ -101,8 +101,21 @@ class SearchCommunityVM with ChangeNotifier {
   final textEditingController = TextEditingController();
   // The controller for handling pagination.
   late PagingController<AmityCommunity> communityController;
+
+  final List<AmityCommunity> allCommunities = [];
+
   void clearSearch() {
     amityCommunities.clear();
+  }
+
+  void getAllCommunities() async {
+    allCommunities.clear();
+    final res = await AmitySocialClient.newCommunityRepository().getCommunities()
+        .sortBy(AmityCommunitySortOption.DISPLAY_NAME)
+        .filter(AmityCommunityFilter.ALL)
+        .includeDeleted(false).getPagingData(limit: 20);
+    allCommunities.addAll(res.data);
+    notifyListeners();
   }
 
   Future<void> initSearchCommunity([String? keyword]) async {

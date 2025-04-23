@@ -5,6 +5,12 @@ import 'package:amity_uikit_beta_service/view/user/medie_component.dart';
 import 'package:flutter/material.dart';
 
 import '../../components/alert_dialog.dart';
+import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:mobile_app_padel/shared/functions.dart';
+
+
 
 class CommuFeedVM extends ChangeNotifier {
   MediaType _selectedMediaType = MediaType.photos;
@@ -22,6 +28,8 @@ class CommuFeedVM extends ChangeNotifier {
   MediaType getMediaType() => _selectedMediaType;
   bool isCurrentUserIsAdmin = false;
   var _amityCommunityFeedPosts = <AmityPost>[];
+
+  var _communityEventList = <Event>[];
 
   late PagingController<AmityPost> _controllerCommu;
 
@@ -58,13 +66,32 @@ class CommuFeedVM extends ChangeNotifier {
     return _amityCommunityPendingFeedPosts;
   }
 
+
+  List<Event> getCommunityEventList() {
+    return _communityEventList;
+  }
+
   void addPostToFeed(AmityPost post) {
     _amityCommunityFeedPosts.insert(0, post);
     notifyListeners();
   }
 
+  Future<void> getUpcomingEvents(AmityCommunity community) async {
+    try {
+      _communityEventList.clear();
+      notifyListeners();
+      final data = await CommunityRepository.getInstance().getAllCommunityUpcomingEvents(community.communityId!);
+      _communityEventList.addAll([...data]);
+      notifyListeners();
+    } catch (e) {
+      // showStyledSnackBar("", SnackBarType.error);
+      rethrow;
+    }
+  }
+
   int postCount = 0;
   void getPostCount(AmityCommunity community) async {
+    getUpcomingEvents(community);
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)
         .then((value) {

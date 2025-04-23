@@ -69,7 +69,9 @@ class ProfileScreenState extends State<ProfileScreen> {
                   : getImageProvider(
                       "${Provider.of<AmityVM>(
                         context,
-                      ).currentamityUser?.avatarUrl}?size=medium",
+                      ).currentamityUser?.avatarUrl ?? Provider.of<AmityVM>(
+                        context,
+                      ).currentamityUser?.avatarCustomUrl}?size=medium",
                     ),
         );
         break;
@@ -82,7 +84,9 @@ class ProfileScreenState extends State<ProfileScreen> {
     Provider.of<ImagePickerVM>(context, listen: false).init(
         Provider.of<AmityVM>(context, listen: false)
             .currentamityUser
-            ?.avatarUrl);
+            ?.avatarUrl ?? Provider.of<AmityVM>(context, listen: false)
+            .currentamityUser
+            ?.avatarCustomUrl);
     _displayNameController.text = Provider.of<AmityVM>(context, listen: false)
             .currentamityUser!
             .displayName ??

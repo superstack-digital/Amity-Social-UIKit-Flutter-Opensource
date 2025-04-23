@@ -158,10 +158,14 @@ class UserProfileScreenState extends State<UserProfileScreen>
                                       isCurrentUser
                                           ? Provider.of<AmityVM>(
                                               context,
-                                            ).currentamityUser?.avatarUrl
+                                            ).currentamityUser?.avatarUrl ?? Provider.of<AmityVM>(
+                                        context,
+                                      ).currentamityUser?.avatarCustomUrl
                                           : Provider.of<UserFeedVM>(context)
                                               .amityUser!
-                                              .avatarUrl,
+                                              .avatarUrl ?? Provider.of<UserFeedVM>(context)
+                                          .amityUser!
+                                          .avatarCustomUrl,
                                       radius: 32)),
                               const SizedBox(width: 10),
                               Expanded(

@@ -47,7 +47,7 @@ class AmityPostHeader extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(32),
                 child: AmityNetworkImage(
-                    imageUrl: post.postedUser?.avatarUrl,
+                    imageUrl: post.postedUser?.avatarUrl ?? post.postedUser?.avatarCustomUrl,
                     placeHolderPath:
                         "assets/Icons/amity_ic_user_avatar_placeholder.svg"),
               ),

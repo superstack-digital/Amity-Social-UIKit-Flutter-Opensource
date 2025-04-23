@@ -6,6 +6,8 @@ import 'package:amity_uikit_beta_service/viewmodel/my_community_viewmodel.dart';
 import 'package:amity_uikit_beta_service/viewmodel/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hexcolor/hexcolor.dart';
+import 'package:mobile_app_padel/shared/widgets/initial_avatar.dart';
 
 class MyCommunityPage extends StatefulWidget {
   const MyCommunityPage({
@@ -95,7 +97,8 @@ class _MyCommunityPageState extends State<MyCommunityPage> {
           itemBuilder: (context, index) {
             // If it's the first item in the list, return the search bar
             if (index == 0) {
-              return Padding(
+              return Container(
+                height: 60,
                 padding: const EdgeInsets.all(10.0),
                 child: TextField(
                   controller: vm.textEditingController,
@@ -107,7 +110,7 @@ class _MyCommunityPageState extends State<MyCommunityPage> {
                     hintText: 'Search',
                     filled: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    fillColor: Colors.grey[3],
+                    fillColor: HexColor('#E7E7E8'),
                     focusColor: Colors.white,
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.0),
@@ -159,19 +162,7 @@ class CommunityWidget extends StatelessWidget {
                       backgroundImage:
                           NetworkImage(communityStream.avatarImage!.fileUrl!),
                     )
-                  : Container(
-                      height: 40,
-                      width: 40,
-                      decoration: BoxDecoration(
-                          color: Provider.of<AmityUIConfiguration>(context)
-                              .appColors
-                              .primaryShade3,
-                          shape: BoxShape.circle),
-                      child: const Icon(
-                        Icons.group,
-                        color: Colors.white,
-                      ),
-                    ),
+                  : InitialAvatar(height: 40, width: 40, fullName: communityStream.displayName ?? ""),
               title: Row(
                 children: [
                   if (!community.isPublic!)

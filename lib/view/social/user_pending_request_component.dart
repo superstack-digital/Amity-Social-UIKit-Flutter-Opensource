@@ -65,7 +65,9 @@ class _AmityPendingScreenState extends State<AmityPendingScreen> {
                         child: Row(
                           children: [
                             getAvatarImage(vm.pendingRequestList[index]
-                                .sourceUser!.avatarUrl),
+                                .sourceUser!.avatarUrl ?? vm.pendingRequestList[index]
+                                .sourceUser!.avatarCustomUrl,fullName: vm.pendingRequestList[index]
+                                .sourceUser.displayName),
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),

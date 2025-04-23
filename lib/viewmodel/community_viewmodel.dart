@@ -9,6 +9,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../components/alert_dialog.dart';
+import 'package:mobile_app_padel/shared/functions.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/community_open_matches_controller.dart';
+import 'package:get/get.dart';
+
+
 
 enum CommunityListType { my, recommend, trending }
 
@@ -20,6 +27,14 @@ class CommunityVM extends ChangeNotifier {
   var _amityTrendingCommunities = <AmityCommunity>[];
   var _amityRecommendCommunities = <AmityCommunity>[];
   var _amityMyCommunities = <AmityCommunity>[];
+
+  var linkedClubIds = <int>[];
+
+
+  void updateLinkedClubs(List<int> ids){
+    linkedClubIds = ids; 
+    notifyListeners();
+  }
 
   List<AmityCommunity> getAmityTrendingCommunities() {
     return _amityTrendingCommunities;
@@ -63,12 +78,31 @@ class CommunityVM extends ChangeNotifier {
     required bool isPublic,
     Map<String, String>? metadata,
     List<String>? userIds,
+    List<int>? clubIds,
+    String? location
   }) async {
     try {
+      if(clubIds?.isEmpty == true){
+        showStyledSnackBar("Please select at least one club", SnackBarType.error);
+        return null;
+      }
+      
+      AmityChannel? channel;
+
+      var channelQuery = AmityChatClient.newChannelRepository().createChannel().communityType().withDisplayName(name);
+
+      if(avatar != null) {
+        channelQuery.avatar(avatar).metadata({"avatar": avatar.getUrl(AmityImageSize.SMALL), "type": "community_channel"});
+      } else {
+        channelQuery.metadata({"type": "community_channel"});
+      }
+
+      channel = await channelQuery.create();
+
       final communityBuilder = AmitySocialClient.newCommunityRepository()
           .createCommunity(name)
           .description(description)
-          .categoryIds(categoryIds);
+          .categoryIds(categoryIds).metadata({"club_ids": clubIds, "location": location, "channel_id": channel.channelId});
 
       if (isPublic) {
         communityBuilder.isPublic(true);
@@ -79,6 +113,10 @@ class CommunityVM extends ChangeNotifier {
 
       if (avatar != null) {
         communityBuilder.avatar(avatar);
+      }
+
+      if(userIds?.isNotEmpty == true){
+        AmityChatClient.newChannelRepository().addMembers(channel?.channelId ?? "",   userIds ?? []);
       }
 
       AmityCommunity createdCommunity = await communityBuilder.create();
@@ -101,7 +139,11 @@ class CommunityVM extends ChangeNotifier {
       String displayName,
       String description,
       List<String> categoryIds,
-      bool isPublic) async {
+      bool isPublic,
+      List<int>? clubIds,
+      String? location,
+      String channelId
+      ) async {
     if (avatar != null) {
       await AmitySocialClient.newCommunityRepository()
           .updateCommunity(communityId)
@@ -110,6 +152,7 @@ class CommunityVM extends ChangeNotifier {
           .description(description)
           .categoryIds(categoryIds)
           .isPublic(isPublic)
+          .metadata({"club_ids": clubIds, "location": location, "channel_id": channelId})
           .update()
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {
@@ -123,13 +166,16 @@ class CommunityVM extends ChangeNotifier {
           .description(description)
           .categoryIds(categoryIds)
           .isPublic(isPublic)
+          .metadata({"club_ids": clubIds, "location": location, "channel_id": channelId})
           .update()
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {
         await AmityDialog()
-            .showAlertErrorDialog(title: "Error!", message: error.toString());
+            .showAlertErrorDialog(title: "Error!", message: error.toString()); 
       });
     }
+    final openMatchCommunityController = Get.find<CommunityOpenMatchesController>(tag: communityId);
+    openMatchCommunityController.initData();
   }
 
   void initAmityRecommendCommunityList() async {
@@ -177,7 +223,8 @@ class CommunityVM extends ChangeNotifier {
       if (type != null) {
         refreshCommunity(type);
       }
-      AmitySuccessDialog.showTimedDialog("Leave community");
+      showCommunityToastMessage(
+          "Successfully left the community");
       notifyListeners();
       callback(true); // Calling the callback with success status
     }).onError((error, stackTrace) async {

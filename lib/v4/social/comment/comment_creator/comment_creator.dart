@@ -101,7 +101,7 @@ class _AmityCommentCreatorInternalState
   }
 
   Widget renderComposer(BuildContext context, CommentCreatorState state, String referenceId, AmityCommentReferenceType referenceType) {
-    String? avatarUrl = AmityCoreClient.getCurrentUser().avatarUrl;
+    String? avatarUrl = AmityCoreClient.getCurrentUser().avatarUrl  ?? AmityCoreClient.getCurrentUser().avatarCustomUrl;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       child: Column(

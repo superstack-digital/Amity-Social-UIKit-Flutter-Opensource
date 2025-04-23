@@ -87,7 +87,7 @@ class CommunitySettingPage extends StatelessWidget {
                     trailing: Icon(Icons.chevron_right, color: Provider.of<AmityUIConfiguration>(context).appColors.base),
                     onTap: () {
                       // Navigate to Members Page or perform an action
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => MemberManagementPage(communityId: livecommunity.communityId!)));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => MemberManagementPage(communityId: livecommunity.communityId!, channelId: livecommunity.metadata?["channel_id"] ?? "")));
                     }),
                 // ListTile(
                 //   leading: Container(
@@ -208,13 +208,17 @@ class CommunitySettingPage extends StatelessWidget {
                               onConfirm: () async {
                                 // Perform Leave Community action
                                 final communityVm = Provider.of<CommunityVM>(context, listen: false);
-                                communityVm.leaveCommunity(community.communityId!, callback: (bool isSuccess) {
+                                communityVm.leaveCommunity(community.communityId!, callback: (bool isSuccess) async {
                                   if (isSuccess) {
                                     Navigator.of(context).pop();
                                     Navigator.of(context).pop();
                                     Provider.of<MyCommunityVM>(context, listen: false).initMyCommunity();
 
                                     Provider.of<ExplorePageVM>(context, listen: false).getRecommendedCommunities();
+
+                                    if(community.metadata?["channel_id"] != null){
+                                      await AmityChatClient.newChannelRepository().leaveChannel(community.metadata?["channel_id"]);
+                                    }
                                   }
                                 });
                               });

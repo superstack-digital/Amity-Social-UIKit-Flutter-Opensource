@@ -29,8 +29,7 @@ class CommunityScreen extends StatefulWidget {
 
   static const routeName = '/CommunityScreen2';
 
-  const CommunityScreen(
-      {Key? key, required this.community, this.isFromFeed = false})
+  const CommunityScreen({Key? key, required this.community, this.isFromFeed = false})
       : super(key: key);
 
   @override
@@ -42,17 +41,15 @@ class CommunityScreenState extends State<CommunityScreen> {
   void initState() {
     Provider.of<CommuFeedVM>(context, listen: false)
         .initAmityCommunityFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .getPostCount(widget.community);
+    Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community);
     Provider.of<CommuFeedVM>(context, listen: false)
         .getReviewingPostCount(widget.community);
     Provider.of<CommuFeedVM>(context, listen: false)
         .initAmityCommunityImageFeed(widget.community.communityId!);
     Provider.of<CommuFeedVM>(context, listen: false)
         .initAmityCommunityVideoFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityPendingCommunityFeed(
-            widget.community.communityId!, AmityFeedType.REVIEWING);
+    Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
+        widget.community.communityId!, AmityFeedType.REVIEWING);
     super.initState();
   }
 
@@ -85,12 +82,11 @@ class CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  void onCommunityOptionTap(
-      CommunityFeedMenuOption option, AmityCommunity community) {
+  void onCommunityOptionTap(CommunityFeedMenuOption option, AmityCommunity community) {
     switch (option) {
       case CommunityFeedMenuOption.edit:
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => EditCommunityScreen(community)));
+        Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => EditCommunityScreen(community)));
         break;
       case CommunityFeedMenuOption.members:
         Navigator.of(context).push(MaterialPageRoute(
@@ -132,8 +128,7 @@ class CommunityScreenState extends State<CommunityScreen> {
                     style: const TextStyle(fontSize: 16),
                   ),
                   Text(community.membersCount == 1 ? 'member' : 'members',
-                      style: const TextStyle(
-                          fontSize: 16, color: Color(0xff898E9E)))
+                      style: const TextStyle(fontSize: 16, color: Color(0xff898E9E)))
                 ],
               ),
             ),
@@ -157,9 +152,7 @@ class CommunityScreenState extends State<CommunityScreen> {
           initialData: widget.community,
           builder: (context, snapshot) {
             var feedWidget = Container(
-              color: Provider.of<AmityUIConfiguration>(context)
-                  .appColors
-                  .baseShade4,
+              color: Provider.of<AmityUIConfiguration>(context).appColors.baseShade4,
               child: RefreshIndicator(
                 color: Provider.of<AmityUIConfiguration>(context).primaryColor,
                 onRefresh: () async {
@@ -173,8 +166,7 @@ class CommunityScreenState extends State<CommunityScreen> {
                       .initAmityCommunityFeed(widget.community.communityId!);
                   await Provider.of<CommuFeedVM>(context, listen: false)
                       .initAmityPendingCommunityFeed(
-                          widget.community.communityId!,
-                          AmityFeedType.REVIEWING);
+                          widget.community.communityId!, AmityFeedType.REVIEWING);
                 },
                 child: ListView.builder(
                   padding: const EdgeInsets.only(top: 0),
@@ -209,11 +201,9 @@ class CommunityScreenState extends State<CommunityScreen> {
                 galleryFeed: GalleryFeed.community,
                 onRefresh: () async {
                   Provider.of<CommuFeedVM>(context, listen: false)
-                      .initAmityCommunityImageFeed(
-                          widget.community.communityId!);
+                      .initAmityCommunityImageFeed(widget.community.communityId!);
                   Provider.of<CommuFeedVM>(context, listen: false)
-                      .initAmityCommunityVideoFeed(
-                          widget.community.communityId!);
+                      .initAmityCommunityVideoFeed(widget.community.communityId!);
                   Provider.of<CommuFeedVM>(context, listen: false);
                 },
               )
@@ -231,34 +221,27 @@ class CommunityScreenState extends State<CommunityScreen> {
                           Provider.of<CommuFeedVM>(context, listen: false)
                               .getReviewingPostCount(widget.community);
                           Provider.of<CommuFeedVM>(context, listen: false)
-                              .initAmityCommunityFeed(
-                                  widget.community.communityId!);
+                              .initAmityCommunityFeed(widget.community.communityId!);
                           Provider.of<CommuFeedVM>(context, listen: false)
-                              .initAmityCommunityImageFeed(
-                                  widget.community.communityId!);
+                              .initAmityCommunityImageFeed(widget.community.communityId!);
                           Provider.of<CommuFeedVM>(context, listen: false)
-                              .initAmityCommunityVideoFeed(
-                                  widget.community.communityId!);
+                              .initAmityCommunityVideoFeed(widget.community.communityId!);
                           Provider.of<CommuFeedVM>(context, listen: false)
                               .initAmityPendingCommunityFeed(
-                                  widget.community.communityId!,
-                                  AmityFeedType.REVIEWING);
+                                  widget.community.communityId!, AmityFeedType.REVIEWING);
                         },
                         backgroundColor:
-                            Provider.of<AmityUIConfiguration>(context)
-                                .primaryColor,
+                            Provider.of<AmityUIConfiguration>(context).primaryColor,
                         child: Provider.of<AmityUIConfiguration>(context)
                             .iconConfig
                             .postIcon(iconSize: 28, color: Colors.white),
                       )
                     : null,
-                backgroundColor: Provider.of<AmityUIConfiguration>(context)
-                    .appColors
-                    .baseBackground,
+                backgroundColor:
+                    Provider.of<AmityUIConfiguration>(context).appColors.baseBackground,
                 body: Stack(
                   children: [
-                    IntrinsicDimension(
-                        listener: (context, width, height, startOffset) {
+                    IntrinsicDimension(listener: (context, width, height, startOffset) {
                       Provider.of<CompoentSizeVM>(context, listen: false)
                           .setCommunityDetailSectionSize(height);
                     }, builder: (_, __, ___, ____) {
@@ -279,19 +262,17 @@ class CommunityScreenState extends State<CommunityScreen> {
                               shadowColor: Colors.white,
                               elevation: 0,
                               surfaceTintColor: Colors.transparent,
-                              backgroundColor:
-                                  Provider.of<AmityUIConfiguration>(context)
-                                      .appColors
-                                      .baseBackground,
+                              backgroundColor: Provider.of<AmityUIConfiguration>(context)
+                                  .appColors
+                                  .baseBackground,
                               floating: false,
                               pinned: true,
                               leading: IconButton(
                                 icon: Icon(
                                   Icons.chevron_left,
-                                  color:
-                                      Provider.of<AmityUIConfiguration>(context)
-                                          .appColors
-                                          .base,
+                                  color: Provider.of<AmityUIConfiguration>(context)
+                                      .appColors
+                                      .base,
                                   size: 30,
                                 ),
                                 onPressed: () => Navigator.of(context).pop(),
@@ -305,17 +286,14 @@ class CommunityScreenState extends State<CommunityScreen> {
                                 //     "${sizeVM.getCommunityDetailSectionSize()}"),
                                 IconButton(
                                     onPressed: () {
-                                      Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (context2) =>
-                                                  CommunitySettingPage(
-                                                    community: snapshot.data!,
-                                                  )));
+                                      Navigator.of(context).push(MaterialPageRoute(
+                                          builder: (context2) => CommunitySettingPage(
+                                                community: snapshot.data!,
+                                              )));
                                     },
                                     icon: Icon(
                                       Icons.more_horiz_rounded,
-                                      color: Provider.of<AmityUIConfiguration>(
-                                              context)
+                                      color: Provider.of<AmityUIConfiguration>(context)
                                           .appColors
                                           .base,
                                     ))
@@ -327,28 +305,23 @@ class CommunityScreenState extends State<CommunityScreen> {
                                   children: [
                                     Expanded(
                                       child: Container(
-                                        color:
-                                            Provider.of<AmityUIConfiguration>(
-                                                    context)
-                                                .appColors
-                                                .baseBackground,
+                                        color: Provider.of<AmityUIConfiguration>(context)
+                                            .appColors
+                                            .baseBackground,
                                         child: TabBar(
                                           tabAlignment: TabAlignment.start,
                                           controller: _tabController,
                                           isScrollable: true,
                                           dividerColor:
-                                              Provider.of<AmityUIConfiguration>(
-                                                      context)
+                                              Provider.of<AmityUIConfiguration>(context)
                                                   .appColors
                                                   .baseBackground,
                                           labelColor:
-                                              Provider.of<AmityUIConfiguration>(
-                                                      context)
+                                              Provider.of<AmityUIConfiguration>(context)
                                                   .appColors
                                                   .primary,
                                           indicatorColor:
-                                              Provider.of<AmityUIConfiguration>(
-                                                      context)
+                                              Provider.of<AmityUIConfiguration>(context)
                                                   .appColors
                                                   .primary,
                                           labelStyle: const TextStyle(
@@ -369,8 +342,7 @@ class CommunityScreenState extends State<CommunityScreen> {
                             ),
                           ];
                         },
-                        body: TabBarView(
-                            controller: _tabController, children: tablist),
+                        body: TabBarView(controller: _tabController, children: tablist),
                       ),
                     ),
                   ],
@@ -394,7 +366,56 @@ class _EditProfileButtonState extends State<EditProfileButton> {
   Widget build(BuildContext context) {
     return !widget.community.hasPermission(AmityPermission.EDIT_COMMUNITY)
         ? widget.community.isJoined!
-            ? const SizedBox()
+            ? InkWell(
+                onTap: () {
+                  // Navigate to Edit Profile Page or perform an action
+                  if (widget.community.isJoined != null) {
+                    if (widget.community.isJoined!) {
+                      AmitySocialClient.newCommunityRepository()
+                          .leaveCommunity(widget.community.communityId!)
+                          .then((value) {
+                        setState(() {
+                          widget.community.isJoined = !(widget.community.isJoined!);
+                          var explorePageVM =
+                              Provider.of<ExplorePageVM>(context, listen: false);
+                          explorePageVM.getRecommendedCommunities();
+                          explorePageVM.getTrendingCommunities();
+                        });
+                      }).onError((error, stackTrace) {
+                        //handle error
+                        log(error.toString());
+                      });
+                    }
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                    color: Provider.of<AmityUIConfiguration>(context).alert,
+                    border: Border.all(
+                        color: Provider.of<AmityUIConfiguration>(context)
+                            .alert), // Grey border color
+                    borderRadius: BorderRadius.circular(4), // Rounded corners
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min, // To wrap the content of the row
+                    children: <Widget>[
+                      Icon(
+                        Icons.output,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 8.0), // Space between icon and text
+                      Text(
+                        "Leave",
+                        style: TextStyle(
+                          color: Colors.white, // Text color
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
             : InkWell(
                 onTap: () {
                   // Navigate to Edit Profile Page or perform an action
@@ -404,11 +425,9 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                           .leaveCommunity(widget.community.communityId!)
                           .then((value) {
                         setState(() {
-                          widget.community.isJoined =
-                              !(widget.community.isJoined!);
-                          var explorePageVM = Provider.of<ExplorePageVM>(
-                              context,
-                              listen: false);
+                          widget.community.isJoined = !(widget.community.isJoined!);
+                          var explorePageVM =
+                              Provider.of<ExplorePageVM>(context, listen: false);
                           explorePageVM.getRecommendedCommunities();
                           explorePageVM.getTrendingCommunities();
                         });
@@ -421,18 +440,15 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                           .joinCommunity(widget.community.communityId!)
                           .then((value) {
                         setState(() {
-                          widget.community.isJoined =
-                              !(widget.community.isJoined!);
-                          var explorePageVM = Provider.of<ExplorePageVM>(
-                              context,
-                              listen: false);
+                          widget.community.isJoined = !(widget.community.isJoined!);
+                          var explorePageVM =
+                              Provider.of<ExplorePageVM>(context, listen: false);
                           explorePageVM.getRecommendedCommunities();
                           explorePageVM.getTrendingCommunities();
                           print(">>>>>>>>>>>>>>>callback");
 
-                          var myCommunityList = Provider.of<MyCommunityVM>(
-                              context,
-                              listen: false);
+                          var myCommunityList =
+                              Provider.of<MyCommunityVM>(context, listen: false);
                           myCommunityList.initMyCommunity();
 
                           for (var i in myCommunityList.amityCommunities) {
@@ -447,11 +463,9 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                   decoration: BoxDecoration(
-                    color:
-                        Provider.of<AmityUIConfiguration>(context).primaryColor,
+                    color: Provider.of<AmityUIConfiguration>(context).primaryColor,
                     border: Border.all(
                         color: Provider.of<AmityUIConfiguration>(context)
                             .primaryColor), // Grey border color
@@ -459,8 +473,7 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize:
-                        MainAxisSize.min, // To wrap the content of the row
+                    mainAxisSize: MainAxisSize.min, // To wrap the content of the row
                     children: <Widget>[
                       Icon(
                         Icons.add,
@@ -481,12 +494,10 @@ class _EditProfileButtonState extends State<EditProfileButton> {
             onTap: () {
               // Navigate to Edit Profile Page or perform an action
               Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) =>
-                      AmityEditCommunityScreen(widget.community)));
+                  builder: (context) => AmityEditCommunityScreen(widget.community)));
             },
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 border: Border.all(
@@ -496,15 +507,10 @@ class _EditProfileButtonState extends State<EditProfileButton> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize:
-                    MainAxisSize.min, // To wrap the content of the row
+                mainAxisSize: MainAxisSize.min, // To wrap the content of the row
                 children: <Widget>[
-                  Provider.of<AmityUIConfiguration>(context)
-                      .iconConfig
-                      .editIcon(
-                        color: Provider.of<AmityUIConfiguration>(context)
-                            .appColors
-                            .base,
+                  Provider.of<AmityUIConfiguration>(context).iconConfig.editIcon(
+                        color: Provider.of<AmityUIConfiguration>(context).appColors.base,
                       ),
                   const SizedBox(width: 8.0), // Space between icon and text
                   Text(
@@ -542,11 +548,9 @@ class PedindingButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         decoration: BoxDecoration(
-          color:
-              Provider.of<AmityUIConfiguration>(context).appColors.baseShade4,
+          color: Provider.of<AmityUIConfiguration>(context).appColors.baseShade4,
           border: Border.all(
-            color:
-                Provider.of<AmityUIConfiguration>(context).appColors.baseShade4,
+            color: Provider.of<AmityUIConfiguration>(context).appColors.baseShade4,
           ), // Grey border color
           borderRadius: BorderRadius.circular(4), // Rounded corners
         ),
@@ -560,8 +564,7 @@ class PedindingButton extends StatelessWidget {
                 Icon(
                   Icons.circle,
                   size: 6,
-                  color:
-                      Provider.of<AmityUIConfiguration>(context).primaryColor,
+                  color: Provider.of<AmityUIConfiguration>(context).primaryColor,
                 ),
                 const SizedBox(width: 8.0), // Space between icon and text
                 Text(
@@ -580,8 +583,7 @@ class PedindingButton extends StatelessWidget {
               // To wrap the content of the row
               children: <Widget>[
                 Text(
-                  !community
-                          .hasPermission(AmityPermission.REVIEW_COMMUNITY_POST)
+                  !community.hasPermission(AmityPermission.REVIEW_COMMUNITY_POST)
                       ? "Your posts are pending for review"
                       : "${Provider.of<CommuFeedVM>(context).reviewingPostCount} posts need approval",
                   style: TextStyle(
@@ -606,8 +608,7 @@ class CommunityDetailComponent extends StatefulWidget {
   const CommunityDetailComponent({super.key, required this.community});
 
   @override
-  State<CommunityDetailComponent> createState() =>
-      _CommunityDetailComponentState();
+  State<CommunityDetailComponent> createState() => _CommunityDetailComponentState();
 }
 
 class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
@@ -624,12 +625,11 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
     );
   }
 
-  void onCommunityOptionTap(
-      CommunityFeedMenuOption option, AmityCommunity community) {
+  void onCommunityOptionTap(CommunityFeedMenuOption option, AmityCommunity community) {
     switch (option) {
       case CommunityFeedMenuOption.edit:
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => EditCommunityScreen(community)));
+        Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => EditCommunityScreen(community)));
         break;
       case CommunityFeedMenuOption.members:
         Navigator.of(context).push(MaterialPageRoute(
@@ -652,9 +652,7 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
                 Text("${Provider.of<CommuFeedVM>(context).postCount}",
                     style: TextStyle(
                       fontSize: 16,
-                      color: Provider.of<AmityUIConfiguration>(context)
-                          .appColors
-                          .base,
+                      color: Provider.of<AmityUIConfiguration>(context).appColors.base,
                     )),
                 const Text('posts',
                     style: TextStyle(fontSize: 16, color: Color(0xff898E9E)))
@@ -680,14 +678,11 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
                     community.membersCount.toString(),
                     style: TextStyle(
                       fontSize: 16,
-                      color: Provider.of<AmityUIConfiguration>(context)
-                          .appColors
-                          .base,
+                      color: Provider.of<AmityUIConfiguration>(context).appColors.base,
                     ),
                   ),
                   Text(community.membersCount == 1 ? 'member' : 'members',
-                      style: const TextStyle(
-                          fontSize: 16, color: Color(0xff898E9E)))
+                      style: const TextStyle(fontSize: 16, color: Color(0xff898E9E)))
                 ],
               ),
             ),
@@ -707,9 +702,7 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
     return Wrap(
       children: [
         Container(
-          color: Provider.of<AmityUIConfiguration>(context)
-              .appColors
-              .baseBackground,
+          color: Provider.of<AmityUIConfiguration>(context).appColors.baseBackground,
           height: 120,
         ),
         Stack(
@@ -822,24 +815,20 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
 
               ///
               AmityStoryTabComponent(
-                type: CommunityFeedStoryTab(
-                    communityId: widget.community.communityId!),
+                type: CommunityFeedStoryTab(communityId: widget.community.communityId!),
               ),
-              widget.community.hasPermission(AmityPermission.EDIT_COMMUNITY)
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: EditProfileButton(
-                            community: widget.community,
-                          ),
-                        ),
-                      ],
-                    )
-                  : const SizedBox(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: EditProfileButton(
+                      community: widget.community,
+                    ),
+                  ),
+                ],
+              ),
               SizedBox(
-                height: widget.community
-                        .hasPermission(AmityPermission.EDIT_COMMUNITY)
+                height: widget.community.hasPermission(AmityPermission.EDIT_COMMUNITY)
                     ? 12
                     : 0,
               ),

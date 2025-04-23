@@ -23,6 +23,7 @@ class EditCommunityScreenState extends State<EditCommunityScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
 
+
   @override
   void initState() {
     // Provider.of<CommunityVM>(context, listen: false)
@@ -31,6 +32,7 @@ class EditCommunityScreenState extends State<EditCommunityScreen> {
     _displayNameController.text = widget.community.displayName ?? "";
     _descriptionController.text = widget.community.description ?? "";
     _categoryController.text = "null";
+
     communityType = widget.community.isPublic!
         ? CommunityType.public
         : CommunityType.private;
@@ -63,9 +65,12 @@ class EditCommunityScreenState extends State<EditCommunityScreen> {
                     widget.community.avatarImage,
                     _displayNameController.text,
                     _descriptionController.text,
+
                     Provider.of<CategoryVM>(context, listen: false)
                         .getSelectedCategory(),
-                    communityType == CommunityType.public ? true : false);
+                    communityType == CommunityType.public ? true : false,
+              [], '', widget.community.metadata?["channel_id"]
+            );
           },
           child: Text(
             "Save",

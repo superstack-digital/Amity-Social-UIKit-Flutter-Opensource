@@ -11,6 +11,7 @@ class MemberManagementVM extends ChangeNotifier {
   late PagingController<AmityCommunityMember> _amityModeratorsController;
   final List<AmityCommunityMember> _userList = [];
   final List<AmityCommunityMember> _moderatorList = [];
+  late String? channelId;
 
   late String communityId;
 
@@ -33,6 +34,10 @@ class MemberManagementVM extends ChangeNotifier {
     });
 
     scrollController.addListener(loadNextPage);
+  }
+
+  initChannelId(String? channelId) {
+    this.channelId = channelId;
   }
 
   Future<void> initModerators({

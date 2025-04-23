@@ -4,6 +4,10 @@ import 'package:amity_uikit_beta_service/view/user/user_profile_v2.dart';
 import 'package:amity_uikit_beta_service/viewmodel/user_feed_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+
+
 
 // Custom Widget that mimics ListTile but without padding
 class CustomListTile extends StatelessWidget {
@@ -28,16 +32,15 @@ class CustomListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => ChangeNotifierProvider(
-            create: (context) =>
-                UserFeedVM(), // Assuming UserFeedVM is your ViewModel
-            child: UserProfileScreen(
-              amityUserId: userId,
-              amityUser: user,
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) =>
+            PeopleProfileScreen(
+              userId: int.tryParse(userId) ?? 0,
+              openFrom: OpenProfileFrom.community,
             ),
           ),
-        ));
+        );
       },
       child: Container(
         padding: const EdgeInsets.only(bottom: 2, top: 2),
@@ -46,18 +49,16 @@ class CustomListTile extends StatelessWidget {
           children: [
             GestureDetector(
               onTap: () async {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider(
-                    create: (context) =>
-                        UserFeedVM(), // Assuming UserFeedVM is your ViewModel
-                    child: UserProfileScreen(
-                      amityUserId: userId,
-                      amityUser: user,
-                    ),
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PeopleProfileScreen(
+                          userId: int.tryParse(userId) ?? 0,
+                        ),
                   ),
-                ));
+                );
               },
-              child: GestureDetector(child: getAvatarImage(avatarUrl)
+              child: GestureDetector(child: getAvatarImage(avatarUrl,fullName: displayName)
                   // If avatarUrl can be null, consider handling it with a placeholder image
                   ),
             ),

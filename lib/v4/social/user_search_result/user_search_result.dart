@@ -106,14 +106,16 @@ class AmityUserSearchResultComponent extends NewBaseComponent {
   Widget userRow(BuildContext context, AmityUser user) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => UserProfileScreen(
-              amityUserId: user.userId ?? '',
-              amityUser: null,
+        if(int.tryParse(user.userId ?? '') != null){
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PeopleProfileScreen(
+                userId: int.tryParse(user.userId!),
+              ),
             ),
-          ),
-        );
+          );
+        }
+
       },
       child: SizedBox(
         height: 56,

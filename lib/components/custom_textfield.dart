@@ -12,6 +12,7 @@ class TextFieldWithCounter extends StatefulWidget {
   final TextInputType keyboardType;
   final int? maxLines;
   final void Function()? onTap;
+  final bool? showChevron;
 
   const TextFieldWithCounter({
     Key? key,
@@ -24,6 +25,7 @@ class TextFieldWithCounter extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.maxLines,
     this.onTap,
+    this.showChevron
   }) : super(key: key);
 
   @override
@@ -71,27 +73,32 @@ class _TextFieldWithCounterState extends State<TextFieldWithCounter> {
                 : Container(),
           ],
         ),
-        TextField(
-          style: TextStyle(
-              color: Provider.of<AmityUIConfiguration>(context).appColors.base),
-          controller: widget.controller,
-          decoration: InputDecoration(
-            // hintStyle: TextStyle(
-            //     color:
-            //         Provider.of<AmityUIConfiguration>(context).appColors.base),
-            border: InputBorder.none,
-            hintText: widget.hintText,
-            counterText: "",
-          ),
-          cursorColor: Provider.of<AmityUIConfiguration>(context).primaryColor,
-          maxLength: widget.maxCharacters,
-          keyboardType: widget.keyboardType,
-          maxLines: widget.maxLines,
-          onTap: widget.onTap,
-          readOnly: widget.onTap != null,
-          onChanged: (text) {
-            setState(() {});
-          },
+        Row(
+          children: [
+            Expanded(child: TextField(
+              style: TextStyle(
+                  color: Provider.of<AmityUIConfiguration>(context).appColors.base),
+              controller: widget.controller,
+              decoration: InputDecoration(
+                // hintStyle: TextStyle(
+                //     color:
+                //         Provider.of<AmityUIConfiguration>(context).appColors.base),
+                border: InputBorder.none,
+                hintText: widget.hintText,
+                counterText: "",
+              ),
+              cursorColor: Provider.of<AmityUIConfiguration>(context).primaryColor,
+              maxLength: widget.maxCharacters,
+              keyboardType: widget.keyboardType,
+              maxLines: widget.maxLines,
+              onTap: widget.onTap,
+              readOnly: widget.onTap != null,
+              onChanged: (text) {
+                setState(() {});
+              },
+            )),
+            if(widget.showChevron == true) Icon(Icons.chevron_right)
+          ],
         ),
         Divider(
           color: Colors.grey[200],
