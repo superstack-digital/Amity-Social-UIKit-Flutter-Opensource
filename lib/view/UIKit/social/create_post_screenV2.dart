@@ -19,6 +19,10 @@ import 'package:mobile_app_padel/features/community/widgets/share_match_modal.da
 import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
 import 'package:mobile_app_padel/features/play/presentation/widgets/court_match_item.dart';
 import 'package:get/get.dart';
+import 'package:flutter_link_previewer/flutter_link_previewer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mobile_app_padel/shared/styles.dart';
+
 
 class AmityCreatePostV2Screen extends StatefulWidget {
   final AmityCommunity? community;
@@ -215,6 +219,53 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                                 vm.removeMatch();
                               },
                               showRemoveButton: true)
+                              : SizedBox(),
+                        ),
+                        Consumer<CreatePostVMV2>(
+                          builder: (context, vm, _) =>
+                          vm.hasLink && vm.link != null
+                              ?
+                              LinkPreview(onPreviewDataFetched: vm.onLinkFetched, previewData: vm.previewData, text: vm.link!, width: Get.width - 32,
+      previewBuilder: (context, data) {return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if(vm.previewData?.link != null)
+            ...[GestureDetector(
+              child: Text(
+                vm.previewData!.link!,
+                style: TextStyle(
+                    color: Styles.green, decoration: TextDecoration.underline),
+              ),
+            ),
+              SizedBox(height: 5)
+            ],
+          if(vm.previewData?.image?.url != null)
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(imageUrl: vm.previewData!.image!.url, width: Get.width - 32, height: 150, fit: BoxFit.cover
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  child: IconButton(
+                    onPressed: () {
+                      vm.removeLink();
+                    },
+                    icon: SvgPicture.asset(
+                      AssetKeys.closeCircle,
+                      height: 24,
+                      width: 24,
+                      colorFilter: ColorFilter.mode(Styles.gray8B9197, BlendMode.srcIn),
+                    ),
+                  ),
+                )
+              ],
+            ),
+        ],
+      );}
+                              )
                               : SizedBox(),
                         )
 

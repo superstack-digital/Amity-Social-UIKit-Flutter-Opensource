@@ -11,6 +11,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
+import 'package:mobile_app_padel/shared/functions.dart';
+import 'package:flutter_link_previewer/flutter_link_previewer.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+
 
 enum FileStatus { uploading, rejected, complete }
 
@@ -46,6 +50,10 @@ class CreatePostVMV2 with ChangeNotifier {
   bool isUploadComplete = false;
   MyFileType? selectedFileType;
   IMatch? match;
+  bool hasLink = false;
+  types.PreviewData? previewData;
+  String? link;
+
   bool get isPostValid {
     // Check if there are any files
     bool hasFiles = files.isNotEmpty;
@@ -72,7 +80,16 @@ class CreatePostVMV2 with ChangeNotifier {
     log("textEditingController: ${textEditingController.text.isNotEmpty}");
     log("isUploadComplete: $isUploadComplete");
 
+    List<String> urls = extractLinks(textEditingController.text);
+
+
+    if(urls.isNotEmpty && urls[0] != link){
+      link = urls[0];
+      hasLink = true;
+    }
+
     notifyListeners();
+    print("link: $link");
   }
 
   void inits() {
@@ -505,6 +522,25 @@ class CreatePostVMV2 with ChangeNotifier {
       }
     } else {
       return FileImage(File(path));
+    }
+  }
+
+  void onLinkFetched(types.PreviewData data){
+    if(previewData?.link != data.link){
+      previewData = data;
+      notifyListeners();
+    }
+  }
+
+  void removeLink(){
+    if(previewData != null){
+      final currentText = "${textEditingController.text}";
+      textEditingController.clear();
+      textEditingController.text = currentText.replaceAll(previewData!.link!, "");
+      previewData = null;
+      hasLink = false;
+      link = null;
+      notifyListeners();
     }
   }
 }

@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'image_viewer.dart';
+import 'package:mobile_app_padel/shared/widgets/link_preview_image.dart';
 
 class AmityPostWidget extends StatefulWidget {
   final List<AmityPost> posts;
@@ -140,9 +141,12 @@ class AmityPostWidgetState extends State<AmityPostWidget> {
                 ? TextPost(post: widget.posts[0], feedType: widget.feedType)
                 : Container(),
 
+            // !urlValidation(widget.posts[0])
+            //     ? const SizedBox()
+            //     : CustomLinkPreview(url: url.toLowerCase())
             !urlValidation(widget.posts[0])
                 ? const SizedBox()
-                : CustomLinkPreview(url: url.toLowerCase())
+                : LinkPreviewImage(url: url.toLowerCase())
 
             // )
           ],
