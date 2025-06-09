@@ -101,7 +101,9 @@ class CategoryVM extends ChangeNotifier {
     if ((scrollcontroller.position.pixels >=
         (scrollcontroller.position.maxScrollExtent - 100))) {
       print("load more");
-      _communityCategoryController.fetchNextPage();
+      if(_communityCategoryController.hasMoreItems){
+        _communityCategoryController.fetchNextPage();
+      }
       notifyListeners();
     }
   }

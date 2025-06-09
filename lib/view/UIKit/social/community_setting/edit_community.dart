@@ -64,6 +64,7 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
     communityType = widget.community.isPublic!
         ? CommunityType.public
         : CommunityType.private;
+    _isPublic = widget.community.isPublic!;
   }
 
   @override
@@ -114,9 +115,7 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                         _descriptionController.text,
                         Provider.of<CategoryVM>(context, listen: false)
                             .getSelectedCategory(),
-                        communityType == CommunityType.public
-                            ? true
-                            : false,
+                       _isPublic,
                       selectedClubs?.map((e) => e).toList() ?? [],
                       _locationController.text, community.metadata?["channel_id"]);
                     AmityLoadingDialog.hideLoadingDialog();

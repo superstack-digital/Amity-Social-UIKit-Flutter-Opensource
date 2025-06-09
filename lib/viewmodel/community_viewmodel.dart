@@ -171,10 +171,16 @@ class CommunityVM extends ChangeNotifier {
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {
         await AmityDialog()
-            .showAlertErrorDialog(title: "Error!", message: error.toString()); 
+            .showAlertErrorDialog(title: "Error!", message: error.toString());
       });
     }
-    final openMatchCommunityController = Get.find<CommunityOpenMatchesController>(tag: communityId);
+    CommunityOpenMatchesController openMatchCommunityController;
+
+    if(Get.isRegistered<CommunityOpenMatchesController>()){
+      openMatchCommunityController = Get.find<CommunityOpenMatchesController>(tag: communityId);
+    } else {
+      openMatchCommunityController = Get.put(CommunityOpenMatchesController(communityId: communityId), tag: communityId);
+    }
     openMatchCommunityController.initData();
   }
 

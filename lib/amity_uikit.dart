@@ -61,7 +61,7 @@ class AmityUIKit {
     Stopwatch stopwatch = Stopwatch()..start();
     AmityRegionalHttpEndpoint? amityEndpoint;
     AmityRegionalMqttEndpoint? amityMqttEndpoint;
-    AmityRegionalSocketEndpoint? amitySocketEndpoint;
+    AmityUploadEndpoint? amityUploadEndpoint;
 
     switch (region) {
       case AmityEndpointRegion.custom:
@@ -71,8 +71,6 @@ class AmityUIKit {
           amityEndpoint = AmityRegionalHttpEndpoint.custom(customEndpoint);
           amityMqttEndpoint =
               AmityRegionalMqttEndpoint.custom(customMqttEndpoint);
-          amitySocketEndpoint =
-              AmityRegionalSocketEndpoint.custom(customSocketEndpoint);
         } else {
           log("please provide custom Endpoint");
         }
@@ -82,7 +80,7 @@ class AmityUIKit {
         {
           amityEndpoint = AmityRegionalHttpEndpoint.SG;
           amityMqttEndpoint = AmityRegionalMqttEndpoint.SG;
-          amitySocketEndpoint = AmityRegionalSocketEndpoint.SG;
+          amityUploadEndpoint = AmityUploadEndpoint.SG;
         }
 
         break;
@@ -90,7 +88,7 @@ class AmityUIKit {
         {
           amityEndpoint = AmityRegionalHttpEndpoint.EU;
           amityMqttEndpoint = AmityRegionalMqttEndpoint.EU;
-          amitySocketEndpoint = AmityRegionalSocketEndpoint.EU;
+          amityUploadEndpoint = AmityUploadEndpoint.EU;
         }
 
         break;
@@ -98,7 +96,7 @@ class AmityUIKit {
         {
           amityEndpoint = AmityRegionalHttpEndpoint.US;
           amityMqttEndpoint = AmityRegionalMqttEndpoint.US;
-          amitySocketEndpoint = AmityRegionalSocketEndpoint.US;
+          amityUploadEndpoint = AmityUploadEndpoint.US;
         }
     }
 
@@ -110,7 +108,8 @@ class AmityUIKit {
             showLogs: false,
             httpEndpoint: amityEndpoint!,
             mqttEndpoint: amityMqttEndpoint!,
-            socketEndpoint: amitySocketEndpoint!),
+            uploadEndpoint: amityUploadEndpoint!
+        ),
         sycInitialization: true);
     stopwatch.stop();
     log('setupAmityClient execution time: ${stopwatch.elapsedMilliseconds} ms');

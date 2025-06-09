@@ -361,6 +361,7 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
           handleShareContent(
               metadata: {"type": "communityPost", "postId": widget.post.postId ?? ""},
               title: "Join Community",
+              shouldShare: true,
               description: "Let's join our match to play together");
           break;
         }

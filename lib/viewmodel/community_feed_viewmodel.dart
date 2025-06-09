@@ -27,6 +27,7 @@ class CommuFeedVM extends ChangeNotifier {
 
   MediaType getMediaType() => _selectedMediaType;
   bool isCurrentUserIsAdmin = false;
+  bool isLeagueCommunity = false;
   var _amityCommunityFeedPosts = <AmityPost>[];
 
   var _communityEventList = <Event>[];
@@ -92,10 +93,13 @@ class CommuFeedVM extends ChangeNotifier {
   int postCount = 0;
   void getPostCount(AmityCommunity community) async {
     getUpcomingEvents(community);
+
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)
         .then((value) {
       print("get community");
+      community = value;
+      isLeagueCommunity = (community?.categories?.indexWhere((item) => item?.name == "League") ?? -1) > -1;
       notifyListeners();
     });
     community.getPostCount(AmityFeedType.PUBLISHED).then((value) async {

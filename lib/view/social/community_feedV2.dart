@@ -1064,7 +1064,11 @@ class _StickyHeaderList extends StatelessWidget {
                     if (vm.userFeedTabController?.index == 0) {
                       return buildContent(context, bheight);
                     } else if (vm.userFeedTabController?.index == 1) {
-                      return buildEventLists(context, bheight);
+                      if(!vm.isLeagueCommunity){
+                        return buildEventLists(context, bheight);
+                      } else {
+                        return Container();
+                      }
                     } else if (vm.userFeedTabController?.index == 2) {
                       if (communityId != null) {
                         return CommunityMatchesScreen(communityId: communityId!);
@@ -1217,6 +1221,21 @@ class AppScaffold extends StatelessWidget {
           actions: [
             // Text(
             //     "${sizeVM.getCommunityDetailSectionSize()}"),
+            IconButton(
+                onPressed: () {
+                  handleShareContent(
+                      metadata: {"type": "community", "communityId": amityCommunity.communityId ?? ""},
+                      title: amityCommunity.displayName ?? "",
+                      description: amityCommunity.description ?? "",
+                      shouldShare: true);
+                },
+                icon: Icon(
+                  Icons.ios_share_outlined,
+                  color: Provider
+                      .of<AmityUIConfiguration>(context)
+                      .appColors
+                      .base,
+                )),
             IconButton(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(
@@ -1373,7 +1392,7 @@ class Header extends StatelessWidget {
                   isScrollable: true,
                   dividerColor: HexColor('#6C727540'),
                   tabAlignment: TabAlignment.start,
-                  indicatorColor: HexColor('#141718'),
+                  indicatorColor: HexColor('#4E8A6D'),
                   indicatorWeight: 2,
                   indicatorSize: TabBarIndicatorSize.tab,
                   unselectedLabelColor: HexColor('#6C7275'),
@@ -1381,7 +1400,7 @@ class Header extends StatelessWidget {
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'SF Pro Text',
-                      color: HexColor('#141718')
+                      color: HexColor('#4E8A6D')
                   ),
                   tabs: const [
                     Tab(text: "Timeline"),
