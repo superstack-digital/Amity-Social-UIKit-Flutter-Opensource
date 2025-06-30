@@ -79,7 +79,8 @@ class CommunityVM extends ChangeNotifier {
     Map<String, String>? metadata,
     List<String>? userIds,
     List<int>? clubIds,
-    String? location
+    String? location,
+    List<int>? competitionIds
   }) async {
     try {
       if(clubIds?.isEmpty == true){
@@ -102,7 +103,12 @@ class CommunityVM extends ChangeNotifier {
       final communityBuilder = AmitySocialClient.newCommunityRepository()
           .createCommunity(name)
           .description(description)
-          .categoryIds(categoryIds).metadata({"club_ids": clubIds, "location": location, "channel_id": channel.channelId});
+          .categoryIds(categoryIds).metadata({
+        "club_ids": clubIds,
+        "location": location,
+        "channel_id": channel.channelId,
+        "competition_ids": competitionIds
+      });
 
       if (isPublic) {
         communityBuilder.isPublic(true);
@@ -142,8 +148,17 @@ class CommunityVM extends ChangeNotifier {
       bool isPublic,
       List<int>? clubIds,
       String? location,
-      String channelId
+      String channelId,
+      AmityCommunity community,
+      List<int>? competitionIds
       ) async {
+    Map<String, dynamic> metadata = community.metadata ?? {};
+
+    metadata["club_ids"] = clubIds;
+    metadata["location"] = location;
+    metadata["channel_id"] = channelId;
+    metadata["competition_ids"] = competitionIds;
+
     if (avatar != null) {
       await AmitySocialClient.newCommunityRepository()
           .updateCommunity(communityId)
@@ -152,12 +167,16 @@ class CommunityVM extends ChangeNotifier {
           .description(description)
           .categoryIds(categoryIds)
           .isPublic(isPublic)
-          .metadata({"club_ids": clubIds, "location": location, "channel_id": channelId})
+          .metadata(metadata)
           .update()
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {
         await AmityDialog()
             .showAlertErrorDialog(title: "Error!", message: error.toString());
+        await AmityChatClient
+            .newChannelRepository()
+            .updateChannel(channelId)
+            .avatar(avatar);
       });
     } else {
       await AmitySocialClient.newCommunityRepository()
@@ -166,7 +185,7 @@ class CommunityVM extends ChangeNotifier {
           .description(description)
           .categoryIds(categoryIds)
           .isPublic(isPublic)
-          .metadata({"club_ids": clubIds, "location": location, "channel_id": channelId})
+          .metadata(metadata)
           .update()
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {
@@ -174,12 +193,14 @@ class CommunityVM extends ChangeNotifier {
             .showAlertErrorDialog(title: "Error!", message: error.toString());
       });
     }
+    final isLeague = community.categories?.isNotEmpty == true && community.categories?.first?.name == "League";
     CommunityOpenMatchesController openMatchCommunityController;
 
     if(Get.isRegistered<CommunityOpenMatchesController>()){
       openMatchCommunityController = Get.find<CommunityOpenMatchesController>(tag: communityId);
     } else {
-      openMatchCommunityController = Get.put(CommunityOpenMatchesController(communityId: communityId), tag: communityId);
+      openMatchCommunityController = Get.put(CommunityOpenMatchesController(
+          communityId: communityId, isLeagueCommunity: isLeague), tag: communityId);
     }
     openMatchCommunityController.initData();
   }

@@ -1,5 +1,7 @@
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_app_padel/shared/file_utils.dart';
+import 'package:mobile_app_padel/shared/widgets/download_progress_overlay.dart';
 
 class ImageViewerScreen extends StatefulWidget {
   final List<AmityPost> files;
@@ -72,6 +74,18 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
           color: Colors.white,
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 5),
+            child: IconButton(onPressed: () => downloadImage(shareOnly: true),
+                icon: Icon(Icons.ios_share, color: Colors.white)),
+          ),
+          Padding(
+            padding: EdgeInsets.only(right: 5),
+            child: IconButton(onPressed: () => downloadImage(),
+                icon: Icon(Icons.download_outlined, color: Colors.white)),
+          )
+        ],
       ),
       body: ValueListenableBuilder<bool>(
         valueListenable: isZoomed,
@@ -93,20 +107,21 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                 var imageData = widget.files[index].data as ImageData;
                 return Padding(
                   padding: const EdgeInsets.all(2.0),
-                  child: InteractiveViewer(
-                    transformationController: _transformationController,
-                    minScale: 1,
-                    maxScale: _maxScale,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: NetworkImage(
-                              imageData.image!.getUrl(AmityImageSize.LARGE)),
-                          fit: BoxFit.fitWidth,
+                  child:
+                      InteractiveViewer(
+                        transformationController: _transformationController,
+                        minScale: 1,
+                        maxScale: _maxScale,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: NetworkImage(
+                                  imageData.image!.getUrl(AmityImageSize.LARGE)),
+                              fit: BoxFit.fitWidth,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
                 );
               },
             ),
@@ -114,5 +129,18 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
         },
       ),
     );
+  }
+
+  void downloadImage({bool? shareOnly}) async {
+    final image = (widget.files[_currentIndex].data as ImageData).image;
+    final url = image?.getUrl(AmityImageSize.FULL);
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) =>
+            DownloadProgressOverlay(
+              shareOnly: shareOnly == true,
+                url: url!, fileType: image?.getMimeType() ?? "image/jpeg"));
   }
 }

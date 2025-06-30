@@ -69,7 +69,8 @@ class EditCommunityScreenState extends State<EditCommunityScreen> {
                     Provider.of<CategoryVM>(context, listen: false)
                         .getSelectedCategory(),
                     communityType == CommunityType.public ? true : false,
-              [], '', widget.community.metadata?["channel_id"]
+              [], '', widget.community.metadata?["channel_id"],  widget.community,
+              []
             );
           },
           child: Text(

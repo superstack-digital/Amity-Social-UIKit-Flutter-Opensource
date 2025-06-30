@@ -866,24 +866,37 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                           const SizedBox(
                             width: 12,
                           ),
-                          // GestureDetector(
-                          //   onTap: () {},
-                          //   child: Row(
-                          //     children: [
-                          //       Provider.of<AmityUIConfiguration>(context)
-                          //           .iconConfig
-                          //           .shareIcon(iconSize: 16),
-                          //       const SizedBox(width: 4),
-                          //       Text(
-                          //         "Share",
-                          //         style: TextStyle(
-                          //           color: Colors.grey,
-                          //           fontSize: feedReactionCountSize,
-                          //         ),
-                          //       ),
-                          //     ],
-                          //   ),
-                          // ),
+                          GestureDetector(
+                            onTap: () {
+                                handleShareContent(
+                                    metadata: {"type": "communityPost", "postId": widget.post.postId ?? ""},
+                                    title: "Join Community",
+                                    shouldShare: true,
+                                    description: "Let's join our match to play together");
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Provider
+                                    .of<AmityUIConfiguration>(context)
+                                    .iconConfig
+                                    .shareIcon(),
+                                const SizedBox(width: 5.5),
+                                Text(
+                                  'Share',
+                                  style: TextStyle(
+                                      color: Provider
+                                          .of<
+                                          AmityUIConfiguration>(
+                                          context)
+                                          .appColors
+                                          .userProfileIconColor,
+                                      fontSize: feedReactionCountSize,
+                                      letterSpacing: 0.5),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),

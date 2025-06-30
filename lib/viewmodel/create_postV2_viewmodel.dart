@@ -12,9 +12,11 @@ import 'package:mime/mime.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:flutter_link_previewer/flutter_link_previewer.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-
+import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/shared/repositories/notification_repository.dart' as app;
 
 enum FileStatus { uploading, rejected, complete }
 
@@ -53,6 +55,7 @@ class CreatePostVMV2 with ChangeNotifier {
   bool hasLink = false;
   types.PreviewData? previewData;
   String? link;
+  List<Mention> mentions = [];
 
   bool get isPostValid {
     // Check if there are any files
@@ -376,8 +379,6 @@ class CreatePostVMV2 with ChangeNotifier {
         postBuilder = targetBuilder.targetMe();
       }
 
-
-
       // Check for file types and add them to the post
       var images =
           files.where((file) => file.fileType == MyFileType.image).toList();
@@ -386,20 +387,18 @@ class CreatePostVMV2 with ChangeNotifier {
       var otherFiles =
           files.where((file) => file.fileType == MyFileType.file).toList();
 
-      if(match != null){
-        if (textEditingController.text.isNotEmpty) {
-          var readyBuilder = postBuilder.text(textEditingController.text).metadata({
-            "matchId": match!.id,
-          });
-          await readyBuilder.post().then((post) async {
-            handleCreatePost(
-                post: post,
-                isCommunity: isCommunity,
-                context: context,
-                callback: callback);
-          });
-        }
-      } else
+      final Map<String,dynamic> metadata = {};
+
+      if (match != null) {
+        metadata["matchId"] = match!.id;
+      }
+
+      if(mentions.isNotEmpty){
+        metadata["mentions"] = mentions.map((mention) => mention.toJson()).toList();
+      }
+
+      print("mentions : ${mentions.map((mention) => mention.toJson()).toList()}");
+
       if (images.isNotEmpty) {
         log("image was selected");
         List<AmityImage> images = [];
@@ -412,6 +411,16 @@ class CreatePostVMV2 with ChangeNotifier {
         if (textEditingController.text.isNotEmpty) {
           readyBuilder.text(textEditingController.text);
         }
+
+        if(mentions.isNotEmpty){
+          final mentionUsers = mentions.map((mention) => mention.userId).toList();
+          readyBuilder.mentionUsers(mentionUsers);
+        }
+
+        if(metadata.isNotEmpty){
+          readyBuilder.metadata(metadata);
+        }
+
         await readyBuilder.post().then((post) async {
           handleCreatePost(
               post: post,
@@ -435,6 +444,16 @@ class CreatePostVMV2 with ChangeNotifier {
         if (textEditingController.text.isNotEmpty) {
           readyBuilder.text(textEditingController.text);
         }
+
+        if(mentions.isNotEmpty){
+          final mentionUsers = mentions.map((mention) => mention.userId).toList();
+          readyBuilder.mentionUsers(mentionUsers);
+        }
+
+        if(metadata.isNotEmpty){
+          readyBuilder.metadata(metadata);
+        }
+
         await readyBuilder.post().then((post) async {
           handleCreatePost(
               post: post,
@@ -455,6 +474,15 @@ class CreatePostVMV2 with ChangeNotifier {
           readyBuilder.text(textEditingController.text);
         }
 
+        if(mentions.isNotEmpty){
+          final mentionUsers = mentions.map((mention) => mention.userId).toList();
+          readyBuilder.mentionUsers(mentionUsers);
+        }
+
+        if(metadata.isNotEmpty){
+          readyBuilder.metadata(metadata);
+        }
+
         await readyBuilder.post().then((AmityPost post) {
           handleCreatePost(
               post: post,
@@ -467,6 +495,13 @@ class CreatePostVMV2 with ChangeNotifier {
       } else {
         print("creating.. text post");
         var readyBuilder = postBuilder.text(textEditingController.text);
+        if(mentions.isNotEmpty){
+          final mentionUsers = mentions.map((mention) => mention.userId).toList();
+          readyBuilder.mentionUsers(mentionUsers);
+        }
+        if(metadata.isNotEmpty){
+          readyBuilder.metadata(metadata);
+        }
         await readyBuilder.createTextPost().then((AmityPost post) {
           handleCreatePost(
               post: post,
@@ -495,6 +530,18 @@ class CreatePostVMV2 with ChangeNotifier {
       //     .initAmityPendingCommunityFeed(
       //         (post.target as CommunityTarget).targetCommunityId!,
       //         AmityFeedType.REVIEWING);
+      if(post.mentionees?.isNotEmpty == true){
+        final communityName = (post.target as CommunityTarget).targetCommunity?.displayName ?? "a community";
+        app.NotificationRepository.getInstance().sendNotification(
+          title: "You've been mentioned",
+          body: "${post.postedUser?.displayName ?? "Someone"} mentioned you in ${communityName}. Check it out here",
+          userIds: post.mentionees?.map((user) => user.userId).toList() ?? [],
+          type: NotificationType.newCommunityPost,
+          additionalData: {
+            "communityId": (post.target as CommunityTarget).targetCommunityId,
+          },
+        );
+      }
       notifyListeners();
     } else {
       // var viewModel = Provider.of<FeedVM>(context, listen: false);
@@ -542,5 +589,10 @@ class CreatePostVMV2 with ChangeNotifier {
       link = null;
       notifyListeners();
     }
+  }
+
+  void onMentionChanged(List<Mention> mentions) {
+    this.mentions = mentions;
+    notifyListeners();
   }
 }

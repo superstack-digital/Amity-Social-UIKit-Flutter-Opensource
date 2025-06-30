@@ -77,11 +77,11 @@ class CommuFeedVM extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> getUpcomingEvents(AmityCommunity community) async {
+  Future<void> getUpcomingEvents(String communityId) async {
     try {
       _communityEventList.clear();
       notifyListeners();
-      final data = await CommunityRepository.getInstance().getAllCommunityUpcomingEvents(community.communityId!);
+      final data = await CommunityRepository.getInstance().getAllCommunityUpcomingEvents(communityId);
       _communityEventList.addAll([...data]);
       notifyListeners();
     } catch (e) {
@@ -92,7 +92,7 @@ class CommuFeedVM extends ChangeNotifier {
 
   int postCount = 0;
   void getPostCount(AmityCommunity community) async {
-    getUpcomingEvents(community);
+    getUpcomingEvents(community.communityId!);
 
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)

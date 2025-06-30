@@ -21,7 +21,6 @@ import 'package:mobile_app_padel/features/community/presentation/screens/create_
 import '../../viewmodel/community_feed_viewmodel.dart';
 import '../../viewmodel/community_viewmodel.dart';
 import '../../viewmodel/configuration_viewmodel.dart';
-import 'edit_community.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
 import 'package:mobile_app_padel/features/community/widgets/event_item.dart';
@@ -36,7 +35,7 @@ import 'package:mobile_app_padel/features/chat/presentations/widgets/chat_screen
 import 'package:get/get.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
-
+import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -101,21 +100,6 @@ class CommunityScreenState extends State<CommunityScreen>
         ),
       ],
     );
-  }
-
-  void onCommunityOptionTap(CommunityFeedMenuOption option, AmityCommunity community) {
-    switch (option) {
-      case CommunityFeedMenuOption.edit:
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => EditCommunityScreen(community)));
-        break;
-      case CommunityFeedMenuOption.members:
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) =>
-                MemberManagementPage(communityId: community.communityId!)));
-        break;
-      default:
-    }
   }
 
   Widget communityInfo(AmityCommunity community) {
@@ -188,7 +172,12 @@ class CommunityScreenState extends State<CommunityScreen>
     final bheight =
         mediaQuery.size.height - mediaQuery.padding.top - myAppBar.preferredSize.height;
     if (true) {
-      return Stack(children: [
+      return PopScope(
+          canPop: true,
+          onPopInvokedWithResult: (_, __){
+            Get.delete<ShareOpenMatchesController>(tag: widget.community?.communityId?.toString());
+          },
+          child: Stack(children: [
         StreamBuilder<AmityCommunity>(
             stream: widget.community.listen.stream,
             initialData: widget.community,
@@ -238,7 +227,7 @@ class CommunityScreenState extends State<CommunityScreen>
                   child: CupertinoActivityIndicator(color: Colors.white),
                 )),
           )
-      ]);
+      ]));
     } else {
       return Scaffold(
         backgroundColor:
@@ -527,22 +516,6 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
         ),
       ],
     );
-  }
-
-  void onCommunityOptionTap(CommunityFeedMenuOption option, AmityCommunity community) {
-    switch (option) {
-      case CommunityFeedMenuOption.edit:
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => EditCommunityScreen(community)));
-        break;
-      case CommunityFeedMenuOption.members:
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) =>
-                MemberManagementPage(communityId: community.communityId!,
-                  channelId: community.metadata?["channel_id"],)));
-        break;
-      default:
-    }
   }
 
   Widget communityInfo(AmityCommunity community) {
@@ -1056,7 +1029,11 @@ class _StickyHeaderList extends StatelessWidget {
                             .length,
                         itemBuilder: (context, index) {
                           final event = vm.getCommunityEventList()[index];
-                          return EventItem(event: event);
+                          return EventItem(event: event, onEventDeleted: () {
+                            if(communityId != null){
+                              vm.getUpcomingEvents(communityId!);
+                            }
+                          });
                         },
                       );
                     }
@@ -1071,7 +1048,7 @@ class _StickyHeaderList extends StatelessWidget {
                       }
                     } else if (vm.userFeedTabController?.index == 2) {
                       if (communityId != null) {
-                        return CommunityMatchesScreen(communityId: communityId!);
+                        return CommunityMatchesScreen(communityId: communityId!, isLeagueCommunity: vm.isLeagueCommunity);
                       } else {
                         return Container();
                       }
@@ -1185,7 +1162,9 @@ class AppScaffold extends StatelessWidget {
                               communityId: amityCommunity.communityId!)));
                 },
                 icon: Icons.event),
-            _renderChildButton(
+            if(!Provider
+                .of<CommuFeedVM>(context, listen: false)
+                .isLeagueCommunity)_renderChildButton(
                 context: context,
                 margin: const EdgeInsets.only(bottom: 0),
                 title: "Share Open Matches",
@@ -1402,10 +1381,10 @@ class Header extends StatelessWidget {
                       fontFamily: 'SF Pro Text',
                       color: HexColor('#4E8A6D')
                   ),
-                  tabs: const [
+                  tabs: [
                     Tab(text: "Timeline"),
                     Tab(text: "Events"),
-                    Tab(text: "Open matches"),
+                    Tab(text: "Matches"),
                     Tab(text: "Gallery"),
                   ],
                 ),

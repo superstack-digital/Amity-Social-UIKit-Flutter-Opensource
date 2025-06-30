@@ -406,7 +406,7 @@ class CommentTextField extends StatelessWidget {
           horizontalTitleGap: 0,
           contentPadding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           leading: getAvatarImage(
-              Provider.of<AmityVM>(context).currentamityUser?.avatarUrl, fullName: Provider.of<AmityVM>(context).currentamityUser?.displayName),
+              Provider.of<AmityVM>(context).currentamityUser?.avatarUrl ?? Provider.of<AmityVM>(context).currentamityUser?.avatarCustomUrl, fullName: Provider.of<AmityVM>(context).currentamityUser?.displayName),
           title: ConstrainedBox(
             constraints: const BoxConstraints(
               maxHeight: 200.0, // Maximum height for the text field

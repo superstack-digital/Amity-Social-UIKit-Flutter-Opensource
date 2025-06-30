@@ -17,8 +17,12 @@ import 'package:linkify/linkify.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:get/get.dart';
 import 'image_viewer.dart';
 import 'package:mobile_app_padel/shared/widgets/link_preview_image.dart';
+import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+
 
 class AmityPostWidget extends StatefulWidget {
   final List<AmityPost> posts;
@@ -129,7 +133,9 @@ class AmityPostWidgetState extends State<AmityPostWidget> {
   Widget build(BuildContext context) {
     if (!widget.isChildrenPost) {
       if (widget.posts[0].children != null && urlValidation(widget.posts[0])) {
-        return TextPost(post: widget.posts[0], feedType: widget.feedType);
+        return TextPost(post: widget.posts[0],
+          feedType: widget.feedType,
+          mentions: widget.posts[0].metadata?["mentions"] ?? []);
       } else {
         String url =
             extractLink(widget.posts[0]); //urlExtraction(widget.posts[0]);
@@ -138,7 +144,9 @@ class AmityPostWidgetState extends State<AmityPostWidget> {
           children: [
             // Text(url),
             widget.shouldShowTextPost
-                ? TextPost(post: widget.posts[0], feedType: widget.feedType)
+                ? TextPost(post: widget.posts[0],
+                feedType: widget.feedType,
+                mentions: widget.posts[0].metadata?["mentions"] ?? [])
                 : Container(),
 
             // !urlValidation(widget.posts[0])
@@ -1080,8 +1088,10 @@ Widget _listMediaGrid(List<AmityPost> files) {
 class TextPost extends StatefulWidget {
   final AmityPost post;
   final FeedType feedType;
+  final List<dynamic> mentions;
 
-  const TextPost({Key? key, required this.post, required this.feedType})
+  const TextPost(
+      {Key? key, required this.post, required this.feedType, required this.mentions})
       : super(key: key);
 
   @override
@@ -1120,6 +1130,63 @@ class _TextPostState extends State<TextPost> {
     }).toList();
   }
 
+  TextSpan _buildMentionsTextSpan(String currentText, TextStyle textStyle, TextStyle linkStyle) {
+    final List<TextSpan> children = [];
+    int currentPos = 0;
+
+    final mentionsList = widget.mentions
+        .map((mention) => Mention(
+              index: mention['index'] as int,
+              length: mention['length'] as int,
+              text: mention['text'] as String,
+              userId: mention['userId'] as String,
+            ))
+        .toList();
+
+    mentionsList.sort((a, b) => a.index.compareTo(b.index));
+
+    for (var mention in mentionsList) {
+      if (mention.index < currentPos || mention.index >= currentText.length) {
+        continue;
+      }
+
+      if (mention.index > currentPos) {
+        final textSpans = _buildTextSpans(
+            currentText.substring(currentPos, mention.index),
+            const TextStyle(color: Colors.black),
+            const TextStyle(color: Colors.blue));
+        children.addAll(textSpans);
+      }
+      int mentionEnd = mention.index + mention.length;
+      if (mentionEnd > currentText.length) {
+        mentionEnd = currentText.length;
+      }
+      children.add(
+        TextSpan(
+          text: currentText.substring(mention.index, mentionEnd),
+          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          recognizer: TapGestureRecognizer()..onTap = () {
+            if(mention.userId != null) {
+              Get.to(() => PeopleProfileScreen(userId: int.parse(mention.userId)));
+            }
+          }
+        ),
+      );
+      currentPos = mentionEnd;
+    }
+
+    if (currentPos < currentText.length) {
+      children.add(
+        TextSpan(
+          text: currentText.substring(currentPos),
+          style: const TextStyle(color: Colors.black),
+        ),
+      );
+    }
+
+    return TextSpan(children: children);
+  }
+
   @override
   Widget build(BuildContext context) {
     final textData = widget.post.data as TextData;
@@ -1152,7 +1219,7 @@ class _TextPostState extends State<TextPost> {
                               ? RichText(
                                   text: TextSpan(
                                     children: [
-                                      ..._buildTextSpans(text.substring(0, 180),
+                                      _buildMentionsTextSpan(text.substring(0, 180),
                                           textStyle, linkStyle),
                                       TextSpan(
                                         text: " ... Load more",
@@ -1177,8 +1244,8 @@ class _TextPostState extends State<TextPost> {
                                   },
                                   child: RichText(
                                     text: TextSpan(
-                                      children: _buildTextSpans(
-                                          text, textStyle, linkStyle),
+                                      children: [_buildMentionsTextSpan(
+                                          text, textStyle, linkStyle)],
                                     ),
                                   ),
                                 ),

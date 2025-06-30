@@ -22,7 +22,8 @@ import 'package:get/get.dart';
 import 'package:flutter_link_previewer/flutter_link_previewer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobile_app_padel/shared/styles.dart';
-
+import 'package:mobile_app_padel/shared/styles.dart';
+import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
 
 class AmityCreatePostV2Screen extends StatefulWidget {
   final AmityCommunity? community;
@@ -183,27 +184,48 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        TextField(
-                          style: TextStyle(
-                              color: Provider
-                                  .of<AmityUIConfiguration>(context)
-                                  .appColors
-                                  .base),
-                          onChanged: (value) => vm.updatePostValidity(),
-                          controller: vm.textEditingController,
-                          scrollPhysics: const NeverScrollableScrollPhysics(),
-                          maxLines: null,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Write something to post",
-                            hintStyle: TextStyle(
-                                color:
-                                Provider
-                                    .of<AmityUIConfiguration>(context)
-                                    .appColors
-                                    .userProfileTextColor),
-                          ),
-                          // style: t/1heme.textTheme.bodyText1.copyWith(color: Colors.grey),
+                        // TextField(
+                        //   style: TextStyle(
+                        //       color: Provider
+                        //           .of<AmityUIConfiguration>(context)
+                        //           .appColors
+                        //           .base),
+                        //   onChanged: (value) => vm.updatePostValidity(),
+                        //   controller: vm.textEditingController,
+                        //   scrollPhysics: const NeverScrollableScrollPhysics(),
+                        //   maxLines: null,
+                        //   decoration: InputDecoration(
+                        //     border: InputBorder.none,
+                        //     hintText: "Write something to post",
+                        //     hintStyle: TextStyle(
+                        //         color:
+                        //         Provider
+                        //             .of<AmityUIConfiguration>(context)
+                        //             .appColors
+                        //             .userProfileTextColor),
+                        //   ),
+                        //   // style: t/1heme.textTheme.bodyText1.copyWith(color: Colors.grey),
+                        // ),
+                        MentionInput(
+                            // style: TextStyle(
+                            //     color: Provider
+                            //         .of<AmityUIConfiguration>(context)
+                            //         .appColors
+                            //         .base),
+                            onChanged: (value) => vm.updatePostValidity(),
+                            controller: vm.textEditingController,
+                            onMentionsChanged: vm.onMentionChanged,
+                            communityId: widget.community?.communityId ?? "",
+                            // decoration: InputDecoration(
+                            //   border: InputBorder.none,
+                            //   hintText: "Write something to post",
+                            //   hintStyle: TextStyle(
+                            //       color:
+                            //       Provider
+                            //           .of<AmityUIConfiguration>(context)
+                            //           .appColors
+                            //           .userProfileTextColor),
+                            // ),
                         ),
                         Consumer<CreatePostVMV2>(
                           builder: (context, vm, _) =>

@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile_app_padel/features/booking/presentation/screens/search_location_screen.dart';
 import 'package:mobile_app_padel/features/booking/data/models/court.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/select_club_screen.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/select_competitions_screen.dart';
 import 'package:get/get.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
@@ -40,10 +41,12 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _clubsController = TextEditingController();
+  final TextEditingController _competitionsController = TextEditingController();
 
   bool _isPublic = true;
   bool _isCreatingCommunity = false;
   RxList<int> selectedClubs = <int>[].obs;
+  RxList<int> selectedCompetitions = <int>[].obs;
 
   @override
   void initState() {
@@ -230,9 +233,40 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                                       onResult: (result) {
                                         if (result != null) {
                                           _clubsController.text =
-                                          "${result.length} clubs selected";
+                                          "${result.length} club${result.length > 1 ? "s" : ""} selected";
                                           selectedClubs.assignAll(
                                               result.map((e) => e).toList());
+                                        }
+                                      }
+                                  ),
+                            ));
+                      }
+                  ),
+                  const SizedBox(height: 16.0),
+                  buildTextFieldWithCounter(
+                      controller: _competitionsController,
+                      isRequred: false,
+                      title: 'Link competitions',
+                      showChevron: true,
+                      showCount: false,
+                      maxCharacters: 30,
+                      hintText: 'Link competitions with community',
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      onTap: () {
+                        Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SelectCompetitionScreen(isMultiSelect: true,
+                                      selectedCompetitionIds: selectedCompetitions.toList(),
+                                      onResult: (result) {
+                                        if (result != null && result.isNotEmpty) {
+                                          _competitionsController.text =
+                                          "${result.length} competition${result.length > 1 ? "s" : ""} selected";
+                                          selectedCompetitions.assignAll(
+                                              result.map((e) => e).toList());
+                                        } else {
+                                          _competitionsController.text = "Link competitions with community";
                                         }
                                       }
                                   ),
@@ -398,6 +432,7 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                       userIds: userIds,
                       clubIds: selectedClubs?.map((e) => e).toList() ?? [],
                       location: _locationController.text,
+                      competitionIds: selectedCompetitions?.map((e) => e).toList() ?? [],
                     );
                     if (createdCommunity != null) {
                       print(

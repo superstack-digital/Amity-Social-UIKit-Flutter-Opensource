@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:mobile_app_padel/shared/file_utils.dart';
+import 'package:mobile_app_padel/shared/widgets/download_progress_overlay.dart';
 
 class LocalVideoPlayer extends StatefulWidget {
   final File file;
@@ -186,6 +188,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
+              actions: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 5),
+                  child: IconButton(onPressed: ()  => downloadVideo(shareOnly: true),
+                      icon: Icon(Icons.ios_share_outlined, color: Colors.white),
+                )),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 5),
+                  child: IconButton(onPressed: ()  => downloadVideo(),
+                      icon: Icon(Icons.download_outlined, color: Colors.white),
+                ))
+              ],
             ),
             body: _controllers != null && _controllers!.isNotEmpty
                 ? PageView.builder(
@@ -238,6 +252,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         .primary,
                   )),
           );
+  }
+
+  void downloadVideo({bool? shareOnly}) async {
+    final video = await (widget.files[_currentIndex].data as VideoData).getVideo(AmityVideoQuality.ORIGINAL);
+    final url = video?.getVideoUrl(AmityVideoResolution.ORIGINAL);
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) =>
+            DownloadProgressOverlay(
+              shareOnly: shareOnly == true,
+                url: url!, fileType: "video/mp4"));
   }
 }
 

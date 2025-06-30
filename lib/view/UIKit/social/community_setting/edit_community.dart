@@ -10,6 +10,7 @@ import 'package:provider/provider.dart'; // For using File class
 import 'package:mobile_app_padel/features/booking/presentation/screens/search_location_screen.dart';
 import 'package:mobile_app_padel/features/booking/data/models/court.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/select_club_screen.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/select_competitions_screen.dart';
 import 'package:get/get.dart';
 
 
@@ -32,11 +33,14 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _clubsController = TextEditingController();
+  final TextEditingController _competitionsController = TextEditingController();
 
 
   bool _isPublic = true;
   RxList<int> selectedClubs = <int>[].obs;
+  RxList<int> selectedCompetitions = <int>[].obs;
   String clubIds = "";
+  String competitionIds = "";
 
   @override
   void initState() {
@@ -49,8 +53,19 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
     _locationController.text = widget.community.metadata?["location"] ?? "";
     _clubsController.text =
     "${widget.community.metadata?["club_ids"]?.length.toString() ?? "0"} clubs selected";
+
+    final competitionLength = widget.community.metadata?["competition_ids"]?.length ?? 0;
+    if(competitionLength > 0){
+      _competitionsController.text =
+        "${competitionLength} competition${competitionLength > 1 ? "s" : ""} selected";
+    } else {
+      _competitionsController.text = "Link competitions with community";
+    }
     selectedClubs.value =
         ((widget.community.metadata?["club_ids"] ?? [] )as List<dynamic>).map((item) =>
+            int.parse(item.toString())).toList() ?? [];
+    selectedCompetitions.value =
+        ((widget.community.metadata?["competition_ids"] ?? [] )as List<dynamic>).map((item) =>
             int.parse(item.toString())).toList() ?? [];
 
 
@@ -117,7 +132,10 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                             .getSelectedCategory(),
                        _isPublic,
                       selectedClubs?.map((e) => e).toList() ?? [],
-                      _locationController.text, community.metadata?["channel_id"]);
+                      _locationController.text, community.metadata?["channel_id"],
+                      community,
+                      selectedCompetitions?.map((e) => e).toList() ?? [],
+                    );
                     AmityLoadingDialog.hideLoadingDialog();
                     Navigator.of(context).pop();
                   },
@@ -267,6 +285,35 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                                                 _clubsController.text =
                                                 "${result.length} clubs selected";
                                                 selectedClubs.assignAll(
+                                                    result.map((e) => e).toList());
+                                              }
+                                            }
+                                        ),
+                                  ));
+                            }
+                        ),
+                        const SizedBox(height: 16.0),
+                        TextFieldWithCounter(
+                            isRequired: false,
+                            controller: _competitionsController,
+                            title: 'Link competitions',
+                            showChevron: true,
+                            showCount: false,
+                            hintText: 'Link competitions with community',
+                            maxCharacters: 180,
+                            keyboardType: TextInputType.multiline,
+                            maxLines: null,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SelectCompetitionScreen(isMultiSelect: true,
+                                            selectedCompetitionIds: selectedCompetitions.toList(),
+                                            onResult: (result) {
+                                              if (result != null) {
+                                                _competitionsController.text =
+                                                "${result.length} competition${result.length > 1 ? "s" : ""} selected";
+                                                selectedCompetitions.assignAll(
                                                     result.map((e) => e).toList());
                                               }
                                             }
