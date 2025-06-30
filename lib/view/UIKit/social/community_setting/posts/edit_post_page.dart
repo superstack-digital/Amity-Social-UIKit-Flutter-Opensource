@@ -10,6 +10,8 @@ import 'package:amity_uikit_beta_service/viewmodel/edit_post_viewmodel.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
+
 
 class AmityEditPostScreen extends StatefulWidget {
   final AmityPost amityPost;
@@ -106,32 +108,29 @@ class _AmityEditPostScreenState extends State<AmityEditPostScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        TextField(
-                          onChanged: (value) {
-                            vm.updatePostValidity();
+                        MentionInput(
+                            onChanged: (value) {
+                              vm.updatePostValidity();
 
-                            if (value == originalText) {
-                              print("match");
-                              hasContent = false;
-                              setState(() {});
-                            } else {
-                              print("unmatch");
-                              hasContent = true;
-                              setState(() {});
-                            }
-                          },
-                          controller: vm.textEditingController,
-                          style: TextStyle(
-                            color: Provider.of<AmityUIConfiguration>(context)
-                                .appColors
-                                .base,
-                          ),
-                          scrollPhysics: const NeverScrollableScrollPhysics(),
-                          maxLines: null,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Write something to post",
-                          ),
+                              if (value == originalText) {
+                                print("match");
+                                hasContent = false;
+                                setState(() {});
+                              } else {
+                                print("unmatch");
+                                hasContent = true;
+                                setState(() {});
+                              }
+                            },
+                            controller: vm.textEditingController,
+                            onMentionsChanged: vm.onMentionsChanged,
+                            communityId: widget.amityPost.target.runtimeType ==
+                                CommunityTarget
+                                ? (widget.amityPost.target as CommunityTarget)
+                                ?.targetCommunity
+                                ?.communityId ?? ""
+                                : "",
+                            initialMentions: vm.mentions,
                         ),
                         Consumer<EditPostVM>(
                           builder: (context, vm, _) => PostMedia(

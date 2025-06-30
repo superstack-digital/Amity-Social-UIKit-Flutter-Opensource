@@ -396,9 +396,7 @@ class CreatePostVMV2 with ChangeNotifier {
       if(mentions.isNotEmpty){
         metadata["mentions"] = mentions.map((mention) => mention.toJson()).toList();
       }
-
-      print("mentions : ${mentions.map((mention) => mention.toJson()).toList()}");
-
+      
       if (images.isNotEmpty) {
         log("image was selected");
         List<AmityImage> images = [];
@@ -591,7 +589,7 @@ class CreatePostVMV2 with ChangeNotifier {
     }
   }
 
-  void onMentionChanged(List<Mention> mentions) {
+  void onMentionsChanged(List<Mention> mentions) {
     this.mentions = mentions;
     notifyListeners();
   }

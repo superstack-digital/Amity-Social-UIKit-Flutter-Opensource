@@ -214,7 +214,7 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                             //         .base),
                             onChanged: (value) => vm.updatePostValidity(),
                             controller: vm.textEditingController,
-                            onMentionsChanged: vm.onMentionChanged,
+                            onMentionsChanged: vm.onMentionsChanged,
                             communityId: widget.community?.communityId ?? "",
                             // decoration: InputDecoration(
                             //   border: InputBorder.none,

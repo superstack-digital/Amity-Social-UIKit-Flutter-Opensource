@@ -5,12 +5,17 @@ import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/components/alert_dialog.dart';
 import 'package:amity_uikit_beta_service/viewmodel/create_postV2_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
 
 class EditPostVM extends CreatePostVMV2 {
   List<UIKitFileSystem> editPostMedie = [];
   AmityPost? amityPost;
   int originalPostLength = 0;
   AmityDataType? postDataForEditMedie;
+  List<Mention> mentions = [];
+  Map<String,dynamic> metadata = {};
+
+  
   void initForEditPost(AmityPost post) {
     print("initForEditPost");
     amityPost = post;
@@ -72,6 +77,14 @@ class EditPostVM extends CreatePostVMV2 {
     }
 
     textEditingController.text = (post.data as TextData).text ?? "";
+    mentions = post.metadata?['mentions'] != null
+        ? (post.metadata!['mentions'] as List)
+            .map((mention) => Mention.fromJson(mention))
+            .toList()
+        : [];
+    if (post.metadata?.isNotEmpty == true) {
+      metadata.addAll(post.metadata!);
+    }
   }
 
   Future<void> editPost(
@@ -113,7 +126,15 @@ class EditPostVM extends CreatePostVMV2 {
         }
       }
     }
-    builder.build().update().then((value) {
+
+    if(mentions.isNotEmpty){
+      final mentionUsers = mentions.map((mention) => mention.userId).toList();
+      print("mentionUsers: $mentionUsers");
+      builder.mentionUsers(mentionUsers);
+      metadata['mentions'] = mentions.map((mention) => mention.toJson()).toList();
+    }
+
+    builder.metadata(metadata).build().update().then((value) {
       notifyListeners();
       callback!();
     }).onError((error, stackTrace) async {
@@ -125,6 +146,11 @@ class EditPostVM extends CreatePostVMV2 {
   void deselectFileAt(int index) {
     editPostMedie.removeAt(index);
     amityPost!.children!.removeAt(index);
+    notifyListeners();
+  }
+
+  void onMentionChanged(List<Mention> mentions) {
+    this.mentions = mentions;
     notifyListeners();
   }
 }
