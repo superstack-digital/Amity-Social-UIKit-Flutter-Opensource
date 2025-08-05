@@ -34,6 +34,8 @@ import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mobile_app_padel/shared/widgets/skeleton_container.dart';
 import 'package:mobile_app_padel/shared/styles.dart';
+import 'package:mobile_app_padel/shared/widgets/richtext_with_mention.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
 
 
 class GlobalFeedScreen extends StatefulWidget {
@@ -139,14 +141,12 @@ class GlobalFeedScreenState extends State<GlobalFeedScreen>
                                         .getMatchDetails(
                                         matchId);
                                   }
-                                  print("@@@@ ${matchId}");
                                   return null;
                                 }
 
                                 return FutureBuilder(future: _getMatchDetails(
                                     snapshot.data?.metadata?["matchId"]),
                                     builder: (context, snapshot1) {
-                                  print("matchId ${snapshot.data?.metadata?["matchId"]}");
                                       return Column(
                                         children: [
                                           index != 0
@@ -1182,18 +1182,39 @@ class _LatestCommentComponentState extends State<LatestCommentComponent> {
                               bottomLeft: Radius.circular(10),
                             ),
                           ),
-                          child: Text(
-                            commentData.text!,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color:
-                              Provider
-                                  .of<AmityUIConfiguration>(
-                                  context)
-                                  .appColors
-                                  .base,
-                            ),
-                          ),
+                          child: Consumer<CommuFeedVM>(builder: (context, vm, _){
+                            return RichTextWithMentions(
+                                mentionColor: Styles.green,
+                                fullText: commentData.text!,
+                                mentions: comments.metadata?["mentions"] !=
+                                    null ? (comments.metadata!["mentions"] as List<dynamic>)
+                                    .map((e) => Mention.fromJson(e)).toList() : [],
+                                isOpponent: true,
+                                onLinkClicked: (_){
+                                  print("Link clicked: $_");
+                                  vm.addLoadingTime();
+                                },
+                                onMentionTap: (userId) {
+                                  final parsedId = int.tryParse(userId);
+                                  if (parsedId != null) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            PeopleProfileScreen(
+                                              userId: parsedId,
+                                              openFrom:
+                                              OpenProfileFrom.community,
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                textColor: Provider
+                                    .of<AmityUIConfiguration>(
+                                    context)
+                                    .appColors
+                                    .base);
+                          }),
                         ),
                         const SizedBox(
                           height: 8,

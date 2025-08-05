@@ -15,8 +15,10 @@ import 'package:mobile_app_padel/shared/functions.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:flutter_link_previewer/flutter_link_previewer.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
-import 'package:mobile_app_padel/shared/repositories/notification_repository.dart' as app;
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/shared/repositories/notification_repository.dart';
+import 'package:fluttertagger/fluttertagger.dart';
+import 'package:mobile_app_padel/shared/widgets/mention_text_field.dart';
 
 enum FileStatus { uploading, rejected, complete }
 
@@ -45,8 +47,6 @@ class UIKitFileSystem {
 }
 
 class CreatePostVMV2 with ChangeNotifier {
-  final TextEditingController textEditingController =
-      TextEditingController(text: "");
   final ImagePicker _picker = ImagePicker();
   List<UIKitFileSystem> files = [];
   bool isUploadComplete = false;
@@ -57,12 +57,15 @@ class CreatePostVMV2 with ChangeNotifier {
   String? link;
   List<Mention> mentions = [];
 
+  GlobalKey<MentionTextFieldState> textFieldKey = GlobalKey<MentionTextFieldState>();
+  FlutterTaggerController mentionTextFieldController = FlutterTaggerController();
+
   bool get isPostValid {
     // Check if there are any files
     bool hasFiles = files.isNotEmpty;
 
     // Check if the text is empty
-    bool isTextEmpty = textEditingController.text.isEmpty;
+    bool isTextEmpty = mentionTextFieldController.text.isEmpty;
 
     // If there are no files and text is empty, return false
     if (!hasFiles && isTextEmpty) {
@@ -74,16 +77,16 @@ class CreatePostVMV2 with ChangeNotifier {
     return !hasFiles || isUploadComplete;
   }
 
-  void updatePostValidity() {
+  void updatePostValidity(String text) {
     // First, update the upload complete status
     checkAllFilesUploaded();
 
     // Then, update the isPostValid status
 
-    log("textEditingController: ${textEditingController.text.isNotEmpty}");
+    log("mentionTextFieldController: ${mentionTextFieldController.text.isNotEmpty}");
     log("isUploadComplete: $isUploadComplete");
 
-    List<String> urls = extractLinks(textEditingController.text);
+    List<String> urls = extractLinks(mentionTextFieldController.text);
 
 
     if(urls.isNotEmpty && urls[0] != link){
@@ -98,8 +101,10 @@ class CreatePostVMV2 with ChangeNotifier {
   void inits() {
     isUploadComplete = false;
     files.clear();
-    textEditingController.clear();
+    mentionTextFieldController.clear();
     selectedFileType = null;
+    link = null;
+    hasLink = false;
   }
 
   void addMatch(IMatch selectMatch) {
@@ -406,8 +411,8 @@ class CreatePostVMV2 with ChangeNotifier {
         }
         log("images length: ${images.length}");
         var readyBuilder = postBuilder.image(images);
-        if (textEditingController.text.isNotEmpty) {
-          readyBuilder.text(textEditingController.text);
+        if (mentionTextFieldController.text.isNotEmpty) {
+          readyBuilder.text(mentionTextFieldController.text);
         }
 
         if(mentions.isNotEmpty){
@@ -439,8 +444,8 @@ class CreatePostVMV2 with ChangeNotifier {
           log("add file to videos ${video.fileId}");
         }
         var readyBuilder = postBuilder.video(videos);
-        if (textEditingController.text.isNotEmpty) {
-          readyBuilder.text(textEditingController.text);
+        if (mentionTextFieldController.text.isNotEmpty) {
+          readyBuilder.text(mentionTextFieldController.text);
         }
 
         if(mentions.isNotEmpty){
@@ -468,8 +473,8 @@ class CreatePostVMV2 with ChangeNotifier {
         var readyBuilder = postBuilder.file(otherFiles
             .map((f) => AmityFile(f.fileInfo!.getFileProperties!))
             .toList());
-        if (textEditingController.text.isNotEmpty) {
-          readyBuilder.text(textEditingController.text);
+        if (mentionTextFieldController.text.isNotEmpty) {
+          readyBuilder.text(mentionTextFieldController.text);
         }
 
         if(mentions.isNotEmpty){
@@ -492,7 +497,7 @@ class CreatePostVMV2 with ChangeNotifier {
         });
       } else {
         print("creating.. text post");
-        var readyBuilder = postBuilder.text(textEditingController.text);
+        var readyBuilder = postBuilder.text(mentionTextFieldController.text);
         if(mentions.isNotEmpty){
           final mentionUsers = mentions.map((mention) => mention.userId).toList();
           readyBuilder.mentionUsers(mentionUsers);
@@ -530,7 +535,7 @@ class CreatePostVMV2 with ChangeNotifier {
       //         AmityFeedType.REVIEWING);
       if(post.mentionees?.isNotEmpty == true){
         final communityName = (post.target as CommunityTarget).targetCommunity?.displayName ?? "a community";
-        app.NotificationRepository.getInstance().sendNotification(
+        AppNotificationRepository.getInstance().sendNotification(
           title: "You've been mentioned",
           body: "${post.postedUser?.displayName ?? "Someone"} mentioned you in ${communityName}. Check it out here",
           userIds: post.mentionees?.map((user) => user.userId).toList() ?? [],
@@ -579,9 +584,9 @@ class CreatePostVMV2 with ChangeNotifier {
 
   void removeLink(){
     if(previewData != null){
-      final currentText = "${textEditingController.text}";
-      textEditingController.clear();
-      textEditingController.text = currentText.replaceAll(previewData!.link!, "");
+      final currentText = "${mentionTextFieldController.text}";
+      mentionTextFieldController.clear();
+      mentionTextFieldController.text = currentText.replaceAll(previewData!.link!, "");
       previewData = null;
       hasLink = false;
       link = null;
@@ -592,5 +597,19 @@ class CreatePostVMV2 with ChangeNotifier {
   void onMentionsChanged(List<Mention> mentions) {
     this.mentions = mentions;
     notifyListeners();
+  }
+
+  Future<List<AmityCommunityMember>> onSearchMentions(
+      {required String keyword, required String communityId}) async {
+    final res = await AmityCommunityRepository()
+        .membership(communityId)
+        .searchMembers(keyword)
+        .getPagingData(limit: 5);
+
+    if (res.data.isNotEmpty) {
+      return res.data;
+    } else {
+      return [];
+    }
   }
 }

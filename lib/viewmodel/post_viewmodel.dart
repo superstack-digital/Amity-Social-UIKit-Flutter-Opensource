@@ -6,16 +6,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../components/alert_dialog.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+
 
 class PostVM extends ChangeNotifier {
   late AmityPost amityPost;
   late PagingController<AmityComment> controller;
   final amityComments = <AmityComment>[];
 
+
   final scrollcontroller = ScrollController();
 
   final AmityCommentSortOption _sortOption =
       AmityCommentSortOption.LAST_CREATED;
+
+  List<Mention> mentions = [];
+  bool isLoading = false;
+
+  void updateMentions(List<Mention> newMentions) {
+    mentions = newMentions;
+    notifyListeners();
+  }
+
+  void addLoadingTime({int miliseconds = 3000}) {
+    isLoading = true;
+    notifyListeners();
+    Future.delayed(Duration(milliseconds: miliseconds), () {
+      isLoading = false;
+      notifyListeners();
+    });
+  }
 
   void getPost(String postId, AmityPost initialPostData) {
     amityPost = initialPostData;
@@ -89,13 +109,21 @@ class PostVM extends ChangeNotifier {
   }
 
   Future<void> createComment(String postId, String text) async {
+    final metadata = <String, dynamic>{};
     // Dismiss the keyboard by removing focus from the current text field
     FocusScope.of(NavigationService.navigatorKey.currentContext!).unfocus();
+
+    final mentionUserIds = mentions.map((mention) => mention.userId).toList();
+    if(mentions.isNotEmpty){
+      metadata['mentions'] = mentions.map((mention) => mention.toJson()).toList();
+    }
     await AmitySocialClient.newCommentRepository()
         .createComment()
         .post(postId)
         .create()
         .text(text)
+        .metadata(metadata)
+        .mentionUsers(mentionUserIds)
         .send()
         .then((comment) async {
       amityComments.insert(0, comment);

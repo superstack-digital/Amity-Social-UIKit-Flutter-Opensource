@@ -22,8 +22,9 @@ import 'package:get/get.dart';
 import 'package:flutter_link_previewer/flutter_link_previewer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobile_app_padel/shared/styles.dart';
-import 'package:mobile_app_padel/shared/styles.dart';
-import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/shared/widgets/mention_text_field.dart';
+import 'package:mobile_app_padel/shared/widgets/shadow_avatar.dart';
+import 'package:fluttertagger/fluttertagger.dart';
 
 class AmityCreatePostV2Screen extends StatefulWidget {
   final AmityCommunity? community;
@@ -206,26 +207,69 @@ class _AmityCreatePostV2ScreenState extends State<AmityCreatePostV2Screen> {
                         //   ),
                         //   // style: t/1heme.textTheme.bodyText1.copyWith(color: Colors.grey),
                         // ),
-                        MentionInput(
-                            // style: TextStyle(
-                            //     color: Provider
-                            //         .of<AmityUIConfiguration>(context)
-                            //         .appColors
-                            //         .base),
-                            onChanged: (value) => vm.updatePostValidity(),
-                            controller: vm.textEditingController,
-                            onMentionsChanged: vm.onMentionsChanged,
-                            communityId: widget.community?.communityId ?? "",
-                            // decoration: InputDecoration(
-                            //   border: InputBorder.none,
-                            //   hintText: "Write something to post",
-                            //   hintStyle: TextStyle(
-                            //       color:
-                            //       Provider
-                            //           .of<AmityUIConfiguration>(context)
-                            //           .appColors
-                            //           .userProfileTextColor),
-                            // ),
+                        // MentionInput(
+                        //     // style: TextStyle(
+                        //     //     color: Provider
+                        //     //         .of<AmityUIConfiguration>(context)
+                        //     //         .appColors
+                        //     //         .base),
+                        //     onChanged: (value) => vm.updatePostValidity(),
+                        //     controller: vm.textEditingController,
+                        //     onMentionsChanged: vm.onMentionsChanged,
+                        //     communityId: widget.community?.communityId ?? "",
+                        //     // decoration: InputDecoration(
+                        //     //   border: InputBorder.none,
+                        //     //   hintText: "Write something to post",
+                        //     //   hintStyle: TextStyle(
+                        //     //       color:
+                        //     //       Provider
+                        //     //           .of<AmityUIConfiguration>(context)
+                        //     //           .appColors
+                        //     //           .userProfileTextColor),
+                        //     // ),
+                        // ),
+                        Consumer<CreatePostVMV2>(
+                          builder: (context, vm, _) =>
+                              MentionTextField<AmityCommunityMember>(
+                                  key: vm.textFieldKey,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Write something to post",
+                                    hintStyle: TextStyle(
+                                        color:
+                                        Provider
+                                            .of<AmityUIConfiguration>(context)
+                                            .appColors
+                                            .userProfileTextColor),
+                                  ),
+                                  overlayPosition: OverlayPosition.bottom,
+                                  keyboardType: TextInputType.multiline,
+                                  flutterTaggerController: vm.mentionTextFieldController,
+                                  onSearchMentions: (keyword) => vm.onSearchMentions(keyword: keyword, communityId: widget.community?.communityId ?? ""),
+                                  mentionListItemBuilder: (member){
+                                    return Padding(padding: EdgeInsets.all(8),
+                                        child: Row(
+                                          children: [
+                                            ShadowAvatar(
+                                                height: 30,
+                                                width: 30,
+                                                url: member.user?.avatarCustomUrl ??
+                                                    member.user?.avatarUrl ??
+                                                    "",
+                                                fullName: member.user?.displayName ?? ""),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Text(member.user?.displayName ?? "",
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Styles.fontInterMedium(16)),
+                                            )
+                                          ],
+                                        ));
+                                  },
+                                  onSelectTag: (member) => CommunityTag(id: member.user?.userId ?? "", name: member.user?.displayName ?? ""),
+                                  onMentionsChanged: vm.onMentionsChanged,
+                                  onTextChanged: vm.updatePostValidity)
                         ),
                         Consumer<CreatePostVMV2>(
                           builder: (context, vm, _) =>

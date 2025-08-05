@@ -178,56 +178,64 @@ class CommunityScreenState extends State<CommunityScreen>
             Get.delete<ShareOpenMatchesController>(tag: widget.community?.communityId?.toString());
           },
           child: Stack(children: [
-        StreamBuilder<AmityCommunity>(
-            stream: widget.community.listen.stream,
-            initialData: widget.community,
-            builder: (context, snapshot) {
-              return AppScaffold(
-                title: '',
-                slivers: [
-                  Consumer<CommuFeedVM>(builder: (context, vm, _) {
-                    return _StickyHeaderList(
-                        index: 0,
+            StreamBuilder<AmityCommunity>(
+                stream: widget.community.listen.stream,
+                initialData: widget.community,
+                builder: (context, snapshot) {
+                  return AppScaffold(
+                    title: '',
+                    slivers: [
+                      Consumer<CommuFeedVM>(builder: (context, vm, _) {
+                        return _StickyHeaderList(
+                            index: 0,
+                            theme: theme,
+                            bheight: bheight,
+                            profileSectionWidget: CommunityDetailComponent(
+                              community: snapshot.data!,
+                              updateLoadingState: (val) {
+                                setState(() {
+                                  isLoading = val;
+                                  vm.isLoading.value = val;
+                                });
+                                if (!val) {
+                                  showCommunityToastMessage(
+                                      "Successfully joined the community");
+                                }
+                              },
+                            ));
+                      }),
+                      _StickyHeaderList(
+                        index: 1,
                         theme: theme,
                         bheight: bheight,
-                        profileSectionWidget: CommunityDetailComponent(
-                          community: snapshot.data!,
-                          updateLoadingState: (val) {
-                            setState(() {
-                              isLoading = val;
-                            });
-                            if (!val) {
-                              showCommunityToastMessage(
-                                  "Successfully joined the community");
-                            }
-                          },
-                        ));
-                  }),
-                  _StickyHeaderList(
-                    index: 1,
-                    theme: theme,
-                    bheight: bheight,
-                    communityId: widget.community.communityId!,
-                  ),
-                ],
-                amityCommunity: snapshot.data!,
-              );
-            }),
-        if (isLoading)
-          Container(
-            color: Colors.black.withValues(alpha: 0.3),
-            child: Center(
-                child: Container(
-                  width: 258,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.65),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: CupertinoActivityIndicator(color: Colors.white),
-                )),
-          )
-      ]));
+                        communityId: widget.community.communityId!,
+                      ),
+                    ],
+                    amityCommunity: snapshot.data!,
+                  );
+                }),
+            Consumer<CommuFeedVM>(
+              builder: (context, vm, _) {
+                if (vm.isLoading.value == true) {
+                  return Container(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: Center(
+                        child: Container(
+                          width: 258,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: CupertinoActivityIndicator(color: Colors.white),
+                        )),
+                  );
+                } else {
+                  return const SizedBox();
+                }
+              },
+            )
+          ]));
     } else {
       return Scaffold(
         backgroundColor:

@@ -5,7 +5,10 @@ import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/components/alert_dialog.dart';
 import 'package:amity_uikit_beta_service/viewmodel/create_postV2_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+import 'package:fluttertagger/fluttertagger.dart';
+import 'package:mobile_app_padel/shared/widgets/mention_text_field.dart';
+import 'package:mobile_app_padel/shared/repositories/notification_repository.dart';
 
 class EditPostVM extends CreatePostVMV2 {
   List<UIKitFileSystem> editPostMedie = [];
@@ -14,8 +17,8 @@ class EditPostVM extends CreatePostVMV2 {
   AmityDataType? postDataForEditMedie;
   List<Mention> mentions = [];
   Map<String,dynamic> metadata = {};
+  bool loadingPost = true;
 
-  
   void initForEditPost(AmityPost post) {
     print("initForEditPost");
     amityPost = post;
@@ -26,11 +29,12 @@ class EditPostVM extends CreatePostVMV2 {
       }
     }
 
-    textEditingController.clear();
+    mentionTextFieldController.clear();
     editPostMedie.clear();
 
     var textdata = post.data as TextData;
-    textEditingController.text = textdata.text ?? "";
+    // mentionTextFieldController.text = textdata.text ?? "";
+
     var children = post.children;
     if (children != null) {
       print(children.length);
@@ -76,20 +80,59 @@ class EditPostVM extends CreatePostVMV2 {
       }
     }
 
-    textEditingController.text = (post.data as TextData).text ?? "";
+    // mentionTextFieldController.text = (post.data as TextData).text ?? "";
     mentions = post.metadata?['mentions'] != null
         ? (post.metadata!['mentions'] as List)
-            .map((mention) => Mention.fromJson(mention))
-            .toList()
+        .map((mention) => Mention.fromJson(mention))
+        .toList()
         : [];
+
     if (post.metadata?.isNotEmpty == true) {
       metadata.addAll(post.metadata!);
     }
+
+    if (mentions.isNotEmpty) {
+      Future.delayed(Duration(milliseconds: 200), () async {
+        final postText = (post.data as TextData).text ?? "";
+        int currentIndex = 0;
+        for (int i = 0; i < mentions.length; i++) {
+          final mention = mentions[i];
+          mentionTextFieldController.text +=
+              postText.substring(currentIndex, mention.index + 1);
+          mentionTextFieldController.selection = TextSelection.fromPosition(
+            TextPosition(offset: mentionTextFieldController.text.length),
+          );
+
+          final username = mention.text.replaceAll(' ', '\u00A0').substring(1);
+          await Future.delayed(Duration(milliseconds: 100), () {
+            mentionTextFieldController.addTag(id: mention.userId, name: username);
+            if(mentionTextFieldController.text.isNotEmpty){
+              mentionTextFieldController.text.trim();
+            }
+          });
+          currentIndex = mention.index + mention.length;
+
+          if (i == mentions.length - 1) {
+            mentionTextFieldController.text +=
+                postText.substring(mention.index + mention.length);
+            loadingPost = false;
+            notifyListeners();
+          }
+        }
+      });
+    } else {
+      mentionTextFieldController.text = (post.data as TextData).text ?? "";
+      loadingPost = false;
+    }
+
+    Future.delayed(Duration(milliseconds: 200), (){
+      updatePostValidity(mentionTextFieldController.text);
+    });
   }
 
   Future<void> editPost(
       {required BuildContext context, Function? callback}) async {
-    var builder = amityPost!.edit().text(textEditingController.text);
+    var builder = amityPost!.edit().text(mentionTextFieldController.text);
 
     if (editPostMedie.length != originalPostLength) {
       print("Children Length is not equal");

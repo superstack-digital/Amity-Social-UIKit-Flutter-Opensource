@@ -20,9 +20,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
 import 'image_viewer.dart';
 import 'package:mobile_app_padel/shared/widgets/link_preview_image.dart';
-import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
-
+import 'package:mobile_app_padel/shared/styles.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:amity_uikit_beta_service/viewmodel/community_feed_viewmodel.dart';
+import 'package:flutter_branch_sdk/flutter_branch_sdk.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
 
 class AmityPostWidget extends StatefulWidget {
   final List<AmityPost> posts;
@@ -154,9 +157,17 @@ class AmityPostWidgetState extends State<AmityPostWidget> {
             //     : CustomLinkPreview(url: url.toLowerCase())
             !urlValidation(widget.posts[0])
                 ? const SizedBox()
-                : LinkPreviewImage(url: url.toLowerCase())
-
-            // )
+                :
+            Consumer<CommuFeedVM>(builder: (context, vm, _) {
+              return LinkPreviewImage(url: url.toLowerCase(), onTap: () {
+                vm.setLoadingValue(true);
+                FlutterBranchSdk.handleDeepLink(url);
+                Future.delayed(Duration(seconds: 3), () {
+                  vm.setLoadingValue(false);
+                });
+              });
+            }
+            )
           ],
         );
       }
@@ -1109,18 +1120,36 @@ class _TextPostState extends State<TextPost> {
     }
   }
 
-  List<TextSpan> _buildTextSpans(
+  List<InlineSpan> _buildTextSpans(
       String text, TextStyle textStyle, TextStyle linkStyle) {
     final elements = linkify(text);
 
     return elements.map((element) {
       if (element is LinkableElement) {
-        return TextSpan(
-          text: element.text,
-          style: linkStyle,
-          recognizer: TapGestureRecognizer()
-            ..onTap = () => _onOpenLink(element),
-        );
+        if(element.url.contains(deeplinkHost)){
+          return WidgetSpan(
+              child: Consumer<CommuFeedVM>(builder: (context, vm, _){
+              return InkWell(
+                onTap: () {
+                  vm.setLoadingValue(true);
+                  FlutterBranchSdk.handleDeepLink(element.url);
+                  Future.delayed(Duration(seconds: 3),  (){
+                    vm.setLoadingValue(false);
+                  });
+                },
+                child: Text(element.url, style: linkStyle),
+              );
+            }));
+        } else {
+          return TextSpan(
+            text: element.text,
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                _onOpenLink(element);
+              },
+          );
+        }
       } else {
         return TextSpan(
           text: element.text,
@@ -1131,8 +1160,9 @@ class _TextPostState extends State<TextPost> {
   }
 
   TextSpan _buildMentionsTextSpan(String currentText, TextStyle textStyle, TextStyle linkStyle) {
-    final List<TextSpan> children = [];
+    final List<InlineSpan> children = [];
     int currentPos = 0;
+
 
     final mentionsList = widget.mentions
         .map((mention) => Mention(
@@ -1143,45 +1173,48 @@ class _TextPostState extends State<TextPost> {
             ))
         .toList();
 
-    mentionsList.sort((a, b) => a.index.compareTo(b.index));
+    if(mentionsList.isNotEmpty){
+      mentionsList.sort((a, b) => a.index.compareTo(b.index));
 
-    for (var mention in mentionsList) {
-      if (mention.index < currentPos || mention.index >= currentText.length) {
-        continue;
-      }
+      for (var mention in mentionsList) {
+        if (mention.index < currentPos || mention.index >= currentText.length) {
+          continue;
+        }
 
-      if (mention.index > currentPos) {
-        final textSpans = _buildTextSpans(
-            currentText.substring(currentPos, mention.index),
-            const TextStyle(color: Colors.black),
-            const TextStyle(color: Colors.blue));
-        children.addAll(textSpans);
+        if (mention.index > currentPos) {
+          final textSpans = _buildTextSpans(
+              currentText.substring(currentPos, mention.index),
+              const TextStyle(color: Colors.black),
+              TextStyle(color: Styles.green));
+          children.addAll(textSpans);
+        }
+
+        int mentionEnd = mention.index + mention.length;
+        if (mentionEnd > currentText.length) {
+          mentionEnd = currentText.length;
+        }
+
+        children.add(
+          TextSpan(
+            text: currentText.substring(mention.index, mentionEnd),
+              style: TextStyle(color: Styles.green, fontWeight: FontWeight.bold),
+              recognizer: TapGestureRecognizer()..onTap = () {
+                if(mention.userId != null) {
+                  Get.to(() => PeopleProfileScreen(userId: int.parse(mention.userId)));
+                }
+              }
+          ),
+        );
+        currentPos = mentionEnd;
       }
-      int mentionEnd = mention.index + mention.length;
-      if (mentionEnd > currentText.length) {
-        mentionEnd = currentText.length;
-      }
-      children.add(
-        TextSpan(
-          text: currentText.substring(mention.index, mentionEnd),
-          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-          recognizer: TapGestureRecognizer()..onTap = () {
-            if(mention.userId != null) {
-              Get.to(() => PeopleProfileScreen(userId: int.parse(mention.userId)));
-            }
-          }
-        ),
-      );
-      currentPos = mentionEnd;
     }
 
-    if (currentPos < currentText.length) {
-      children.add(
-        TextSpan(
-          text: currentText.substring(currentPos),
-          style: const TextStyle(color: Colors.black),
-        ),
-      );
+    if(currentPos < currentText.length){
+      final textSpans = _buildTextSpans(
+          currentText.substring(currentPos, currentText.length),
+          const TextStyle(color: Colors.black),
+          TextStyle(color: Styles.green));
+      children.addAll(textSpans);
     }
 
     return TextSpan(children: children);

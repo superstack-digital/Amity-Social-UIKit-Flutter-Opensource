@@ -49,6 +49,7 @@ class CommuFeedVM extends ChangeNotifier {
   late PagingController<AmityPost> _controllerPendingPost;
 
   final pendingScrollcontroller = ScrollController();
+  final isLoading = ValueNotifier<bool>(false);
 
   AmityCommunity? community;
   List<AmityPost> getCommunityPosts() {
@@ -67,6 +68,14 @@ class CommuFeedVM extends ChangeNotifier {
     return _amityCommunityPendingFeedPosts;
   }
 
+  void addLoadingTime({int miliseconds = 3000}) {
+    isLoading.value = true;
+    notifyListeners();
+    Future.delayed(Duration(milliseconds: miliseconds), () {
+      isLoading.value = false;
+      notifyListeners();
+    });
+  }
 
   List<Event> getCommunityEventList() {
     return _communityEventList;
@@ -434,5 +443,11 @@ class CommuFeedVM extends ChangeNotifier {
       print(error);
       //handle error
     });
+  }
+
+  void setLoadingValue(bool value) {
+    print("setLoadingValue: $value");
+    isLoading.value = value;
+    notifyListeners();
   }
 }

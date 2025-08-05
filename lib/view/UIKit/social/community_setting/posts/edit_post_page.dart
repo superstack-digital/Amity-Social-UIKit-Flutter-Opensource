@@ -9,8 +9,13 @@ import 'package:amity_uikit_beta_service/viewmodel/edit_post_viewmodel.dart';
 // import 'package:amity_uikit_beta_service/viewmodel/media_viewmodel.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:mobile_app_padel/features/community/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/shared/widgets/mention_text_field.dart';
+import 'package:mobile_app_padel/shared/widgets/shadow_avatar.dart';
+import 'package:fluttertagger/fluttertagger.dart';
+import 'package:mobile_app_padel/shared/styles.dart';
 
 
 class AmityEditPostScreen extends StatefulWidget {
@@ -108,29 +113,51 @@ class _AmityEditPostScreenState extends State<AmityEditPostScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        MentionInput(
-                            onChanged: (value) {
-                              vm.updatePostValidity();
-
-                              if (value == originalText) {
-                                print("match");
-                                hasContent = false;
-                                setState(() {});
-                              } else {
-                                print("unmatch");
-                                hasContent = true;
-                                setState(() {});
-                              }
-                            },
-                            controller: vm.textEditingController,
-                            onMentionsChanged: vm.onMentionsChanged,
-                            communityId: widget.amityPost.target.runtimeType ==
-                                CommunityTarget
-                                ? (widget.amityPost.target as CommunityTarget)
-                                ?.targetCommunity
-                                ?.communityId ?? ""
-                                : "",
-                            initialMentions: vm.mentions,
+                        IndexedStack(
+                          index: vm.loadingPost ? 0 : 1,
+                          children: [
+                            CupertinoActivityIndicator(),
+                            MentionTextField<AmityCommunityMember>(
+                                key: vm.textFieldKey,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "Write something to post",
+                                  hintStyle: TextStyle(
+                                      color:
+                                      Provider
+                                          .of<AmityUIConfiguration>(context)
+                                          .appColors
+                                          .userProfileTextColor),
+                                ),
+                                overlayPosition: OverlayPosition.bottom,
+                                keyboardType: TextInputType.multiline,
+                                flutterTaggerController: vm.mentionTextFieldController,
+                                onSearchMentions: (keyword) => vm.onSearchMentions(keyword: keyword, communityId: (widget.amityPost.target as CommunityTarget)?.targetCommunity?.communityId ?? ""),
+                                mentionListItemBuilder: (member){
+                                  return Padding(padding: EdgeInsets.all(8),
+                                      child: Row(
+                                        children: [
+                                          ShadowAvatar(
+                                              height: 30,
+                                              width: 30,
+                                              url: member.user?.avatarCustomUrl ??
+                                                  member.user?.avatarUrl ??
+                                                  "",
+                                              fullName: member.user?.displayName ?? ""),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(member.user?.displayName ?? "",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Styles.fontInterMedium(16)),
+                                          )
+                                        ],
+                                      ));
+                                },
+                                onSelectTag: (member) => CommunityTag(id: member.user?.userId ?? "", name: member.user?.displayName ?? ""),
+                                onMentionsChanged: vm.onMentionsChanged,
+                                onTextChanged: vm.updatePostValidity),
+                          ],
                         ),
                         Consumer<EditPostVM>(
                           builder: (context, vm, _) => PostMedia(
