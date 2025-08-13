@@ -116,6 +116,7 @@ class PostVM extends ChangeNotifier {
     final mentionUserIds = mentions.map((mention) => mention.userId).toList();
     if(mentions.isNotEmpty){
       metadata['mentions'] = mentions.map((mention) => mention.toJson()).toList();
+      print("metadata ${metadata}");
     }
     await AmitySocialClient.newCommentRepository()
         .createComment()

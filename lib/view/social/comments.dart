@@ -558,10 +558,12 @@ class CommentTextField extends StatelessWidget {
                                 .commentId;
                         HapticFeedback.heavyImpact();
                         print(replyingComment!);
+                        final mentions = Provider.of<PostVM>(context, listen: false).mentions;
                         Provider.of<ReplyVM>(context, listen: false)
                             .createReplyComment(
                             postId: postId,
                             commentId: replyingComment,
+                            mentions: mentions,
                             text: commentTextEditController.text);
                       }
 
@@ -1501,6 +1503,8 @@ class ReplyCommentComponent extends StatelessWidget {
           builder: (context, snapshot) {
             var comments = snapshot.data!;
             var commentData = comments.data as CommentTextData;
+            print(comments.metadata);
+
             return comments.isDeleted!
                 ? Container(
                     padding: const EdgeInsets.only(left: 0),

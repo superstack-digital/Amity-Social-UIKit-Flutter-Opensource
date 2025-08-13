@@ -5,6 +5,7 @@ import 'package:amity_uikit_beta_service/components/alert_dialog.dart';
 import 'package:amity_uikit_beta_service/viewmodel/post_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
 
 class ReplyTo {
   ReplyTo(this._replyToComment, this._replyingToUser);
@@ -162,14 +163,23 @@ class ReplyVM extends PostVM {
   Future<void> createReplyComment(
       {required String postId,
       required String commentId,
-      required String text}) async {
+      required String text, required List<Mention> mentions
+      }) async {
     final amityComments = <AmityComment>[];
+    final metadata = <String, dynamic>{};
+    final mentionUserIds = mentions.map((mention) => mention.userId).toList();
+
+    if(mentions.isNotEmpty){
+      metadata['mentions'] = mentions.map((mention) => mention.toJson()).toList();
+      print("metadata ${metadata}");
+    }
     await AmitySocialClient.newCommentRepository()
         .createComment()
         .post(postId)
         .parentId(commentId)
         .create()
         .text(text)
+        .metadata(metadata)
         .send()
         .then((comment) async {
       // _controller.add(comment);

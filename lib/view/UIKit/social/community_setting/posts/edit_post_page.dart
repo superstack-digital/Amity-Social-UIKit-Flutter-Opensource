@@ -156,7 +156,12 @@ class _AmityEditPostScreenState extends State<AmityEditPostScreen> {
                                 },
                                 onSelectTag: (member) => CommunityTag(id: member.user?.userId ?? "", name: member.user?.displayName ?? ""),
                                 onMentionsChanged: vm.onMentionsChanged,
-                                onTextChanged: vm.updatePostValidity),
+                                onTextChanged: (text) {
+                                  setState(() {
+                                    hasContent = text.length > 0;
+                                    vm.updatePostValidity(text);
+                                  });
+                                } ),
                           ],
                         ),
                         Consumer<EditPostVM>(

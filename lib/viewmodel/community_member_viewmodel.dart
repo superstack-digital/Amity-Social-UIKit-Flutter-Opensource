@@ -1,6 +1,7 @@
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/components/alert_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_app_padel/shared/shared_preferences.dart';
 
 class MemberManagementVM extends ChangeNotifier {
   final ScrollController scrollController = ScrollController();
@@ -29,10 +30,18 @@ class MemberManagementVM extends ChangeNotifier {
       pageSize: 20,
     )..addListener(_handleMemberControllerUpdates);
     print("initMember");
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      _amityUsersController.fetchNextPage();
-    });
 
+    final cachedMembers = await PreferenceUtils().getCommunityMembers(communityId);
+    if(cachedMembers != null && cachedMembers.isNotEmpty) {
+      print("Using cached members");
+      _userList.clear();
+      _userList.addAll(cachedMembers);
+      notifyListeners();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        _amityUsersController.fetchNextPage();
+      });
+    }
     scrollController.addListener(loadNextPage);
   }
 
@@ -68,6 +77,11 @@ class MemberManagementVM extends ChangeNotifier {
     if (_amityUsersController.error == null) {
       _userList.clear();
       _userList.addAll(_amityUsersController.loadedItems);
+      if(_amityUsersController.loadedItems.length < 20){
+        PreferenceUtils().updateCommunityMembers(
+            communityId: communityId, members: _amityUsersController.loadedItems);
+      }
+
       notifyListeners();
     } else {
       // Handle the error appropriately
