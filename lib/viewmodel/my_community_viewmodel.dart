@@ -8,15 +8,19 @@ class MyCommunityVM with ChangeNotifier {
 
   final scrollcontroller = ScrollController();
   bool loadingNextPage = false;
+
   // The list of communities.
   final List<AmityCommunity> _amityCommunities = [];
   final List<AmityCommunity> _amityCommunitiesForFeed = [];
+
   // The controller for handling pagination.
   // late PagingController<AmityCommunity> _communityController;
   late CommunityLiveCollection communityLiveCollection;
   late CommunityLiveCollection communityFeedLiveCollection;
+
   // Getter for _amityCommunities for external classes to use.
   List<AmityCommunity> get amityCommunities => _amityCommunities;
+
   List<AmityCommunity> get amityCommunitiesForFeed => _amityCommunitiesForFeed;
   final textEditingController = TextEditingController();
 
@@ -30,7 +34,10 @@ class MyCommunityVM with ChangeNotifier {
           keyword); // Add keyword filtering only if keyword is provided and not empty
     }
     communityLiveCollection = repository.getLiveCollection(pageSize: 50);
-    communityLiveCollection.getStreamController().stream.listen((event) {
+    communityLiveCollection
+        .getStreamController()
+        .stream
+        .listen((event) {
       _amityCommunities.clear();
       _amityCommunities.addAll(event);
 
@@ -54,7 +61,10 @@ class MyCommunityVM with ChangeNotifier {
         .includeDeleted(false);
 
     communityFeedLiveCollection = repository.getLiveCollection(pageSize: 50);
-    communityFeedLiveCollection.getStreamController().stream.listen((event) {
+    communityFeedLiveCollection
+        .getStreamController()
+        .stream
+        .listen((event) {
       _amityCommunitiesForFeed.clear();
       _amityCommunitiesForFeed.addAll(event);
 
@@ -74,7 +84,7 @@ class MyCommunityVM with ChangeNotifier {
       print("hasMore: ${communityLiveCollection.hasNextPage()}");
     }
     if ((scrollcontroller.position.pixels >
-            scrollcontroller.position.maxScrollExtent - 800) &&
+        scrollcontroller.position.maxScrollExtent - 800) &&
         communityLiveCollection.hasNextPage() &&
         !loadingNextPage) {
       loadingNextPage = true;
@@ -94,11 +104,14 @@ class SearchCommunityVM with ChangeNotifier {
 
   final scrollcontroller = ScrollController();
   bool loadingNextPage = false;
+
   // The list of communities.
   final List<AmityCommunity> _amityCommunities = [];
+
   // Getter for _amityCommunities for external classes to use.
   List<AmityCommunity> get amityCommunities => _amityCommunities;
   final textEditingController = TextEditingController();
+
   // The controller for handling pagination.
   late PagingController<AmityCommunity> communityController;
 
@@ -113,7 +126,8 @@ class SearchCommunityVM with ChangeNotifier {
     final res = await AmitySocialClient.newCommunityRepository().getCommunities()
         .sortBy(AmityCommunitySortOption.DISPLAY_NAME)
         .filter(AmityCommunityFilter.ALL)
-        .includeDeleted(false).getPagingData(limit: 20);
+        .includeDeleted(false).getPagingData(limit: 99);
+    res.data.sort((a, b) => b.membersCount?.compareTo(a.membersCount ?? 0) ?? 0);
     allCommunities.addAll(res.data);
     notifyListeners();
   }
@@ -123,20 +137,25 @@ class SearchCommunityVM with ChangeNotifier {
       pageFuture: (token) {
         final repository = AmitySocialClient.newCommunityRepository()
             .getCommunities()
-            .sortBy(AmityCommunitySortOption.DISPLAY_NAME)
+            .sortBy(AmityCommunitySortOption.FIRST_CREATED)
             .filter(AmityCommunityFilter.ALL)
             .includeDeleted(false);
         if (keyword != null && keyword.isNotEmpty) {
           repository.withKeyword(
               keyword); // Add keyword filtering only if keyword is provided and not empty
         }
-        return repository.getPagingData(token: token, limit: 20);
+        return repository.getPagingData(token: token, limit: 99);
       },
-      pageSize: 20,
-    )..addListener(
-        () async {
+      pageSize: 99,
+    )
+      ..addListener(
+            () async {
           if (communityController.error == null) {
             amityCommunities.clear();
+            // Sort by membersCount in descending order
+            communityController.loadedItems.sort((a, b) =>
+            b.membersCount?.compareTo(a.membersCount ?? 0) ?? 0);
+
             amityCommunities.addAll(communityController.loadedItems);
             // Call any additional methods like sortedUserListWithHeaders here if needed.
             notifyListeners();
@@ -162,7 +181,7 @@ class SearchCommunityVM with ChangeNotifier {
       print("hasMore: ${communityController.hasMoreItems}");
     }
     if ((scrollcontroller.position.pixels >
-            scrollcontroller.position.maxScrollExtent - 800) &&
+        scrollcontroller.position.maxScrollExtent - 800) &&
         communityController.hasMoreItems &&
         !loadingNextPage) {
       loadingNextPage = true;
