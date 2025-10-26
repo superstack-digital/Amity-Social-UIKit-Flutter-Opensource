@@ -1049,11 +1049,11 @@ class _StickyHeaderList extends StatelessWidget {
                     if (vm.userFeedTabController?.index == 0) {
                       return buildContent(context, bheight);
                     } else if (vm.userFeedTabController?.index == 1) {
-                      if(!vm.isLeagueCommunity){
+                      // if(!vm.isLeagueCommunity){
                         return buildEventLists(context, bheight);
-                      } else {
-                        return Container();
-                      }
+                      // } else {
+                      //   return Container();
+                      // }
                     } else if (vm.userFeedTabController?.index == 2) {
                       if (communityId != null) {
                         return CommunityMatchesScreen(communityId: communityId!, isLeagueCommunity: vm.isLeagueCommunity);
