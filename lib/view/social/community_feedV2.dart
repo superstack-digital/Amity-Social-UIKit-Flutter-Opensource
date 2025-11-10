@@ -28,6 +28,7 @@ import 'package:mobile_app_padel/features/community/widgets/share_match_modal.da
 import 'package:mobile_app_padel/features/community/widgets/empty_community_matches_view.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_event_view.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_matches_screen.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/community_rankings_screen.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:mobile_app_padel/features/chat/presentations/screens/chat_screen.dart';
 import 'package:mobile_app_padel/shared/deeplink.dart';
@@ -73,7 +74,7 @@ class CommunityScreenState extends State<CommunityScreen>
         .of<CommuFeedVM>(context, listen: false)
         .userFeedTabController =
         TabController(
-          length: 4,
+          length: 5,
           vsync: this,
         );
   }
@@ -1045,27 +1046,30 @@ class _StickyHeaderList extends StatelessWidget {
                         },
                       );
                     }
+                        final int _tabIndex = vm.userFeedTabController?.index ?? -1;
 
-                    if (vm.userFeedTabController?.index == 0) {
-                      return buildContent(context, bheight);
-                    } else if (vm.userFeedTabController?.index == 1) {
-                      // if(!vm.isLeagueCommunity){
-                        return buildEventLists(context, bheight);
-                      // } else {
-                      //   return Container();
-                      // }
-                    } else if (vm.userFeedTabController?.index == 2) {
-                      if (communityId != null) {
-                        return CommunityMatchesScreen(communityId: communityId!, isLeagueCommunity: vm.isLeagueCommunity);
-                      } else {
-                        return Container();
-                      }
-                    } else {
-                      return MediaGalleryPage(
-                        galleryFeed: GalleryFeed.community,
-                        onRefresh: () {},
-                      );
-                    }
+                        switch (_tabIndex) {
+                          case 0:
+                            return buildContent(context, bheight);
+                          case 1:
+                            return buildEventLists(context, bheight);
+                          case 2:
+                            return CommunityRankingsScreen(communityId: communityId!);
+                          case 3:
+                            if (communityId != null) {
+                              return CommunityMatchesScreen(
+                                communityId: communityId!,
+                                isLeagueCommunity: vm.isLeagueCommunity,
+                              );
+                            } else {
+                              return Container();
+                            }
+                          default:
+                            return MediaGalleryPage(
+                              galleryFeed: GalleryFeed.community,
+                              onRefresh: () {},
+                            );
+                        }
                   },
                 ),
               );
@@ -1392,6 +1396,7 @@ class Header extends StatelessWidget {
                   tabs: [
                     Tab(text: "Timeline"),
                     Tab(text: "Events"),
+                    Tab(text: "Rankings"),
                     Tab(text: "Matches"),
                     Tab(text: "Gallery"),
                   ],
