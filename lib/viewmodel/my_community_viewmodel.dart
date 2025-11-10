@@ -29,10 +29,12 @@ class MyCommunityVM with ChangeNotifier {
         .getCommunities()
         .filter(AmityCommunityFilter.MEMBER)
         .includeDeleted(false);
+
     if (keyword != null && keyword.isNotEmpty) {
       repository.withKeyword(
           keyword); // Add keyword filtering only if keyword is provided and not empty
     }
+
     communityLiveCollection = repository.getLiveCollection(pageSize: 50);
     communityLiveCollection
         .getStreamController()
@@ -121,11 +123,12 @@ class SearchCommunityVM with ChangeNotifier {
     amityCommunities.clear();
   }
 
-  void getAllCommunities() async {
+  void getAllCommunities(List<String>? tags) async {
     allCommunities.clear();
     final res = await AmitySocialClient.newCommunityRepository().getCommunities()
         .sortBy(AmityCommunitySortOption.DISPLAY_NAME)
         .filter(AmityCommunityFilter.ALL)
+        .tags(tags != null ? tags : [])
         .includeDeleted(false).getPagingData(limit: 99);
     res.data.sort((a, b) => b.membersCount?.compareTo(a.membersCount ?? 0) ?? 0);
     allCommunities.addAll(res.data);

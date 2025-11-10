@@ -14,8 +14,9 @@ import 'package:hexcolor/hexcolor.dart';
 
 
 class SearchCommunitiesScreen extends StatefulWidget {
-  const SearchCommunitiesScreen({super.key, this.hideUserTab});
+  const SearchCommunitiesScreen({super.key, this.hideUserTab, this.tags});
   final bool? hideUserTab;
+  final List<String>? tags;
 
   @override
   _SearchCommunitiesScreenState createState() =>
@@ -28,7 +29,7 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
     super.initState();
 
     Provider.of<SearchCommunityVM>(context, listen: false).clearSearch();
-    Provider.of<SearchCommunityVM>(context, listen: false).getAllCommunities();
+    Provider.of<SearchCommunityVM>(context, listen: false).getAllCommunities(widget.tags);
     Provider.of<UserVM>(context, listen: false).clearUserList();
   }
 

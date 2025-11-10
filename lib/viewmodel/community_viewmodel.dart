@@ -100,6 +100,16 @@ class CommunityVM extends ChangeNotifier {
 
       channel = await channelQuery.create();
 
+      // Create tags from location
+      List<String> communityTags = [];
+      if (location != null && location.isNotEmpty) {
+        communityTags.add(location.toLowerCase().trim());
+      }
+      // Add additional tags if provided
+      if (tags != null && tags.isNotEmpty) {
+        communityTags.addAll(tags);
+      }
+
       final communityBuilder = AmitySocialClient.newCommunityRepository()
           .createCommunity(name)
           .description(description)
@@ -109,6 +119,11 @@ class CommunityVM extends ChangeNotifier {
         "channel_id": channel.channelId,
         "competition_ids": competitionIds
       });
+
+      // Add tags if available
+      if (communityTags.isNotEmpty) {
+        communityBuilder.tags(communityTags);
+      }
 
       if (isPublic) {
         communityBuilder.isPublic(true);
@@ -159,15 +174,27 @@ class CommunityVM extends ChangeNotifier {
     metadata["channel_id"] = channelId;
     metadata["competition_ids"] = competitionIds;
 
+    // Create tags from location
+    List<String> communityTags = [];
+    if (location != null && location.isNotEmpty) {
+      communityTags.add(location.toLowerCase().trim());
+    }
+
     if (avatar != null) {
-      await AmitySocialClient.newCommunityRepository()
+      final updateBuilder = AmitySocialClient.newCommunityRepository()
           .updateCommunity(communityId)
           .avatar(avatar)
           .displayName(displayName)
           .description(description)
           .categoryIds(categoryIds)
           .isPublic(isPublic)
-          .metadata(metadata)
+          .metadata(metadata);
+
+      if (communityTags.isNotEmpty) {
+        updateBuilder.tags(communityTags);
+      }
+
+      await updateBuilder
           .update()
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {
@@ -179,13 +206,19 @@ class CommunityVM extends ChangeNotifier {
             .avatar(avatar);
       });
     } else {
-      await AmitySocialClient.newCommunityRepository()
+      final updateBuilder = AmitySocialClient.newCommunityRepository()
           .updateCommunity(communityId)
           .displayName(displayName)
           .description(description)
           .categoryIds(categoryIds)
           .isPublic(isPublic)
-          .metadata(metadata)
+          .metadata(metadata);
+
+      if (communityTags.isNotEmpty) {
+        updateBuilder.tags(communityTags);
+      }
+
+      await updateBuilder
           .update()
           .then((value) => notifyListeners())
           .onError((error, stackTrace) async {

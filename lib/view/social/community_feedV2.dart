@@ -1167,7 +1167,9 @@ class AppScaffold extends StatelessWidget {
                   Navigator.of(context).push(MaterialPageRoute(
                       builder: (context2) =>
                           CreateEventScreen(
-                              communityId: amityCommunity.communityId!)));
+                              communityId: amityCommunity.communityId!,
+                              communityLocation: amityCommunity.metadata?['location'],
+                          )));
                 },
                 icon: Icons.event),
             if(!Provider

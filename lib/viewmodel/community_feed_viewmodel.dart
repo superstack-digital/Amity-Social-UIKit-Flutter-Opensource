@@ -106,7 +106,6 @@ class CommuFeedVM extends ChangeNotifier {
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)
         .then((value) {
-      print("get community");
       community = value;
       isLeagueCommunity = (community?.categories?.indexWhere((item) => item?.name == "League") ?? -1) > -1;
       notifyListeners();
