@@ -135,12 +135,13 @@ class SearchCommunityVM with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> initSearchCommunity([String? keyword]) async {
+  Future<void> initSearchCommunity([String? keyword, List<String>? tags]) async {
     communityController = PagingController(
       pageFuture: (token) {
         final repository = AmitySocialClient.newCommunityRepository()
             .getCommunities()
             .sortBy(AmityCommunitySortOption.FIRST_CREATED)
+            .tags(tags != null ? tags : [])
             .filter(AmityCommunityFilter.ALL)
             .includeDeleted(false);
         if (keyword != null && keyword.isNotEmpty) {

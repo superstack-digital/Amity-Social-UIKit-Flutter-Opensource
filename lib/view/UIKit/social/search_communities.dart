@@ -73,7 +73,7 @@ class _SearchCommunitiesScreenState extends State<SearchCommunitiesScreen> {
                     ),
                     onChanged: (value) {
                       Provider.of<SearchCommunityVM>(context, listen: false)
-                          .initSearchCommunity(value.trim());
+                          .initSearchCommunity(value.trim(), widget.tags);
                       Provider.of<UserVM>(context, listen: false)
                           .initUserList(value.trim());
                     },
