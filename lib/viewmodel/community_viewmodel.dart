@@ -83,10 +83,10 @@ class CommunityVM extends ChangeNotifier {
     List<int>? competitionIds
   }) async {
     try {
-      if(clubIds?.isEmpty == true){
-        showStyledSnackBar("Please select at least one club", SnackBarType.error);
-        return null;
-      }
+      // if(clubIds?.isEmpty == true){
+      //   showStyledSnackBar("Please select at least one club", SnackBarType.error);
+      //   return null;
+      // }
       
       AmityChannel? channel;
 

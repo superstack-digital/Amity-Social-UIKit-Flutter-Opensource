@@ -215,6 +215,7 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                       title: 'Link clubs',
                       showChevron: true,
                       showCount: false,
+                      isRequred: false,
                       maxCharacters: 30,
                       hintText: 'Link clubs to show their matches',
                       keyboardType: TextInputType.multiline,
