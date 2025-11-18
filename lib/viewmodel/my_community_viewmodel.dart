@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
 
 class MyCommunityVM with ChangeNotifier {
   // Existing members...
@@ -135,13 +136,86 @@ class SearchCommunityVM with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> initSearchCommunity([String? keyword, List<String>? tags]) async {
+  void getAllCommunitiesWithLocation({
+    List<String>? communityIds,
+  }) async {
+    allCommunities.clear();
+
+    try {
+      List<AmityCommunity> communities;
+
+      if (communityIds != null) {
+        // Use location-based filtering with provided community IDs
+        // If communityIds is empty, it means no communities in that location
+        if (communityIds.isEmpty) {
+          communities = [];
+        } else {
+          // Call external API/repository to get communities by IDs
+          communities = await _getCommunitiesByIds(communityIds);
+        }
+      } else {
+        // Use old filtering method without location
+        final res = await AmitySocialClient.newCommunityRepository()
+            .getCommunities()
+            .sortBy(AmityCommunitySortOption.DISPLAY_NAME)
+            .filter(AmityCommunityFilter.ALL)
+            .includeDeleted(false)
+            .getPagingData(limit: 99);
+        communities = res.data;
+      }
+
+      // Sort by members count in descending order
+      communities.sort((a, b) => b.membersCount?.compareTo(a.membersCount ?? 0) ?? 0);
+
+      allCommunities.addAll(communities);
+      notifyListeners();
+    } catch (e) {
+      log("Error in getAllCommunitiesWithLocation: $e");
+      allCommunities.clear();
+      notifyListeners();
+    }
+  }
+
+  // Helper method to get communities by IDs
+  Future<List<AmityCommunity>> _getCommunitiesByIds(List<String> communityIds) async {
+    return await CommunityRepository.getInstance().getCommunitiesByIds(communityIds);
+  }
+
+  // Search in allCommunities (client-side search)
+  void searchInAllCommunities(String? keyword) {
+    amityCommunities.clear();
+
+    if (keyword == null || keyword.isEmpty) {
+      // No keyword - show all communities
+      amityCommunities.addAll(allCommunities);
+    } else {
+      // Filter communities by keyword (search in displayName)
+      final filtered = allCommunities.where((community) {
+        final displayName = community.displayName?.toLowerCase() ?? '';
+        final searchKeyword = keyword.toLowerCase();
+        return displayName.contains(searchKeyword);
+      }).toList();
+
+      amityCommunities.addAll(filtered);
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> initSearchCommunity([String? keyword, List<String>? communityIds]) async {
+    // If communityIds is provided, use client-side search in allCommunities
+    if (communityIds != null) {
+      // Client-side search logic
+      searchInAllCommunities(keyword);
+      return;
+    }
+
+    // Otherwise, use old server-side search logic
     communityController = PagingController(
       pageFuture: (token) {
         final repository = AmitySocialClient.newCommunityRepository()
             .getCommunities()
             .sortBy(AmityCommunitySortOption.FIRST_CREATED)
-            .tags(tags != null ? tags : [])
             .filter(AmityCommunityFilter.ALL)
             .includeDeleted(false);
         if (keyword != null && keyword.isNotEmpty) {
