@@ -12,6 +12,8 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_app_padel/features/booking/presentation/screens/search_location_screen.dart';
 import 'package:mobile_app_padel/features/booking/data/models/court.dart';
+import 'package:mobile_app_padel/features/booking/data/models/search_location.dart';
+import 'package:mobile_app_padel/features/booking/data/repositories/booking_repository.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/select_club_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/select_competitions_screen.dart';
 import 'package:get/get.dart';
@@ -47,6 +49,9 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
   bool _isCreatingCommunity = false;
   RxList<int> selectedClubs = <int>[].obs;
   RxList<int> selectedCompetitions = <int>[].obs;
+
+  // Store selected location with coordinates
+  dynamic _selectedLocation;
 
   @override
   void initState() {
@@ -197,17 +202,38 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                       hintText: 'Select location',
                       keyboardType: TextInputType.multiline,
                       maxLines: null,
-                      onTap: () {
-                        Navigator.of(context).push(
+                      onTap: () async {
+                        final result = await Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) =>
                             const SearchLocationScreen(title: 'Location'),
                           ),
-                        ).then((result) {
-                          if (result != null) {
-                            _locationController.text = result.mainText;
+                        );
+
+                        if (result != null) {
+                          _locationController.text = result.mainText;
+
+                          // Fetch lat/long if not already present
+                          if ((result.latitude == null || result.longitude == null) &&
+                              result.placeId.isNotEmpty) {
+                            try {
+                              final latLng = await BookingRepository.getInstance()
+                                  .getLocationDetails(result.placeId);
+                              _selectedLocation = SearchLocation(
+                                mainText: result.mainText,
+                                placeId: result.placeId,
+                                description: result.description,
+                                latitude: latLng.latitude,
+                                longitude: latLng.longitude,
+                              );
+                            } catch (e) {
+                              print("Failed to fetch location details: $e");
+                              _selectedLocation = result;
+                            }
+                          } else {
+                            _selectedLocation = result;
                           }
-                        });
+                        }
                       }
                   ),
                   buildTextFieldWithCounter(
@@ -433,6 +459,8 @@ class _CreateCommunityPageState extends State<CreateCommunityPage> {
                       userIds: userIds,
                       clubIds: selectedClubs?.map((e) => e).toList() ?? [],
                       location: _locationController.text,
+                      latitude: _selectedLocation?.latitude,
+                      longitude: _selectedLocation?.longitude,
                       competitionIds: selectedCompetitions?.map((e) => e).toList() ?? [],
                     );
                     if (createdCommunity != null) {

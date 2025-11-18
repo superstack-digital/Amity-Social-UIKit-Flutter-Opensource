@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // For using File class
 import 'package:mobile_app_padel/features/booking/presentation/screens/search_location_screen.dart';
 import 'package:mobile_app_padel/features/booking/data/models/court.dart';
+import 'package:mobile_app_padel/features/booking/data/models/search_location.dart';
+import 'package:mobile_app_padel/features/booking/data/repositories/booking_repository.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/select_club_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/select_competitions_screen.dart';
 import 'package:get/get.dart';
@@ -41,6 +43,9 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
   RxList<int> selectedCompetitions = <int>[].obs;
   String clubIds = "";
   String competitionIds = "";
+
+  // Store selected location with coordinates
+  dynamic _selectedLocation;
 
   @override
   void initState() {
@@ -80,6 +85,15 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
         ? CommunityType.public
         : CommunityType.private;
     _isPublic = widget.community.isPublic!;
+
+    // Initialize selected location from metadata if available
+    if (widget.community.metadata?["latitude"] != null &&
+        widget.community.metadata?["longitude"] != null) {
+      _selectedLocation = {
+        'latitude': widget.community.metadata?["latitude"],
+        'longitude': widget.community.metadata?["longitude"],
+      };
+    }
   }
 
   @override
@@ -132,7 +146,10 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                             .getSelectedCategory(),
                        _isPublic,
                       selectedClubs?.map((e) => e).toList() ?? [],
-                      _locationController.text, community.metadata?["channel_id"],
+                      _locationController.text,
+                      _selectedLocation is Map ? _selectedLocation['latitude'] : _selectedLocation?.latitude,
+                      _selectedLocation is Map ? _selectedLocation['longitude'] : _selectedLocation?.longitude,
+                      community.metadata?["channel_id"],
                       community,
                       selectedCompetitions?.map((e) => e).toList() ?? [],
                     );
@@ -250,17 +267,38 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
                             showCount: false,
                             keyboardType: TextInputType.multiline,
                             maxLines: null,
-                            onTap: () {
-                              Navigator.of(context).push(
+                            onTap: () async {
+                              final result = await Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (context) =>
                                   const SearchLocationScreen(title: 'Location'),
                                 ),
-                              ).then((result) {
-                                if (result != null) {
-                                  _locationController.text = result.mainText;
+                              );
+
+                              if (result != null) {
+                                _locationController.text = result.mainText;
+
+                                // Fetch lat/long if not already present
+                                if ((result.latitude == null || result.longitude == null) &&
+                                    result.placeId.isNotEmpty) {
+                                  try {
+                                    final latLng = await BookingRepository.getInstance()
+                                        .getLocationDetails(result.placeId);
+                                    _selectedLocation = SearchLocation(
+                                      mainText: result.mainText,
+                                      placeId: result.placeId,
+                                      description: result.description,
+                                      latitude: latLng.latitude,
+                                      longitude: latLng.longitude,
+                                    );
+                                  } catch (e) {
+                                    print("Failed to fetch location details: $e");
+                                    _selectedLocation = result;
+                                  }
+                                } else {
+                                  _selectedLocation = result;
                                 }
-                              });
+                              }
                             }
                         ),
                         const SizedBox(height: 16.0),

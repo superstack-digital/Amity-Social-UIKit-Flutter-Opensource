@@ -13,6 +13,7 @@ import 'package:mobile_app_padel/shared/functions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/community_open_matches_controller.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
 import 'package:get/get.dart';
 
 
@@ -80,6 +81,8 @@ class CommunityVM extends ChangeNotifier {
     List<String>? userIds,
     List<int>? clubIds,
     String? location,
+    double? latitude,
+    double? longitude,
     List<int>? competitionIds
   }) async {
     try {
@@ -116,6 +119,8 @@ class CommunityVM extends ChangeNotifier {
           .categoryIds(categoryIds).metadata({
         "club_ids": clubIds,
         "location": location,
+        "latitude": latitude,
+        "longitude": longitude,
         "channel_id": channel.channelId,
         "competition_ids": competitionIds
       });
@@ -142,6 +147,20 @@ class CommunityVM extends ChangeNotifier {
 
       AmityCommunity createdCommunity = await communityBuilder.create();
       print("Created community ${createdCommunity.displayName}");
+
+      // Save community information to Supabase
+      if (latitude != null && longitude != null) {
+        try {
+          await CommunityRepository.getInstance().upsertCommunityInformation(
+            communityId: createdCommunity.communityId!,
+            latitude: latitude,
+            longitude: longitude,
+          );
+        } catch (e) {
+          print("Failed to save community information: $e");
+        }
+      }
+
       notifyListeners();
       Navigator.of(context).pop();
       final userProvider = Provider.of<UserVM>(context, listen: false);
@@ -163,6 +182,8 @@ class CommunityVM extends ChangeNotifier {
       bool isPublic,
       List<int>? clubIds,
       String? location,
+      double? latitude,
+      double? longitude,
       String channelId,
       AmityCommunity community,
       List<int>? competitionIds
@@ -171,8 +192,13 @@ class CommunityVM extends ChangeNotifier {
 
     metadata["club_ids"] = clubIds;
     metadata["location"] = location;
+    metadata["latitude"] = latitude;
+    metadata["longitude"] = longitude;
     metadata["channel_id"] = channelId;
     metadata["competition_ids"] = competitionIds;
+
+    print('metadata');
+    print(metadata);
 
     // Create tags from location
     List<String> communityTags = [];
@@ -226,6 +252,20 @@ class CommunityVM extends ChangeNotifier {
             .showAlertErrorDialog(title: "Error!", message: error.toString());
       });
     }
+
+    // Save community information to Supabase
+    if (latitude != null && longitude != null) {
+      try {
+        await CommunityRepository.getInstance().upsertCommunityInformation(
+          communityId: communityId,
+          latitude: latitude,
+          longitude: longitude,
+        );
+      } catch (e) {
+        print("Failed to save community information: $e");
+      }
+    }
+
     final isLeague = community.categories?.isNotEmpty == true && community.categories?.first?.name == "League";
     CommunityOpenMatchesController openMatchCommunityController;
 
