@@ -37,6 +37,11 @@ import 'package:get/get.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/community_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/social_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/americano_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/mexicano_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/team_rankings_controller.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -177,6 +182,11 @@ class CommunityScreenState extends State<CommunityScreen>
           canPop: true,
           onPopInvokedWithResult: (_, __){
             Get.delete<ShareOpenMatchesController>(tag: widget.community?.communityId?.toString());
+            Get.delete<CommunityRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<SocialRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<AmericanoRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<MexicanoRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<TeamRankingsController>(tag: widget.community?.communityId?.toString());
           },
           child: Stack(children: [
             StreamBuilder<AmityCommunity>(
@@ -1054,7 +1064,8 @@ class _StickyHeaderList extends StatelessWidget {
                           case 1:
                             return buildEventLists(context, bheight);
                           case 2:
-                            return CommunityRankingsScreen(communityId: communityId!);
+                            return CommunityRankingsScreen(communityId: communityId!,
+                                onViewUpcomingPressed: vm.onSwitchToEventsTab);
                           case 3:
                             if (communityId != null) {
                               return CommunityMatchesScreen(

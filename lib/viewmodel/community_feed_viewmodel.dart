@@ -340,7 +340,6 @@ class CommuFeedVM extends ChangeNotifier {
   }
 
   void loadnextpage() {
-    print("load next page");
     if ((scrollcontroller.position.pixels ==
             scrollcontroller.position.maxScrollExtent) &&
         _controllerCommu.hasMoreItems) {
@@ -448,6 +447,10 @@ class CommuFeedVM extends ChangeNotifier {
   void setLoadingValue(bool value) {
     print("setLoadingValue: $value");
     isLoading.value = value;
+    notifyListeners();
+  }
+  void onSwitchToEventsTab() {
+    userFeedTabController?.animateTo(1);
     notifyListeners();
   }
 }
