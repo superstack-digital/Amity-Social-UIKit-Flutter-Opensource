@@ -28,6 +28,7 @@ import 'package:mobile_app_padel/features/community/widgets/share_match_modal.da
 import 'package:mobile_app_padel/features/community/widgets/empty_community_matches_view.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_event_view.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_matches_screen.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/community_rankings_screen.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:mobile_app_padel/features/chat/presentations/screens/chat_screen.dart';
 import 'package:mobile_app_padel/shared/deeplink.dart';
@@ -36,6 +37,11 @@ import 'package:get/get.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/community_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/social_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/americano_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/mexicano_rankings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/team_rankings_controller.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -67,15 +73,20 @@ class CommunityScreenState extends State<CommunityScreen>
         .initAmityCommunityVideoFeed(widget.community.communityId!);
     Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
         widget.community.communityId!, AmityFeedType.REVIEWING);
+    Provider.of<CommuFeedVM>(context, listen: false)
+        .checkRankingsEnabled().then((val) {
+      Provider
+          .of<CommuFeedVM>(context, listen: false)
+          .userFeedTabController =
+          TabController(
+            length: val ? 5 : 4,
+            vsync: this,
+          );
+    });
+
 
     super.initState();
-    Provider
-        .of<CommuFeedVM>(context, listen: false)
-        .userFeedTabController =
-        TabController(
-          length: 4,
-          vsync: this,
-        );
+
   }
 
   getAvatarImage(String? url) {
@@ -176,6 +187,11 @@ class CommunityScreenState extends State<CommunityScreen>
           canPop: true,
           onPopInvokedWithResult: (_, __){
             Get.delete<ShareOpenMatchesController>(tag: widget.community?.communityId?.toString());
+            Get.delete<CommunityRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<SocialRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<AmericanoRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<MexicanoRankingsController>(tag: widget.community?.communityId?.toString());
+            Get.delete<TeamRankingsController>(tag: widget.community?.communityId?.toString());
           },
           child: Stack(children: [
             StreamBuilder<AmityCommunity>(
@@ -1045,27 +1061,46 @@ class _StickyHeaderList extends StatelessWidget {
                         },
                       );
                     }
+                        final int _tabIndex = vm.userFeedTabController?.index ?? -1;
 
-                    if (vm.userFeedTabController?.index == 0) {
-                      return buildContent(context, bheight);
-                    } else if (vm.userFeedTabController?.index == 1) {
-                      // if(!vm.isLeagueCommunity){
-                        return buildEventLists(context, bheight);
-                      // } else {
-                      //   return Container();
-                      // }
-                    } else if (vm.userFeedTabController?.index == 2) {
-                      if (communityId != null) {
-                        return CommunityMatchesScreen(communityId: communityId!, isLeagueCommunity: vm.isLeagueCommunity);
-                      } else {
-                        return Container();
-                      }
-                    } else {
-                      return MediaGalleryPage(
-                        galleryFeed: GalleryFeed.community,
-                        onRefresh: () {},
-                      );
-                    }
+                        switch (_tabIndex) {
+                          case 0:
+                            return buildContent(context, bheight);
+                          case 1:
+                            return buildEventLists(context, bheight);
+                          case 2:
+                            if(vm.communityRankingEnabled.value)
+                              {
+                                return CommunityRankingsScreen(communityId: communityId!,
+                                    onViewUpcomingPressed: vm.onSwitchToEventsTab);
+                              } else {
+                              return CommunityMatchesScreen(
+                                communityId: communityId!,
+                                isLeagueCommunity: vm.isLeagueCommunity,
+                              );
+                            }
+                          case 3:
+                            if(vm.communityRankingEnabled.value){
+                              if (communityId != null) {
+                                return CommunityMatchesScreen(
+                                  communityId: communityId!,
+                                  isLeagueCommunity: vm.isLeagueCommunity,
+                                );
+                              } else {
+                                return Container();
+                              }
+                            } else {
+                              return MediaGalleryPage(
+                                galleryFeed: GalleryFeed.community,
+                                onRefresh: () {},
+                              );
+                            }
+                          default:
+                            return MediaGalleryPage(
+                              galleryFeed: GalleryFeed.community,
+                              onRefresh: () {},
+                            );
+                        }
                   },
                 ),
               );
@@ -1394,6 +1429,8 @@ class Header extends StatelessWidget {
                   tabs: [
                     Tab(text: "Timeline"),
                     Tab(text: "Events"),
+                    if(vm.communityRankingEnabled.value)
+                      Tab(text: "Rankings"),
                     Tab(text: "Matches"),
                     Tab(text: "Gallery"),
                   ],
