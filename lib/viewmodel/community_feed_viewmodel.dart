@@ -9,6 +9,7 @@ import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
+import 'package:mobile_app_padel/shared/feature_flags.dart';
 
 
 
@@ -50,6 +51,7 @@ class CommuFeedVM extends ChangeNotifier {
 
   final pendingScrollcontroller = ScrollController();
   final isLoading = ValueNotifier<bool>(false);
+  final communityRankingEnabled  = ValueNotifier<bool>(true);
 
   AmityCommunity? community;
   List<AmityPost> getCommunityPosts() {
@@ -102,6 +104,10 @@ class CommuFeedVM extends ChangeNotifier {
   int postCount = 0;
   void getPostCount(AmityCommunity community) async {
     getUpcomingEvents(community.communityId!);
+    final rankingEnabled =
+        await FeatureFlagService.isEnabled(FeatureFlagKeys.communityRanking);
+    communityRankingEnabled.value = rankingEnabled;
+    notifyListeners();
 
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)
@@ -180,6 +186,10 @@ class CommuFeedVM extends ChangeNotifier {
     });
     notifyListeners();
     await checkIsCurrentUserIsAdmin(communityId);
+  }
+
+  Future<bool> checkRankingsEnabled(){
+    return FeatureFlagService.isEnabled(FeatureFlagKeys.communityRanking);
   }
 
   Future<void> initAmityPendingCommunityFeed(

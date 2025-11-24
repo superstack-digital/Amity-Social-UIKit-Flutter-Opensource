@@ -73,15 +73,20 @@ class CommunityScreenState extends State<CommunityScreen>
         .initAmityCommunityVideoFeed(widget.community.communityId!);
     Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
         widget.community.communityId!, AmityFeedType.REVIEWING);
+    Provider.of<CommuFeedVM>(context, listen: false)
+        .checkRankingsEnabled().then((val) {
+      Provider
+          .of<CommuFeedVM>(context, listen: false)
+          .userFeedTabController =
+          TabController(
+            length: val ? 5 : 4,
+            vsync: this,
+          );
+    });
+
 
     super.initState();
-    Provider
-        .of<CommuFeedVM>(context, listen: false)
-        .userFeedTabController =
-        TabController(
-          length: 5,
-          vsync: this,
-        );
+
   }
 
   getAvatarImage(String? url) {
@@ -1064,16 +1069,31 @@ class _StickyHeaderList extends StatelessWidget {
                           case 1:
                             return buildEventLists(context, bheight);
                           case 2:
-                            return CommunityRankingsScreen(communityId: communityId!,
-                                onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                          case 3:
-                            if (communityId != null) {
+                            if(vm.communityRankingEnabled.value)
+                              {
+                                return CommunityRankingsScreen(communityId: communityId!,
+                                    onViewUpcomingPressed: vm.onSwitchToEventsTab);
+                              } else {
                               return CommunityMatchesScreen(
                                 communityId: communityId!,
                                 isLeagueCommunity: vm.isLeagueCommunity,
                               );
+                            }
+                          case 3:
+                            if(vm.communityRankingEnabled.value){
+                              if (communityId != null) {
+                                return CommunityMatchesScreen(
+                                  communityId: communityId!,
+                                  isLeagueCommunity: vm.isLeagueCommunity,
+                                );
+                              } else {
+                                return Container();
+                              }
                             } else {
-                              return Container();
+                              return MediaGalleryPage(
+                                galleryFeed: GalleryFeed.community,
+                                onRefresh: () {},
+                              );
                             }
                           default:
                             return MediaGalleryPage(
@@ -1407,7 +1427,8 @@ class Header extends StatelessWidget {
                   tabs: [
                     Tab(text: "Timeline"),
                     Tab(text: "Events"),
-                    Tab(text: "Rankings"),
+                    if(vm.communityRankingEnabled.value)
+                      Tab(text: "Rankings"),
                     Tab(text: "Matches"),
                     Tab(text: "Gallery"),
                   ],
