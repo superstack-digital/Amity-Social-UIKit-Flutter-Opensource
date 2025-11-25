@@ -315,7 +315,8 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
     switch (tournamentType.toLowerCase()) {
       case 'mexicano':
         return LeaderboardType.mexicano;
-      case 'team':
+      case 'teamamericano':
+      case 'teammexicano':
         return LeaderboardType.team;
       case 'social':
         return LeaderboardType.social;
@@ -341,7 +342,8 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
     if (standings.isEmpty) return const SizedBox();
 
     final tournamentType = standings.first.event.tournamentType ?? 'americano';
-    final isTeam = tournamentType.toLowerCase() == 'team';
+    final isTeam = tournamentType.toLowerCase() == 'teamamericano' ||
+                   tournamentType.toLowerCase() == 'teammexicano';
 
     // Get top 3
     final top3 = standings.take(3).toList();
@@ -498,8 +500,10 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
     if (standings.isEmpty) return [];
 
     final tournamentType = standings.first.event.tournamentType ?? 'americano';
+    final isTeam = tournamentType.toLowerCase() == 'teamamericano' ||
+                   tournamentType.toLowerCase() == 'teammexicano';
 
-    if (tournamentType == 'team') {
+    if (isTeam) {
       return standings.map((standing) {
         return CommunityTeamLeaderboard(
           id: standing.id,
