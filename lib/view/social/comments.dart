@@ -31,6 +31,7 @@ import 'package:mobile_app_padel/shared/styles.dart';
 import 'package:fluttertagger/fluttertagger.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 
 class CommentScreen extends StatefulWidget {
@@ -41,6 +42,7 @@ class CommentScreen extends StatefulWidget {
   final IMatch? match;
   final IMatch? matchResult;
   final Event? event;
+  final List<EventStanding>? eventStanding;
   const CommentScreen({
     Key? key,
     required this.amityPost,
@@ -49,7 +51,8 @@ class CommentScreen extends StatefulWidget {
     required this.feedType,
     this.match,
     this.matchResult,
-    this.event
+    this.event,
+    this.eventStanding
   }) : super(key: key);
 
   @override
@@ -316,6 +319,7 @@ class CommentScreenState extends State<CommentScreen> {
                                                 match: widget.match,
                                                 matchResult: widget.matchResult,
                                                 event: widget.event,
+                                                eventStanding: widget.eventStanding,
                                               ),
 
                                               Divider(

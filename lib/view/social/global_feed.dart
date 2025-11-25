@@ -37,9 +37,16 @@ import 'package:mobile_app_padel/shared/styles.dart';
 import 'package:mobile_app_padel/shared/widgets/richtext_with_mention.dart';
 import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 import 'package:mobile_app_padel/features/play/presentation/widgets/upcoming_event_item.dart';
 import 'package:mobile_app_padel/features/profile/widgets/profile_score_set_item.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/ranking_leaderboard.dart';
+import 'package:mobile_app_padel/features/community/data/models/community_leaderboard_data.dart';
+import 'package:mobile_app_padel/features/onboarding/data/models/user.dart';
+import 'package:mobile_app_padel/features/community/widgets/ranking_avatar.dart';
+import 'package:mobile_app_padel/features/community/widgets/team_ranking_avatar.dart';
+import 'package:country_picker/country_picker.dart';
 
 
 class GlobalFeedScreen extends StatefulWidget {
@@ -259,7 +266,8 @@ class PostWidget extends StatefulWidget {
     required this.isPostDetail,
     this.match,
     this.matchResult,
-    this.event
+    this.event,
+    this.eventStanding
   }) : super(key: key);
   final FeedType feedType;
   final AmityPost post;
@@ -273,6 +281,7 @@ class PostWidget extends StatefulWidget {
   final IMatch? match;
   final IMatch? matchResult;
   final Event? event;
+  final List<EventStanding>? eventStanding;
 
   @override
   State<PostWidget> createState() => _PostWidgetState();
@@ -298,6 +307,245 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: widgets,
     );
+  }
+
+  LeaderboardType _getLeaderboardType(EventStanding standing) {
+    final tournamentType = standing.event.tournamentType ?? 'americano';
+
+    switch (tournamentType.toLowerCase()) {
+      case 'mexicano':
+        return LeaderboardType.mexicano;
+      case 'team':
+        return LeaderboardType.team;
+      case 'social':
+        return LeaderboardType.social;
+      default:
+        return LeaderboardType.americano;
+    }
+  }
+
+  DisplayUser _convertUserToDisplayUser(User user) {
+    return DisplayUser(
+      id: user.id,
+      fullName: user.fullName,
+      country: user.country,
+      level: user.level,
+      public: user.public,
+      avatar: user.avatar,
+      gender: user.gender,
+      reliability: user.reliability,
+    );
+  }
+
+  Widget _buildEventStandingTopRankings(List<EventStanding> standings) {
+    if (standings.isEmpty) return const SizedBox();
+
+    final tournamentType = standings.first.event.tournamentType ?? 'americano';
+    final isTeam = tournamentType.toLowerCase() == 'team';
+
+    // Get top 3
+    final top3 = standings.take(3).toList();
+
+    if (isTeam) {
+      // Team ranking - show team avatars
+      return Container(
+        decoration: BoxDecoration(
+          color: Styles.green20,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // 2nd place
+            if (top3.length > 1)
+              TeamRankingAvatar(
+                type: RankingAvatarType.second,
+                players: [
+                  _convertUserToDisplayUser(top3[1].user),
+                  if (top3[1].partner != null) _convertUserToDisplayUser(top3[1].partner!),
+                ],
+                points: top3[1].points.toDouble(),
+              ),
+            // 1st place
+            if (top3.isNotEmpty)
+              TeamRankingAvatar(
+                type: RankingAvatarType.first,
+                players: [
+                  _convertUserToDisplayUser(top3[0].user),
+                  if (top3[0].partner != null) _convertUserToDisplayUser(top3[0].partner!),
+                ],
+                points: top3[0].points.toDouble(),
+              ),
+            // 3rd place
+            if (top3.length > 2)
+              TeamRankingAvatar(
+                type: RankingAvatarType.third,
+                players: [
+                  _convertUserToDisplayUser(top3[2].user),
+                  if (top3[2].partner != null) _convertUserToDisplayUser(top3[2].partner!),
+                ],
+                points: top3[2].points.toDouble(),
+              ),
+          ],
+        ),
+      );
+    } else {
+      // Player ranking - show individual avatars
+      final firstNationalityCode = Country.tryParse(top3.isNotEmpty ? top3[0].user.country ?? "" : "")?.countryCode;
+      final secondNationalityCode = Country.tryParse(top3.length > 1 ? top3[1].user.country ?? "" : "")?.countryCode;
+      final thirdNationalityCode = Country.tryParse(top3.length > 2 ? top3[2].user.country ?? "" : "")?.countryCode;
+
+      return Container(
+        decoration: BoxDecoration(
+          color: Styles.green20,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // 2nd place
+            if (top3.length > 1)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.second,
+                    avatarUrl: top3[1].user.avatar ?? '',
+                    nationalityCode: secondNationalityCode,
+                    fullName: top3[1].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    top3[1].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2,
+                        color: Styles.trafficGrey,
+                        lineHeightInPxl: 20),
+                  ),
+                  Text(
+                    '${top3[1].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green,
+                        lineHeightInPxl: 24,
+                        letterSpacingInPercent: -2),
+                  ),
+                ],
+              ),
+            // 1st place
+            if (top3.isNotEmpty)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.first,
+                    avatarUrl: top3[0].user.avatar ?? '',
+                    nationalityCode: firstNationalityCode,
+                    fullName: top3[0].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    top3[0].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2,
+                        color: Styles.trafficGrey,
+                        lineHeightInPxl: 20),
+                  ),
+                  Text(
+                    '${top3[0].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green,
+                        lineHeightInPxl: 24,
+                        letterSpacingInPercent: -2),
+                  ),
+                ],
+              ),
+            // 3rd place
+            if (top3.length > 2)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.third,
+                    avatarUrl: top3[2].user.avatar ?? '',
+                    nationalityCode: thirdNationalityCode,
+                    fullName: top3[2].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    top3[2].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2,
+                        color: Styles.trafficGrey,
+                        lineHeightInPxl: 20),
+                  ),
+                  Text(
+                    '${top3[2].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green,
+                        lineHeightInPxl: 24,
+                        letterSpacingInPercent: -2),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+  }
+
+  List<CommunityLeaderboardData> _convertEventStandingsToLeaderboardData(List<EventStanding> standings) {
+    if (standings.isEmpty) return [];
+
+    final tournamentType = standings.first.event.tournamentType ?? 'americano';
+
+    if (tournamentType == 'team') {
+      return standings.map((standing) {
+        return CommunityTeamLeaderboard(
+          id: standing.id,
+          userId: standing.userId,
+          createdAt: standing.createdAt,
+          updatedAt: standing.updatedAt,
+          leaderboardType: 'team',
+          periodStart: standing.createdAt,
+          communityId: standing.event.communityId ?? '',
+          periodEnd: standing.createdAt,
+          points: standing.points,
+          wins: standing.wins,
+          ties: standing.ties,
+          losses: standing.losses,
+          pointsFor: standing.pointsFor,
+          pointsAgainst: standing.pointsAgainst,
+          tournamentType: tournamentType,
+          partnerId: standing.partnerId,
+          user: _convertUserToDisplayUser(standing.user),
+          partner: standing.partner != null
+              ? _convertUserToDisplayUser(standing.partner!)
+              : _convertUserToDisplayUser(standing.user),
+        );
+      }).toList();
+    } else {
+      return standings.map((standing) {
+        return CommunityPlayerLeaderboard(
+          id: standing.id,
+          userId: standing.userId,
+          createdAt: standing.createdAt,
+          updatedAt: standing.updatedAt,
+          leaderboardType: tournamentType,
+          periodStart: standing.createdAt,
+          communityId: standing.event.communityId ?? '',
+          periodEnd: standing.createdAt,
+          points: standing.points,
+          wins: standing.wins,
+          ties: standing.ties,
+          losses: standing.losses,
+          pointsFor: standing.pointsFor,
+          pointsAgainst: standing.pointsAgainst,
+          tournamentType: tournamentType,
+          user: _convertUserToDisplayUser(standing.user),
+        );
+      }).toList();
+    }
   }
 
   Widget postOptions(BuildContext context) {
@@ -482,6 +730,7 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                           match: widget.match,
                           matchResult: widget.matchResult,
                           event: widget.event,
+                          eventStanding: widget.eventStanding,
                         )));
               }
             },
@@ -738,6 +987,22 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                             data: widget.event!,
                             margin: EdgeInsets.zero) else
                         CircularProgressIndicator(color: Styles.green),
+                    if(widget.post.metadata?["eventStandingId"] != null)
+                      if(widget.eventStanding != null && widget.eventStanding!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Column(
+                            children: [
+                              _buildEventStandingTopRankings(widget.eventStanding!),
+                              const SizedBox(height: 12),
+                              RankingLeaderboard(
+                                leaderboardType: _getLeaderboardType(widget.eventStanding!.first),
+                                data: _convertEventStandingsToLeaderboardData(widget.eventStanding!),
+                              ),
+                            ],
+                          ),
+                        ) else
+                        CircularProgressIndicator(color: Styles.green),
                     widget.feedType == FeedType.pending
                         ? const SizedBox()
                         : Container(
@@ -902,6 +1167,7 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                                               match: widget.match,
                                               matchResult: widget.matchResult,
                                               event: widget.event,
+                                              eventStanding: widget.eventStanding,
                                             )));
                               }
                             },

@@ -45,6 +45,7 @@ import 'package:mobile_app_padel/features/community/presentation/controllers/mex
 import 'package:mobile_app_padel/features/community/presentation/controllers/team_rankings_controller.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -1015,6 +1016,7 @@ class _StickyHeaderList extends StatelessWidget {
                                 final matchId = metadata?["matchId"];
                                 final matchResultId = metadata?["matchResultId"];
                                 final eventId = metadata?["eventId"];
+                                final eventStandingId = metadata?["eventStandingId"];
 
                                 _getMatchDetails(int? matchId) async {
                                   if (matchId != null) {
@@ -1045,16 +1047,27 @@ class _StickyHeaderList extends StatelessWidget {
                                   return null;
                                 }
 
+                                _getEventStandingDetails(int? eventStandingId) async {
+                                  if (eventStandingId != null) {
+                                    return await EventRepository
+                                        .getInstance()
+                                        .getEventStandingById(eventStandingId);
+                                  }
+                                  return null;
+                                }
+
                                 return FutureBuilder<List<dynamic>>(
                                     future: Future.wait([
                                       _getMatchDetails(matchId),
                                       _getEventDetails(eventId),
                                       _getMatchResultDetails(matchResultId),
+                                      _getEventStandingDetails(eventStandingId),
                                     ]),
                                     builder: (context, snapshot1) {
                                       final match = snapshot1.data?[0] as IMatch?;
                                       final event = snapshot1.data?[1] as Event?;
                                       final matchResult = snapshot1.data?[2] as IMatch?;
+                                      final eventStanding = snapshot1.data?[3] as List<EventStanding>?;
 
                                       return PostWidget(
                                         isPostDetail: false,
@@ -1068,6 +1081,7 @@ class _StickyHeaderList extends StatelessWidget {
                                         match: match,
                                         matchResult: matchResult,
                                         event: event,
+                                        eventStanding: eventStanding,
                                       );
                                     });
                               });
