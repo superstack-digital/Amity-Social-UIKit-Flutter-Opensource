@@ -29,6 +29,9 @@ import 'package:mobile_app_padel/shared/widgets/mention_text_field.dart';
 import 'package:mobile_app_padel/shared/widgets/shadow_avatar.dart';
 import 'package:mobile_app_padel/shared/styles.dart';
 import 'package:fluttertagger/fluttertagger.dart';
+import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
+import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 
 class CommentScreen extends StatefulWidget {
   final AmityPost amityPost;
@@ -36,13 +39,17 @@ class CommentScreen extends StatefulWidget {
   final bool isFromFeed;
   final FeedType feedType;
   final IMatch? match;
+  final IMatch? matchResult;
+  final Event? event;
   const CommentScreen({
     Key? key,
     required this.amityPost,
     required this.theme,
     required this.isFromFeed,
     required this.feedType,
-    this.match
+    this.match,
+    this.matchResult,
+    this.event
   }) : super(key: key);
 
   @override
@@ -307,6 +314,8 @@ class CommentScreenState extends State<CommentScreen> {
                                                 postIndex: 0,
                                                 isFromFeed: false,
                                                 match: widget.match,
+                                                matchResult: widget.matchResult,
+                                                event: widget.event,
                                               ),
 
                                               Divider(

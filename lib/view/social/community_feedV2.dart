@@ -24,6 +24,7 @@ import '../../viewmodel/configuration_viewmodel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
 import 'package:mobile_app_padel/features/community/widgets/event_item.dart';
+import 'package:mobile_app_padel/features/play/presentation/widgets/upcoming_event_item.dart';
 import 'package:mobile_app_padel/features/community/widgets/share_match_modal.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_matches_view.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_event_view.dart';
@@ -36,6 +37,8 @@ import 'package:get/get.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
+import 'package:mobile_app_padel/features/community/data/models/event.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -992,6 +995,11 @@ class _StickyHeaderList extends StatelessWidget {
                               stream: vm.getCommunityPosts()[index].listen.stream,
                               initialData: vm.getCommunityPosts()[index],
                               builder: (context, snapshot) {
+                                final metadata = snapshot.data?.metadata;
+                                final matchId = metadata?["matchId"];
+                                final matchResultId = metadata?["matchResultId"];
+                                final eventId = metadata?["eventId"];
+
                                 _getMatchDetails(int? matchId) async {
                                   if (matchId != null) {
                                     return await MatchRepository
@@ -1002,9 +1010,36 @@ class _StickyHeaderList extends StatelessWidget {
                                   return null;
                                 }
 
-                                return FutureBuilder(future: _getMatchDetails(
-                                    snapshot.data?.metadata?["matchId"]),
+                                _getMatchResultDetails(int? matchResultId) async {
+                                  if (matchResultId != null) {
+                                    return await MatchRepository
+                                        .getInstance()
+                                        .getMatchDetails(
+                                        matchResultId);
+                                  }
+                                  return null;
+                                }
+
+                                _getEventDetails(int? eventId) async {
+                                  if (eventId != null) {
+                                    return await EventRepository
+                                        .getInstance()
+                                        .getEventDetails(eventId);
+                                  }
+                                  return null;
+                                }
+
+                                return FutureBuilder<List<dynamic>>(
+                                    future: Future.wait([
+                                      _getMatchDetails(matchId),
+                                      _getEventDetails(eventId),
+                                      _getMatchResultDetails(matchResultId),
+                                    ]),
                                     builder: (context, snapshot1) {
+                                      final match = snapshot1.data?[0] as IMatch?;
+                                      final event = snapshot1.data?[1] as Event?;
+                                      final matchResult = snapshot1.data?[2] as IMatch?;
+
                                       return PostWidget(
                                         isPostDetail: false,
                                         showCommunity: false,
@@ -1014,7 +1049,9 @@ class _StickyHeaderList extends StatelessWidget {
                                         theme: theme,
                                         postIndex: index,
                                         feedType: FeedType.community,
-                                        match: snapshot1.data as IMatch?,
+                                        match: match,
+                                        matchResult: matchResult,
+                                        event: event,
                                       );
                                     });
                               });

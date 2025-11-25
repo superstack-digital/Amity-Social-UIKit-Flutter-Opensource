@@ -36,6 +36,10 @@ import 'package:mobile_app_padel/shared/widgets/skeleton_container.dart';
 import 'package:mobile_app_padel/shared/styles.dart';
 import 'package:mobile_app_padel/shared/widgets/richtext_with_mention.dart';
 import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
+import 'package:mobile_app_padel/features/play/presentation/widgets/upcoming_event_item.dart';
+import 'package:mobile_app_padel/features/profile/widgets/profile_score_set_item.dart';
 
 
 class GlobalFeedScreen extends StatefulWidget {
@@ -134,6 +138,11 @@ class GlobalFeedScreenState extends State<GlobalFeedScreen>
                               stream: vm.getAmityPosts[index].listen.stream,
                               initialData: vm.getAmityPosts[index],
                               builder: (context, snapshot) {
+                                final metadata = snapshot.data?.metadata;
+                                final matchId = metadata?["matchId"];
+                                final matchResultId = metadata?["matchResultId"];
+                                final eventId = metadata?["eventId"];
+
                                 _getMatchDetails(int? matchId) async {
                                   if (matchId != null) {
                                     return await MatchRepository
@@ -144,9 +153,36 @@ class GlobalFeedScreenState extends State<GlobalFeedScreen>
                                   return null;
                                 }
 
-                                return FutureBuilder(future: _getMatchDetails(
-                                    snapshot.data?.metadata?["matchId"]),
+                                _getMatchResultDetails(int? matchResultId) async {
+                                  if (matchResultId != null) {
+                                    return await MatchRepository
+                                        .getInstance()
+                                        .getMatchDetails(
+                                        matchResultId);
+                                  }
+                                  return null;
+                                }
+
+                                _getEventDetails(int? eventId) async {
+                                  if (eventId != null) {
+                                    return await EventRepository
+                                        .getInstance()
+                                        .getEventDetails(eventId);
+                                  }
+                                  return null;
+                                }
+
+                                return FutureBuilder<List<dynamic>>(
+                                    future: Future.wait([
+                                      _getMatchDetails(matchId),
+                                      _getEventDetails(eventId),
+                                      _getMatchResultDetails(matchResultId),
+                                    ]),
                                     builder: (context, snapshot1) {
+                                      final match = snapshot1.data?[0] as IMatch?;
+                                      final event = snapshot1.data?[1] as Event?;
+                                      final matchResult = snapshot1.data?[2] as IMatch?;
+
                                       return Column(
                                         children: [
                                           index != 0
@@ -163,7 +199,9 @@ class GlobalFeedScreenState extends State<GlobalFeedScreen>
                                               : const SizedBox(),
                                           PostWidget(
                                             isPostDetail: false,
-                                            match: snapshot1.data as IMatch?,
+                                            match: match,
+                                            matchResult: matchResult,
+                                            event: event,
                                             // customPostRanking:
                                             //     widget.isCustomPostRanking,
                                             feedType: FeedType.global,
@@ -219,7 +257,9 @@ class PostWidget extends StatefulWidget {
     required this.showCommunity,
     this.showAcceptOrRejectButton = false,
     required this.isPostDetail,
-    this.match
+    this.match,
+    this.matchResult,
+    this.event
   }) : super(key: key);
   final FeedType feedType;
   final AmityPost post;
@@ -231,6 +271,8 @@ class PostWidget extends StatefulWidget {
   final bool showAcceptOrRejectButton;
   final bool isPostDetail;
   final IMatch? match;
+  final IMatch? matchResult;
+  final Event? event;
 
   @override
   State<PostWidget> createState() => _PostWidgetState();
@@ -438,6 +480,8 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                           isFromFeed: true,
                           feedType: widget.feedType,
                           match: widget.match,
+                          matchResult: widget.matchResult,
+                          event: widget.event,
                         )));
               }
             },
@@ -675,6 +719,25 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                             margin: EdgeInsets.zero,
                             match: widget.match!, onInvitePlayer: () {}) else
                         CircularProgressIndicator(color: Styles.green),
+                    if(widget.post.metadata?["matchResultId"] != null)
+                      if(widget.matchResult != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: ProfileScoreSetItem(
+                            match: widget.matchResult!,
+                            buttonTitle: "",
+                            onClickButton: (match) {},
+                            isComplete: true,
+                            hideAddDetails: true,
+                          ),
+                        ) else
+                        CircularProgressIndicator(color: Styles.green),
+                    if(widget.post.metadata?["eventId"] != null)
+                      if(widget.event != null)
+                        UpcomingEventItem(
+                            data: widget.event!,
+                            margin: EdgeInsets.zero) else
+                        CircularProgressIndicator(color: Styles.green),
                     widget.feedType == FeedType.pending
                         ? const SizedBox()
                         : Container(
@@ -837,6 +900,8 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                                               isFromFeed: true,
                                               feedType: widget.feedType,
                                               match: widget.match,
+                                              matchResult: widget.matchResult,
+                                              event: widget.event,
                                             )));
                               }
                             },
