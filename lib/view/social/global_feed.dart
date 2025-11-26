@@ -400,7 +400,7 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
         ),
       );
     } else {
-      // Player ranking - show individual avatars
+      // Player ranking - show individual avatars in single row
       final firstNationalityCode = Country.tryParse(top3.isNotEmpty ? top3[0].user.country ?? "" : "")?.countryCode;
       final secondNationalityCode = Country.tryParse(top3.length > 1 ? top3[1].user.country ?? "" : "")?.countryCode;
       final thirdNationalityCode = Country.tryParse(top3.length > 2 ? top3[2].user.country ?? "" : "")?.countryCode;
@@ -411,10 +411,38 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // 1st place - first row
+            // 2nd place
+            if (top3.length > 1)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.second,
+                    avatarUrl: top3[1].user.avatar ?? '',
+                    nationalityCode: secondNationalityCode,
+                    fullName: top3[1].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${top3[1].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green,
+                        lineHeightInPxl: 24,
+                        letterSpacingInPercent: -2),
+                  ),
+                  Text(
+                    top3[1].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2,
+                        color: Styles.trafficGrey,
+                        lineHeightInPxl: 20),
+                  ),
+                ],
+              ),
+            // 1st place
             if (top3.isNotEmpty)
               Column(
                 children: [
@@ -426,82 +454,48 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    top3[0].user.fullName?.split(' ').first ?? '',
-                    style: Styles.fontSFProRegular(10,
-                        letterSpacingInPercent: -2,
-                        color: Styles.trafficGrey,
-                        lineHeightInPxl: 20),
-                  ),
-                  Text(
                     '${top3[0].points} pts',
                     style: Styles.fontSFProSemiBold(14,
                         color: Styles.green,
                         lineHeightInPxl: 24,
                         letterSpacingInPercent: -2),
                   ),
+                  Text(
+                    top3[0].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2,
+                        color: Styles.trafficGrey,
+                        lineHeightInPxl: 20),
+                  ),
                 ],
               ),
-            // 2nd and 3rd place - second row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // 2nd place
-                if (top3.length > 1)
-                  Column(
-                    children: [
-                      RankingAvatar(
-                        type: RankingAvatarType.second,
-                        avatarUrl: top3[1].user.avatar ?? '',
-                        nationalityCode: secondNationalityCode,
-                        fullName: top3[1].user.fullName,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        top3[1].user.fullName?.split(' ').first ?? '',
-                        style: Styles.fontSFProRegular(10,
-                            letterSpacingInPercent: -2,
-                            color: Styles.trafficGrey,
-                            lineHeightInPxl: 20),
-                      ),
-                      Text(
-                        '${top3[1].points} pts',
-                        style: Styles.fontSFProSemiBold(14,
-                            color: Styles.green,
-                            lineHeightInPxl: 24,
-                            letterSpacingInPercent: -2),
-                      ),
-                    ],
+            // 3rd place
+            if (top3.length > 2)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.third,
+                    avatarUrl: top3[2].user.avatar ?? '',
+                    nationalityCode: thirdNationalityCode,
+                    fullName: top3[2].user.fullName,
                   ),
-                // 3rd place
-                if (top3.length > 2)
-                  Column(
-                    children: [
-                      RankingAvatar(
-                        type: RankingAvatarType.third,
-                        avatarUrl: top3[2].user.avatar ?? '',
-                        nationalityCode: thirdNationalityCode,
-                        fullName: top3[2].user.fullName,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        top3[2].user.fullName?.split(' ').first ?? '',
-                        style: Styles.fontSFProRegular(10,
-                            letterSpacingInPercent: -2,
-                            color: Styles.trafficGrey,
-                            lineHeightInPxl: 20),
-                      ),
-                      Text(
-                        '${top3[2].points} pts',
-                        style: Styles.fontSFProSemiBold(14,
-                            color: Styles.green,
-                            lineHeightInPxl: 24,
-                            letterSpacingInPercent: -2),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    '${top3[2].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green,
+                        lineHeightInPxl: 24,
+                        letterSpacingInPercent: -2),
                   ),
-              ],
-            ),
+                  Text(
+                    top3[2].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2,
+                        color: Styles.trafficGrey,
+                        lineHeightInPxl: 20),
+                  ),
+                ],
+              ),
           ],
         ),
       );
