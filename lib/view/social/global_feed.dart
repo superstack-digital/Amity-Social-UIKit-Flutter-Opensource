@@ -356,21 +356,10 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 2nd place
-            if (top3.length > 1)
-              TeamRankingAvatar(
-                type: RankingAvatarType.second,
-                players: [
-                  _convertUserToDisplayUser(top3[1].user),
-                  if (top3[1].partner != null) _convertUserToDisplayUser(top3[1].partner!),
-                ],
-                points: top3[1].points.toDouble(),
-              ),
-            // 1st place
+            // 1st place - first row
             if (top3.isNotEmpty)
               TeamRankingAvatar(
                 type: RankingAvatarType.first,
@@ -380,16 +369,33 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                 ],
                 points: top3[0].points.toDouble(),
               ),
-            // 3rd place
-            if (top3.length > 2)
-              TeamRankingAvatar(
-                type: RankingAvatarType.third,
-                players: [
-                  _convertUserToDisplayUser(top3[2].user),
-                  if (top3[2].partner != null) _convertUserToDisplayUser(top3[2].partner!),
-                ],
-                points: top3[2].points.toDouble(),
-              ),
+            // 2nd and 3rd place - second row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // 2nd place
+                if (top3.length > 1)
+                  TeamRankingAvatar(
+                    type: RankingAvatarType.second,
+                    players: [
+                      _convertUserToDisplayUser(top3[1].user),
+                      if (top3[1].partner != null) _convertUserToDisplayUser(top3[1].partner!),
+                    ],
+                    points: top3[1].points.toDouble(),
+                  ),
+                // 3rd place
+                if (top3.length > 2)
+                  TeamRankingAvatar(
+                    type: RankingAvatarType.third,
+                    players: [
+                      _convertUserToDisplayUser(top3[2].user),
+                      if (top3[2].partner != null) _convertUserToDisplayUser(top3[2].partner!),
+                    ],
+                    points: top3[2].points.toDouble(),
+                  ),
+              ],
+            ),
           ],
         ),
       );
@@ -405,38 +411,10 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 2nd place
-            if (top3.length > 1)
-              Column(
-                children: [
-                  RankingAvatar(
-                    type: RankingAvatarType.second,
-                    avatarUrl: top3[1].user.avatar ?? '',
-                    nationalityCode: secondNationalityCode,
-                    fullName: top3[1].user.fullName,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    top3[1].user.fullName?.split(' ').first ?? '',
-                    style: Styles.fontSFProRegular(10,
-                        letterSpacingInPercent: -2,
-                        color: Styles.trafficGrey,
-                        lineHeightInPxl: 20),
-                  ),
-                  Text(
-                    '${top3[1].points} pts',
-                    style: Styles.fontSFProSemiBold(14,
-                        color: Styles.green,
-                        lineHeightInPxl: 24,
-                        letterSpacingInPercent: -2),
-                  ),
-                ],
-              ),
-            // 1st place
+            // 1st place - first row
             if (top3.isNotEmpty)
               Column(
                 children: [
@@ -463,33 +441,67 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                   ),
                 ],
               ),
-            // 3rd place
-            if (top3.length > 2)
-              Column(
-                children: [
-                  RankingAvatar(
-                    type: RankingAvatarType.third,
-                    avatarUrl: top3[2].user.avatar ?? '',
-                    nationalityCode: thirdNationalityCode,
-                    fullName: top3[2].user.fullName,
+            // 2nd and 3rd place - second row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // 2nd place
+                if (top3.length > 1)
+                  Column(
+                    children: [
+                      RankingAvatar(
+                        type: RankingAvatarType.second,
+                        avatarUrl: top3[1].user.avatar ?? '',
+                        nationalityCode: secondNationalityCode,
+                        fullName: top3[1].user.fullName,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        top3[1].user.fullName?.split(' ').first ?? '',
+                        style: Styles.fontSFProRegular(10,
+                            letterSpacingInPercent: -2,
+                            color: Styles.trafficGrey,
+                            lineHeightInPxl: 20),
+                      ),
+                      Text(
+                        '${top3[1].points} pts',
+                        style: Styles.fontSFProSemiBold(14,
+                            color: Styles.green,
+                            lineHeightInPxl: 24,
+                            letterSpacingInPercent: -2),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    top3[2].user.fullName?.split(' ').first ?? '',
-                    style: Styles.fontSFProRegular(10,
-                        letterSpacingInPercent: -2,
-                        color: Styles.trafficGrey,
-                        lineHeightInPxl: 20),
+                // 3rd place
+                if (top3.length > 2)
+                  Column(
+                    children: [
+                      RankingAvatar(
+                        type: RankingAvatarType.third,
+                        avatarUrl: top3[2].user.avatar ?? '',
+                        nationalityCode: thirdNationalityCode,
+                        fullName: top3[2].user.fullName,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        top3[2].user.fullName?.split(' ').first ?? '',
+                        style: Styles.fontSFProRegular(10,
+                            letterSpacingInPercent: -2,
+                            color: Styles.trafficGrey,
+                            lineHeightInPxl: 20),
+                      ),
+                      Text(
+                        '${top3[2].points} pts',
+                        style: Styles.fontSFProSemiBold(14,
+                            color: Styles.green,
+                            lineHeightInPxl: 24,
+                            letterSpacingInPercent: -2),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${top3[2].points} pts',
-                    style: Styles.fontSFProSemiBold(14,
-                        color: Styles.green,
-                        lineHeightInPxl: 24,
-                        letterSpacingInPercent: -2),
-                  ),
-                ],
-              ),
+              ],
+            ),
           ],
         ),
       );
