@@ -47,6 +47,7 @@ import 'package:mobile_app_padel/features/onboarding/data/models/user.dart';
 import 'package:mobile_app_padel/features/community/widgets/ranking_avatar.dart';
 import 'package:mobile_app_padel/features/community/widgets/team_ranking_avatar.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:mobile_app_padel/shared/widgets/deleted_content_placeholder.dart';
 
 
 class GlobalFeedScreen extends StatefulWidget {
@@ -336,6 +337,64 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
       gender: user.gender,
       reliability: user.reliability,
     );
+  }
+
+  String _formatMatchDateTime(IMatch match) {
+    if (match.booking == null) return '';
+
+    try {
+      final startTime = match.booking!.getDateTime().toLocal();
+      final endTime = match.booking!.getEndDateTime().toLocal();
+
+      final dateFormat = 'EEE, dd MMM';
+      final timeFormat = 'HH:mm';
+
+      final datePart = _formatDate(startTime, dateFormat);
+      final startTimePart = _formatDate(startTime, timeFormat);
+      final endTimePart = _formatDate(endTime, timeFormat);
+
+      return '$datePart $startTimePart - $endTimePart';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String _formatEventDateTime(Event event) {
+    try {
+      final startTime = event.getStartDateTimeInLocal();
+      final endTime = event.getEndDateTimeInLocal();
+
+      final dateFormat = 'EEE, dd MMM';
+      final timeFormat = 'HH:mm';
+
+      final datePart = _formatDate(startTime, dateFormat);
+      final startTimePart = _formatDate(startTime, timeFormat);
+      final endTimePart = _formatDate(endTime, timeFormat);
+
+      return '$datePart $startTimePart - $endTimePart';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String _formatDate(DateTime date, String format) {
+    // Simple date formatting - you may want to use intl package for better formatting
+    if (format == 'EEE, dd MMM') {
+      final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final weekday = weekdays[date.weekday - 1];
+      final day = date.day.toString().padLeft(2, '0');
+      final month = months[date.month - 1];
+      return '$weekday, $day $month';
+    } else if (format == 'HH:mm') {
+      // Convert to 12-hour format with AM/PM
+      final hour24 = date.hour;
+      final period = hour24 >= 12 ? 'PM' : 'AM';
+      final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$hour12:$minute $period';
+    }
+    return '';
   }
 
   Widget _buildEventStandingTopRankings(List<EventStanding> standings) {
@@ -974,44 +1033,73 @@ class _PostWidgetState extends State<PostWidget> // with AutomaticKeepAliveClien
                     postWidgets(),
                     if(matchId != null)
                       if(widget.match != null)
-                        CourtMatchItem(
-                            margin: EdgeInsets.zero,
-                            match: widget.match!, onInvitePlayer: () {}) else
+                        widget.match!.status == MatchStatus.cancelled
+                          ? DeletedContentPlaceholder(
+                              type: DeletedContentType.match,
+                              margin: EdgeInsets.zero,
+                              subtitle: _formatMatchDateTime(widget.match!),
+                            )
+                          : CourtMatchItem(
+                              margin: EdgeInsets.zero,
+                              match: widget.match!,
+                              onInvitePlayer: () {})
+                      else
                         CircularProgressIndicator(color: Styles.green),
                     if(widget.post.metadata?["matchResultId"] != null)
                       if(widget.matchResult != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: ProfileScoreSetItem(
-                            match: widget.matchResult!,
-                            buttonTitle: "",
-                            onClickButton: (match) {},
-                            isComplete: true,
-                            hideAddDetails: true,
-                          ),
-                        ) else
+                        widget.matchResult!.status == MatchStatus.cancelled
+                          ? DeletedContentPlaceholder(
+                              type: DeletedContentType.matchResult,
+                              margin: const EdgeInsets.only(top: 8.0),
+                              subtitle: _formatMatchDateTime(widget.matchResult!),
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: ProfileScoreSetItem(
+                                match: widget.matchResult!,
+                                buttonTitle: "",
+                                onClickButton: (match) {},
+                                isComplete: true,
+                                hideAddDetails: true,
+                              ),
+                            )
+                      else
                         CircularProgressIndicator(color: Styles.green),
                     if(widget.post.metadata?["eventId"] != null)
                       if(widget.event != null)
-                        UpcomingEventItem(
-                            data: widget.event!,
-                            margin: EdgeInsets.zero) else
+                        widget.event!.deleted == true
+                          ? DeletedContentPlaceholder(
+                              type: DeletedContentType.event,
+                              margin: EdgeInsets.zero,
+                              subtitle: '${widget.event!.name}\n${_formatEventDateTime(widget.event!)}',
+                            )
+                          : UpcomingEventItem(
+                              data: widget.event!,
+                              margin: EdgeInsets.zero)
+                      else
                         CircularProgressIndicator(color: Styles.green),
                     if(widget.post.metadata?["eventStandingId"] != null)
                       if(widget.eventStanding != null && widget.eventStanding!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Column(
-                            children: [
-                              _buildEventStandingTopRankings(widget.eventStanding!),
-                              const SizedBox(height: 12),
-                              RankingLeaderboard(
-                                leaderboardType: _getLeaderboardType(widget.eventStanding!.first),
-                                data: _convertEventStandingsToLeaderboardData(widget.eventStanding!),
+                        widget.eventStanding!.first.event.deleted == true
+                          ? DeletedContentPlaceholder(
+                              type: DeletedContentType.eventStanding,
+                              margin: const EdgeInsets.only(top: 8.0),
+                              subtitle: '${widget.eventStanding!.first.event.name}\n${_formatEventDateTime(widget.eventStanding!.first.event)}',
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Column(
+                                children: [
+                                  _buildEventStandingTopRankings(widget.eventStanding!),
+                                  const SizedBox(height: 12),
+                                  RankingLeaderboard(
+                                    leaderboardType: _getLeaderboardType(widget.eventStanding!.first),
+                                    data: _convertEventStandingsToLeaderboardData(widget.eventStanding!),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ) else
+                            )
+                      else
                         CircularProgressIndicator(color: Styles.green),
                     widget.feedType == FeedType.pending
                         ? const SizedBox()
