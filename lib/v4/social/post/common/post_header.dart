@@ -12,6 +12,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 
 class AmityPostHeader extends StatelessWidget {
   final AmityPost post;
@@ -34,25 +35,41 @@ class AmityPostHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          Container(
-            width: 48,
-            height: 48,
-            padding:
-                const EdgeInsets.only(top: 8, left: 12, right: 4, bottom: 8),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(color: theme.backgroundColor),
-            child: SizedBox(
-              width: 32,
-              height: 32,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(32),
-                child: AmityNetworkImage(
-                    imageUrl: post.postedUser?.avatarUrl ?? post.postedUser?.avatarCustomUrl,
-                    placeHolderPath:
+          GestureDetector(
+              onTap: () {
+                final userId = int.tryParse(post.postedUserId ?? '0');
+                if (userId != null && userId.toString() != AmityCoreClient.getUserId()) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          PeopleProfileScreen(
+                            userId: int.parse(post.postedUserId ?? '0'),
+                          ),
+                    ),
+                  );
+                }
+              },
+              child:
+              Container(
+                width: 56,
+                height: 56,
+                padding:
+                const EdgeInsets.only(top: 8, left: 12, right: 4, bottom: 4),
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(color: theme.backgroundColor),
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(40),
+                    child: AmityNetworkImage(
+                        imageUrl: post.postedUser?.avatarUrl ??
+                            post.postedUser?.avatarCustomUrl,
+                        placeHolderPath:
                         "assets/Icons/amity_ic_user_avatar_placeholder.svg"),
-              ),
-            ),
-          ),
+                  ),
+                ),
+              )),
           Expanded(child: PostDisplayName(post: post, theme: theme)),
           GestureDetector(
             onTap: () => showPostAction(context, post),

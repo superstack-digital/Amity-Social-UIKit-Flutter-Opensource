@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+
 
 class CommentItem extends BaseElement {
   final ScrollController parentScrollController;
@@ -120,7 +122,7 @@ class CommentItem extends BaseElement {
                                                 builder: (context) =>
                                                     PeopleProfileScreen(
                                                       userId:
-                                                      int.parse(comment.user?.userId!),
+                                                      int.tryParse(comment.user?.userId! ?? ""),
                                                     ),
                                               ),
                                             );

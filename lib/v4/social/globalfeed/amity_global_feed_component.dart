@@ -42,25 +42,23 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
               child: Container(
             width: double.infinity,
             decoration: BoxDecoration(color: theme.baseColorShade4),
-            child: CustomScrollView(
-              controller: scrollController,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: AmityStoryTabComponent(
-                    type: GlobalFeedStoryTab(),
-                  ),
-                ),
-                if (state.list.isNotEmpty)
+            child: RefreshIndicator(
+              onRefresh: () async {
+                context.read<GlobalFeedBloc>().add(GlobalFeedInit());
+                context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
+              },
+              child: CustomScrollView(
+                controller: scrollController,
+                slivers: [
                   SliverToBoxAdapter(
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        context.read<GlobalFeedBloc>().add(GlobalFeedInit());
-                      },
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: state.list.length,
-                        itemBuilder: (context, index) {
+                    child: AmityStoryTabComponent(
+                      type: GlobalFeedStoryTab(),
+                    ),
+                  ),
+                  if (state.list.isNotEmpty)
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
                           final amityPost = state.list[index];
 
                           if (((amityPost.children?.isNotEmpty ?? false) && (amityPost.children!.first.type == AmityDataType.FILE || amityPost.children!.first.type == AmityDataType.POLL || amityPost.children!.first.type == AmityDataType.LIVESTREAM)) || (amityPost.isDeleted ?? false)) {
@@ -97,28 +95,28 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
                             );
                           }
                         },
-                        padding: const EdgeInsets.only(top: 8),
+                        childCount: state.list.length,
+                      ),
+                    )
+                  else
+                    SliverFillRemaining(
+                      child: Container(
+                        width: double.infinity,
+                        color: theme.backgroundColor,
+                        alignment: Alignment.center,
+                        child: state.isFetching ? const CircularProgressIndicator() : AmityEmptyNewsFeedComponent(elementId: "amity_empty_newsfeed_component"),
                       ),
                     ),
-                  )
-                else
-                  SliverToBoxAdapter(
-                    child: Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      color: theme.backgroundColor,
-                      alignment: Alignment.center,
-                      child: state.isFetching ? const CircularProgressIndicator() : AmityEmptyNewsFeedComponent(elementId: "amity_empty_newsfeed_component"),
-                    ),
-                  ),
-                if (state.isFetching && state.list.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Container(
-                      alignment: Alignment.center,
-                      child: const CircularProgressIndicator(),
-                    ),
-                  )
-              ],
+                  if (state.isFetching && state.list.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: const CircularProgressIndicator(),
+                      ),
+                    )
+                ],
+              ),
             ),
           ));
         }

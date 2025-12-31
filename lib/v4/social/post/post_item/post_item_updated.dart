@@ -1,0 +1,872 @@
+import 'package:amity_sdk/amity_sdk.dart';
+import 'package:amity_uikit_beta_service/v4/core/base_component.dart';
+import 'package:amity_uikit_beta_service/v4/social/globalfeed/bloc/global_feed_bloc.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/common/post_action.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/common/post_children_content_image.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/common/post_children_content_video.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/common/post_header.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/post_detail/amity_post_detail_page.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/post_item/bloc/post_item_bloc.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/post_item/post_item_bottom.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:linkify/linkify.dart';
+import 'package:flutter/cupertino.dart';
+
+// Import custom components from mobile_app_padel
+import 'package:mobile_app_padel/features/profile/data/match.dart';
+import 'package:mobile_app_padel/features/play/presentation/widgets/court_match_item.dart';
+import 'package:mobile_app_padel/features/profile/widgets/profile_score_set_item.dart';
+import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/play/presentation/widgets/upcoming_event_item.dart';
+import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/ranking_leaderboard.dart';
+import 'package:mobile_app_padel/features/community/data/models/community_leaderboard_data.dart';
+import 'package:mobile_app_padel/features/onboarding/data/models/user.dart';
+import 'package:mobile_app_padel/features/community/widgets/ranking_avatar.dart';
+import 'package:mobile_app_padel/features/community/widgets/team_ranking_avatar.dart';
+import 'package:country_picker/country_picker.dart';
+import 'package:mobile_app_padel/shared/widgets/deleted_content_placeholder.dart';
+import 'package:mobile_app_padel/shared/styles.dart';
+import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+
+class PostItem extends NewBaseComponent {
+  final AmityPost post;
+  final AmityPostAction? action;
+  final IMatch? match;
+  final IMatch? matchResult;
+  final Event? event;
+  final List<EventStanding>? eventStanding;
+
+  PostItem({
+    Key? key,
+    String? pageId,
+    required this.post,
+    this.action,
+    this.match,
+    this.matchResult,
+    this.event,
+    this.eventStanding,
+  }) : super(key: key, pageId: pageId, componentId: "post_item_component");
+
+  @override
+  Widget buildComponent(BuildContext context) {
+    return BlocBuilder<PostItemBloc, PostItemState>(builder: (context, state) {
+      if (state is PostItemStateLoaded) {
+        return renderPost(context: context, post: state.post);
+      } else if (state is PostItemStateReacting) {
+        return renderPost(context: context, post: state.post, isReacting: true);
+      } else {
+        return renderPost(context: context, post: post);
+      }
+    });
+  }
+
+  Widget renderPost(
+      {required BuildContext context,
+      required AmityPost post,
+      bool isReacting = false}) {
+    onAddReaction(reactionType) {
+      context
+          .read<PostItemBloc>()
+          .add(AddReactionToPost(post: post, reactionType: reactionType));
+    }
+
+    onRemoveReaction(reactionType) {
+      context
+          .read<PostItemBloc>()
+          .add(RemoveReactionToPost(post: post, reactionType: reactionType));
+    }
+
+    onPostUpdated(post) {
+      context.read<PostItemBloc>().add(PostItemLoaded(post: post));
+    }
+
+    var postAction = (action != null)
+        ? action!.copyWith(
+            onAddReaction: onAddReaction, onRemoveReaction: onRemoveReaction, onPostUpdated: onPostUpdated)
+        : AmityPostAction(
+            onAddReaction: onAddReaction,
+            onRemoveReaction: onRemoveReaction,
+            onPostDeleted: (String) {},
+            onPostUpdated: onPostUpdated);
+
+    var page = AmityPostDetailPage(
+      postId: post.postId!,
+      action: postAction,
+    );
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => PopScope(
+            canPop: true,
+            child: page,
+            onPopInvoked: (didPop) => {
+              if (didPop)
+                {
+                  context
+                      .read<GlobalFeedBloc>()
+                      .add(GlobalFeedReloadThePost(post: post))
+                }
+            },
+          ),
+        ));
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.only(top: 4),
+        decoration: BoxDecoration(color: theme.backgroundColor),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AmityPostHeader(
+              post: post,
+              theme: theme,
+              action: postAction,
+            ),
+            getTextPostContent(post),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: post.children?.isEmpty == true ? 0 : 4),
+              child: getChildrenPostContent(context, post),
+            ),
+            // Add custom components for match, matchResult, event, eventStanding
+            getMetadataComponents(context, post),
+            getPostBottom(
+                post: post, action: postAction, isReacting: isReacting),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget getTextPostContent(AmityPost post) {
+    String textContent = "";
+    if (post.data is TextData) {
+      textContent = (post.data as TextData).text ?? "";
+    }
+    
+    if (textContent.isEmpty) {
+      return Container();
+    }
+
+    // Get mentions from post metadata
+    final mentions = post.metadata?["mentions"] as List<dynamic>? ?? [];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: mentions.isNotEmpty
+          ? _buildTextWithMentions(textContent, mentions)
+          : Text(
+              textContent,
+              style: TextStyle(
+                color: theme.baseColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+    );
+  }
+
+  /// Build text with mentions support
+  Widget _buildTextWithMentions(String text, List<dynamic> mentionsData) {
+    final mentionsList = mentionsData
+        .map((mention) => Mention(
+              index: mention['index'] as int,
+              length: mention['length'] as int,
+              text: mention['text'] as String,
+              userId: mention['userId'] as String,
+            ))
+        .toList();
+
+    mentionsList.sort((a, b) => a.index.compareTo(b.index));
+
+    return RichText(
+      text: _buildMentionsTextSpan(
+        text,
+        mentionsList,
+        TextStyle(
+          color: theme.baseColor,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+        ),
+        TextStyle(
+          color: Styles.green,
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  /// Build TextSpan with mentions highlighting
+  TextSpan _buildMentionsTextSpan(
+    String currentText,
+    List<Mention> mentionsList,
+    TextStyle textStyle,
+    TextStyle mentionStyle,
+  ) {
+    final List<InlineSpan> children = [];
+    int currentPos = 0;
+
+    for (var mention in mentionsList) {
+      if (mention.index < currentPos || mention.index >= currentText.length) {
+        continue;
+      }
+
+      // Add text before mention
+      if (mention.index > currentPos) {
+        final textSpans = _buildTextSpansWithLinks(
+          currentText.substring(currentPos, mention.index),
+          textStyle,
+          TextStyle(
+            color: Styles.green,
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            decoration: TextDecoration.underline,
+          ),
+        );
+        children.addAll(textSpans);
+      }
+
+      // Add mention text
+      int mentionEnd = mention.index + mention.length;
+      if (mentionEnd > currentText.length) {
+        mentionEnd = currentText.length;
+      }
+
+      children.add(
+        TextSpan(
+          text: currentText.substring(mention.index, mentionEnd),
+          style: mentionStyle,
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              _handleMentionTap(mention.userId);
+            },
+        ),
+      );
+
+      currentPos = mentionEnd;
+    }
+
+    // Add remaining text after last mention
+    if (currentPos < currentText.length) {
+      final textSpans = _buildTextSpansWithLinks(
+        currentText.substring(currentPos),
+        textStyle,
+        TextStyle(
+          color: Styles.green,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          decoration: TextDecoration.underline,
+        ),
+      );
+      children.addAll(textSpans);
+    }
+
+    return TextSpan(children: children);
+  }
+
+  /// Build text spans with clickable links
+  List<InlineSpan> _buildTextSpansWithLinks(
+    String text,
+    TextStyle textStyle,
+    TextStyle linkStyle,
+  ) {
+    final elements = linkify(text);
+
+    return elements.map((element) {
+      if (element is LinkableElement) {
+        return TextSpan(
+          text: element.text,
+          style: linkStyle,
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              _handleLinkTap(element.url);
+            },
+        );
+      } else {
+        return TextSpan(
+          text: element.text,
+          style: textStyle,
+        );
+      }
+    }).toList();
+  }
+
+  /// Handle mention tap - navigate to user profile
+  void _handleMentionTap(String userId) {
+    final parsedId = int.tryParse(userId);
+    if (parsedId != null) {
+      Get.to(() => PeopleProfileScreen(
+            userId: parsedId,
+            openFrom: OpenProfileFrom.community,
+          ));
+    }
+  }
+
+  /// Handle link tap
+  Future<void> _handleLinkTap(String url) async {
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url));
+      }
+    } catch (e) {
+      print('Could not launch $url: $e');
+    }
+  }
+
+  Widget getImagePostContent(List<ImageData> images) {
+    final imageUrl = images.first.image?.getUrl(AmityImageSize.LARGE) ?? "";
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: ShapeDecoration(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Image.network(imageUrl),
+      ),
+    );
+  }
+
+  Widget getVideoPostContent(List<VideoData> images) {
+    return Container();
+  }
+
+  Widget getChildrenPostContent(BuildContext context, AmityPost post) {
+    final noChildrenPost = post.children?.isEmpty ?? true;
+    if (noChildrenPost) {
+      return Container();
+    } else if (post.children!.first.data is ImageData) {
+      return PostContentImage(posts: post.children!);
+    } else if (post.children!.first.data is VideoData) {
+      return PostContentVideo(posts: post.children!);
+    } else {
+      return Container();
+    }
+  }
+
+  /// New method to render metadata components (match, matchResult, event, eventStanding)
+  Widget getMetadataComponents(BuildContext context, AmityPost post) {
+    final metadata = post.metadata;
+    if (metadata == null) return Container();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Match component
+          if (metadata['matchId'] != null)
+            match != null
+                ? match!.status == MatchStatus.cancelled
+                    ? DeletedContentPlaceholder(
+                        type: DeletedContentType.match,
+                        margin: EdgeInsets.zero,
+                        subtitle: _formatMatchDateTime(match!),
+                      )
+                    : CourtMatchItem(
+                        margin: EdgeInsets.zero,
+                        match: match!,
+                        onInvitePlayer: () {})
+                : Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CupertinoActivityIndicator(color: Styles.green),
+                ),
+
+          // Match Result component
+          if (metadata['matchResultId'] != null)
+            matchResult != null
+                ? matchResult!.status == MatchStatus.cancelled
+                    ? DeletedContentPlaceholder(
+                        type: DeletedContentType.matchResult,
+                        margin: const EdgeInsets.only(top: 8.0),
+                        subtitle: _formatMatchDateTime(matchResult!),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: ProfileScoreSetItem(
+                          match: matchResult!,
+                          buttonTitle: "",
+                          onClickButton: (match) {},
+                          isComplete: true,
+                          hideAddDetails: true,
+                        ),
+                      )
+                : Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CupertinoActivityIndicator(color: Styles.green),
+                ),
+
+          // Event component
+          if (metadata['eventId'] != null)
+            event != null
+                ? event!.deleted == true
+                    ? DeletedContentPlaceholder(
+                        type: DeletedContentType.event,
+                        margin: EdgeInsets.zero,
+                        subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
+                      )
+                    : UpcomingEventItem(data: event!, margin: EdgeInsets.zero)
+                : Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CupertinoActivityIndicator(color: Styles.green),
+                ),
+
+          // Event Standing component
+          if (metadata['eventStandingId'] != null)
+            eventStanding != null && eventStanding!.isNotEmpty
+                ? eventStanding!.first.event.deleted == true
+                    ? DeletedContentPlaceholder(
+                        type: DeletedContentType.eventStanding,
+                        margin: const EdgeInsets.only(top: 0),
+                        subtitle:
+                            '${eventStanding!.first.event.name}\n${_formatEventDateTime(eventStanding!.first.event)}',
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 0.0),
+                        child: Column(
+                          children: [
+                            _buildEventStandingTopRankings(eventStanding!),
+                            const SizedBox(height: 12),
+                            RankingLeaderboard(
+                              leaderboardType: _getLeaderboardType(eventStanding!.first),
+                              data: _convertEventStandingsToLeaderboardData(eventStanding!),
+                            ),
+                          ],
+                        ),
+                      )
+                : Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CupertinoActivityIndicator(color: Styles.green),
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget getPostBottom(
+      {required AmityPost post,
+      required AmityPostAction action,
+      bool isReacting = false}) {
+    return PostItemBottom(
+      post: post,
+      action: action,
+      isReacting: isReacting,
+      componentId: '',
+      isOptimisticUi: true,
+    );
+  }
+
+  // Helper methods from global_feed.dart
+  String _formatMatchDateTime(IMatch match) {
+    if (match.booking == null) return '';
+
+    try {
+      final startTime = match.booking!.getDateTime().toLocal();
+      final endTime = match.booking!.getEndDateTime().toLocal();
+
+      final dateFormat = 'EEE, dd MMM';
+      final timeFormat = 'HH:mm';
+
+      final datePart = _formatDate(startTime, dateFormat);
+      final startTimePart = _formatDate(startTime, timeFormat);
+      final endTimePart = _formatDate(endTime, timeFormat);
+
+      return '$datePart $startTimePart - $endTimePart';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String _formatEventDateTime(Event event) {
+    try {
+      final startTime = event.getStartDateTimeInLocal();
+      final endTime = event.getEndDateTimeInLocal();
+
+      final dateFormat = 'EEE, dd MMM';
+      final timeFormat = 'HH:mm';
+
+      final datePart = _formatDate(startTime, dateFormat);
+      final startTimePart = _formatDate(startTime, timeFormat);
+      final endTimePart = _formatDate(endTime, timeFormat);
+
+      return '$datePart $startTimePart - $endTimePart';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String _formatDate(DateTime date, String format) {
+    if (format == 'EEE, dd MMM') {
+      final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final weekday = weekdays[date.weekday - 1];
+      final day = date.day.toString().padLeft(2, '0');
+      final month = months[date.month - 1];
+      return '$weekday, $day $month';
+    } else if (format == 'HH:mm') {
+      final hour24 = date.hour;
+      final period = hour24 >= 12 ? 'PM' : 'AM';
+      final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$hour12:$minute $period';
+    }
+    return '';
+  }
+
+  LeaderboardType _getLeaderboardType(EventStanding standing) {
+    final tournamentType = standing.event.tournamentType ?? 'americano';
+
+    switch (tournamentType.toLowerCase()) {
+      case 'mexicano':
+        return LeaderboardType.mexicano;
+      case 'teamamericano':
+      case 'teammexicano':
+        return LeaderboardType.team;
+      case 'social':
+        return LeaderboardType.social;
+      default:
+        return LeaderboardType.americano;
+    }
+  }
+
+  DisplayUser _convertUserToDisplayUser(User user) {
+    return DisplayUser(
+      id: user.id,
+      fullName: user.fullName,
+      country: user.country,
+      level: user.level,
+      public: user.public,
+      avatar: user.avatar,
+      gender: user.gender,
+      reliability: user.reliability,
+    );
+  }
+
+  Widget _buildEventStandingTopRankings(List<EventStanding> standings) {
+    if (standings.isEmpty) return const SizedBox();
+
+    final tournamentType = standings.first.event.tournamentType ?? 'americano';
+    final isTeam = tournamentType.toLowerCase() == 'teamamericano' ||
+        tournamentType.toLowerCase() == 'teammexicano';
+
+    final top3 = standings.take(3).toList();
+
+    if (isTeam) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Styles.green20,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (top3.isNotEmpty)
+              TeamRankingAvatar(
+                type: RankingAvatarType.first,
+                players: [
+                  _convertUserToDisplayUser(top3[0].user),
+                  if (top3[0].partner != null) _convertUserToDisplayUser(top3[0].partner!),
+                ],
+                points: top3[0].points.toDouble(),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                if (top3.length > 1)
+                  TeamRankingAvatar(
+                    type: RankingAvatarType.second,
+                    players: [
+                      _convertUserToDisplayUser(top3[1].user),
+                      if (top3[1].partner != null) _convertUserToDisplayUser(top3[1].partner!),
+                    ],
+                    points: top3[1].points.toDouble(),
+                  ),
+                if (top3.length > 2)
+                  TeamRankingAvatar(
+                    type: RankingAvatarType.third,
+                    players: [
+                      _convertUserToDisplayUser(top3[2].user),
+                      if (top3[2].partner != null) _convertUserToDisplayUser(top3[2].partner!),
+                    ],
+                    points: top3[2].points.toDouble(),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else {
+      final firstNationalityCode = Country.tryParse(top3.isNotEmpty ? top3[0].user.country ?? "" : "")?.countryCode;
+      final secondNationalityCode = Country.tryParse(top3.length > 1 ? top3[1].user.country ?? "" : "")?.countryCode;
+      final thirdNationalityCode = Country.tryParse(top3.length > 2 ? top3[2].user.country ?? "" : "")?.countryCode;
+
+      return Container(
+        decoration: BoxDecoration(
+          color: Styles.green20,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (top3.length > 1)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.second,
+                    avatarUrl: top3[1].user.avatar ?? '',
+                    nationalityCode: secondNationalityCode,
+                    fullName: top3[1].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${top3[1].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                  ),
+                  Text(
+                    top3[1].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2, color: Styles.trafficGrey, lineHeightInPxl: 20),
+                  ),
+                ],
+              ),
+            if (top3.isNotEmpty)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.first,
+                    avatarUrl: top3[0].user.avatar ?? '',
+                    nationalityCode: firstNationalityCode,
+                    fullName: top3[0].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${top3[0].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                  ),
+                  Text(
+                    top3[0].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2, color: Styles.trafficGrey, lineHeightInPxl: 20),
+                  ),
+                ],
+              ),
+            if (top3.length > 2)
+              Column(
+                children: [
+                  RankingAvatar(
+                    type: RankingAvatarType.third,
+                    avatarUrl: top3[2].user.avatar ?? '',
+                    nationalityCode: thirdNationalityCode,
+                    fullName: top3[2].user.fullName,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${top3[2].points} pts',
+                    style: Styles.fontSFProSemiBold(14,
+                        color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                  ),
+                  Text(
+                    top3[2].user.fullName?.split(' ').first ?? '',
+                    style: Styles.fontSFProRegular(10,
+                        letterSpacingInPercent: -2, color: Styles.trafficGrey, lineHeightInPxl: 20),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+  }
+
+  List<CommunityLeaderboardData> _convertEventStandingsToLeaderboardData(List<EventStanding> standings) {
+    if (standings.isEmpty) return [];
+
+    final tournamentType = standings.first.event.tournamentType ?? 'americano';
+    final isTeam = tournamentType.toLowerCase() == 'teamamericano' ||
+        tournamentType.toLowerCase() == 'teammexicano';
+
+    if (isTeam) {
+      return standings.map((standing) {
+        return CommunityTeamLeaderboard(
+          id: standing.id,
+          userId: standing.userId,
+          createdAt: standing.createdAt,
+          updatedAt: standing.updatedAt,
+          leaderboardType: 'team',
+          periodStart: standing.createdAt,
+          communityId: standing.event.communityId ?? '',
+          periodEnd: standing.createdAt,
+          points: standing.points,
+          wins: standing.wins,
+          ties: standing.ties,
+          losses: standing.losses,
+          pointsFor: standing.pointsFor,
+          pointsAgainst: standing.pointsAgainst,
+          tournamentType: tournamentType,
+          partnerId: standing.partnerId,
+          user: _convertUserToDisplayUser(standing.user),
+          partner: standing.partner != null
+              ? _convertUserToDisplayUser(standing.partner!)
+              : _convertUserToDisplayUser(standing.user),
+        );
+      }).toList();
+    } else {
+      return standings.map((standing) {
+        return CommunityPlayerLeaderboard(
+          id: standing.id,
+          userId: standing.userId,
+          createdAt: standing.createdAt,
+          updatedAt: standing.updatedAt,
+          leaderboardType: tournamentType,
+          periodStart: standing.createdAt,
+          communityId: standing.event.communityId ?? '',
+          periodEnd: standing.createdAt,
+          points: standing.points,
+          wins: standing.wins,
+          ties: standing.ties,
+          losses: standing.losses,
+          pointsFor: standing.pointsFor,
+          pointsAgainst: standing.pointsAgainst,
+          tournamentType: tournamentType,
+          user: _convertUserToDisplayUser(standing.user),
+        );
+      }).toList();
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    if (!await launchUrl(Uri.parse(url))) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  Widget _listMediaGrid(List<AmityPost> files) {
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: files.length,
+      shrinkWrap: true,
+      itemBuilder: (context, index) {
+        String fileImage = _getFileImage(files[index].data!.fileInfo.fileName!);
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4.0),
+            border: Border.all(
+              color: theme.baseColorShade4,
+              width: 1.0,
+            ),
+          ),
+          margin: const EdgeInsets.all(8.0),
+          child: Stack(
+            children: [
+              ListTile(
+                onTap: () {
+                  _launchUrl(
+                    files[index].data!.fileInfo.fileUrl!,
+                  );
+                },
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 8, horizontal: 14),
+                tileColor: Colors.white.withOpacity(0.0),
+                leading: Container(
+                  height: 100,
+                  width: 40,
+                  alignment: Alignment.centerLeft,
+                  child: Image(
+                    image: AssetImage(fileImage,
+                        package: 'amity_uikit_beta_service'),
+                  ),
+                ),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "${files[index].data!.fileInfo.fileName}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Text(
+                      '${(files[index].data!.fileInfo.fileSize)} KB',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getFileImage(String filePath) {
+    String extension = filePath.split('.').last;
+    switch (extension) {
+      case 'audio':
+        return 'assets/images/fileType/audio_small.png';
+      case 'avi':
+        return 'assets/images/fileType/avi_large.png';
+      case 'csv':
+        return 'assets/images/fileType/csv_large.png';
+      case 'doc':
+        return 'assets/images/fileType/doc_large.png';
+      case 'exe':
+        return 'assets/images/fileType/exe_large.png';
+      case 'html':
+        return 'assets/images/fileType/html_large.png';
+      case 'img':
+        return 'assets/images/fileType/img_large.png';
+      case 'mov':
+        return 'assets/images/fileType/mov_large.png';
+      case 'mp3':
+        return 'assets/images/fileType/mp3_large.png';
+      case 'mp4':
+        return 'assets/images/fileType/mp4_large.png';
+      case 'pdf':
+        return 'assets/images/fileType/pdf_large.png';
+      case 'ppx':
+        return 'assets/images/fileType/ppx_large.png';
+      case 'rar':
+        return 'assets/images/fileType/rar_large.png';
+      case 'txt':
+        return 'assets/images/fileType/txt_large.png';
+      case 'xls':
+        return 'assets/images/fileType/xls_large.png';
+      case 'zip':
+        return 'assets/images/fileType/zip_large.png';
+      default:
+        return 'assets/images/fileType/default.png';
+    }
+  }
+}

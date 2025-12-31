@@ -10,6 +10,8 @@ import 'package:amity_uikit_beta_service/view/user/user_profile_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+
 
 class AmityReactionListComponent extends NewBaseComponent {
   final String referenceId;
@@ -197,7 +199,7 @@ class AmityReactionListComponent extends NewBaseComponent {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => PeopleProfileScreen(
-              userId: reaction.creator?.userId ?? '',
+              userId: int.tryParse(reaction.creator?.userId ?? ''),
             ),
           ),
         );

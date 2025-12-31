@@ -7,6 +7,7 @@ import 'package:amity_uikit_beta_service/v4/utils/skeleton.dart';
 import 'package:amity_uikit_beta_service/view/user/user_profile_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 
 class AmityUserSearchResultComponent extends NewBaseComponent {
   AmityGlobalSearchViewModel viewModel;

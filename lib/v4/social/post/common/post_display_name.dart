@@ -2,12 +2,13 @@ import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/v4/core/theme.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/common/post_moderator_badge.dart';
 import 'package:amity_uikit_beta_service/v4/utils/date_time_extension.dart';
-import 'package:amity_uikit_beta_service/view/social/community_feed.dart';
+import 'package:amity_uikit_beta_service/view/social/community_feedV2.dart';
 import 'package:amity_uikit_beta_service/view/user/user_profile.dart';
 import 'package:amity_uikit_beta_service/view/user/user_profile_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+
 class PostDisplayName extends StatelessWidget {
   final AmityPost post;
   final AmityThemeColor theme;
@@ -33,7 +34,7 @@ class PostDisplayName extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 5),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -53,6 +54,7 @@ class PostDisplayName extends StatelessWidget {
                   ]
                 : [Expanded(child: DisplayName(context, post.postedUser))],
           ),
+          SizedBox(height: 2),
           Row(
             children: [
               if (isModerator) const CommunityModeratorBadge(),
@@ -88,7 +90,8 @@ class PostDisplayName extends StatelessWidget {
   Widget DisplayName(BuildContext context, AmityUser? user) {
     return GestureDetector(
       onTap: () {
-        if(int.tryParse(user?.userId ?? '0') != null){
+        final userId = int.tryParse(post.postedUserId ?? '0');
+        if (userId != null && userId.toString() != AmityCoreClient.getUserId()) {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => PeopleProfileScreen(
