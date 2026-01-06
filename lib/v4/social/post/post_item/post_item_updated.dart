@@ -35,6 +35,8 @@ import 'package:mobile_app_padel/features/community/presentation/screens/people_
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:get/get.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:amity_uikit_beta_service/view/social/comments.dart';
+import 'package:amity_uikit_beta_service/view/social/global_feed.dart';
 
 class PostItem extends NewBaseComponent {
   final AmityPost post;
@@ -97,9 +99,15 @@ class PostItem extends NewBaseComponent {
             onPostDeleted: (String) {},
             onPostUpdated: onPostUpdated);
 
-    var page = AmityPostDetailPage(
-      postId: post.postId!,
-      action: postAction,
+    var page = CommentScreen(
+      amityPost: post,
+      theme: ThemeData(),
+      isFromFeed: true,
+      feedType: FeedType.community,
+      eventStanding: eventStanding,
+      event: event,
+      match: match,
+      matchResult: matchResult,
     );
 
     return GestureDetector(

@@ -49,7 +49,6 @@ class ReplyVM extends PostVM {
     for (var comment in comments) {
       // Check if the comment ID does not exist in the amityReplyCommentsMap
 
-      print("comment: ${comment.data}");
       await listenForReplyComments(
           postID: postId, commentId: comment.commentId!);
     }
