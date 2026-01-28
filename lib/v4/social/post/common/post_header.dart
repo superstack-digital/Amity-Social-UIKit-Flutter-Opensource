@@ -13,12 +13,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:mobile_app_padel/features/profile/data/match.dart';
+import 'package:mobile_app_padel/features/community/data/models/event.dart';
+import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
+import 'package:amity_uikit_beta_service/view/social/global_feed.dart';
+import 'package:amity_uikit_beta_service/view/UIKit/social/general_component.dart';
+import 'package:hexcolor/hexcolor.dart';
+import 'package:mobile_app_padel/shared/styles.dart';
+import 'package:mobile_app_padel/shared/functions.dart';
+import 'package:mobile_app_padel/features/onboarding/data/models/user.dart';
+import 'package:mobile_app_padel/features/profile/data/repositories/profile_repository.dart';
+import 'package:amity_uikit_beta_service/v4/utils/post_data_cache_manager.dart';
+import 'package:mobile_app_padel/shared/widgets/shadow_avatar.dart';
 
-class AmityPostHeader extends StatelessWidget {
+
+
+class AmityPostHeader extends StatefulWidget {
   final AmityPost post;
   final bool isShowOption;
   final AmityThemeColor theme;
   final AmityPostAction? action;
+  final IMatch? match;
+  final IMatch? matchResult;
+  final Event? event;
+  final List<EventStanding>? eventStanding;
+  final User? followingUser;
 
   const AmityPostHeader({
     super.key,
@@ -26,61 +46,142 @@ class AmityPostHeader extends StatelessWidget {
     this.isShowOption = true,
     required this.theme,
     this.action,
-  });
+    this.match,
+    this.matchResult,
+    this.event,
+    this.eventStanding,
+    this.followingUser});
 
+  @override
+  State<AmityPostHeader> createState() => _AmityPostHeaderState();
+}
+
+class _AmityPostHeaderState extends State<AmityPostHeader> {
+  List<User>? _joinedUsers;
+  bool _isLoadingUsers = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJoinedUsersIfNeeded();
+  }
+
+  Future<void> _loadJoinedUsersIfNeeded() async {
+    final type = getGeneratePostType(widget.post);
+    if ((type == GeneratePostType.joined_event || type == GeneratePostType.joined_match) && 
+        !_isLoadingUsers && _joinedUsers == null) {
+      final joinedUserIds = widget.post.metadata?["joinedUserIds"] as List<dynamic>?;
+      if (joinedUserIds != null && joinedUserIds.isNotEmpty) {
+        setState(() {
+          _isLoadingUsers = true;
+        });
+        
+        try {
+          // Use cache manager for batch user loading
+          final cacheManager = PostDataCacheManager();
+          final userIdsList = joinedUserIds.map((id) => id as int).toList();
+          final users = await cacheManager.getMultipleUsers(userIdsList);
+          
+          if (mounted) {
+            setState(() {
+              _joinedUsers = users;
+              _isLoadingUsers = false;
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _isLoadingUsers = false;
+            });
+          }
+        }
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          GestureDetector(
-              onTap: () {
-                final userId = int.tryParse(post.postedUserId ?? '0');
-                if (userId != null && userId.toString() != AmityCoreClient.getUserId()) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          PeopleProfileScreen(
-                            userId: int.parse(post.postedUserId ?? '0'),
-                          ),
-                    ),
-                  );
-                }
-              },
-              child:
+    final isJoinedMatchPost = widget.post.metadata?["type"] == "joined_match";
+
+    return Container(
+      height: isJoinedMatchPost ? 87 : 60,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child:
               Container(
-                width: 56,
-                height: 56,
-                padding:
-                const EdgeInsets.only(top: 8, left: 12, right: 4, bottom: 4),
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(color: theme.backgroundColor),
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(40),
-                    child: AmityNetworkImage(
-                        imageUrl: post.postedUser?.avatarUrl ??
-                            post.postedUser?.avatarCustomUrl,
-                        placeHolderPath:
-                        "assets/Icons/amity_ic_user_avatar_placeholder.svg"),
-                  ),
-                ),
+                child:  TimeAgoWidget(createdAt: widget.post.createdAt ?? DateTime.now(),
+                    textStyle: Styles.fontInterRegular(10, lineHeightInPxl: 21, color: Styles.tpsBrown)),
+                alignment: Alignment.centerRight,
               )),
-          Expanded(child: PostDisplayName(post: post, theme: theme)),
-          GestureDetector(
-            onTap: () => showPostAction(context, post),
-            child: Container(
-              width: 44,
-              height: double.infinity,
-              padding:
-                  const EdgeInsets.only(top: 8, left: 4, right: 16, bottom: 8),
-              child: isShowOption ? getPostOptionIcon() : Container(),
-            ),
+              Container(
+                padding: EdgeInsets.only(right: 10, left: 7),
+                child: Icon(
+                  Icons.more_vert,
+                  color: HexColor("B3B3B3"),
+                ),
+              )
+            ],
           ),
+          SizedBox(height: 36, child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              GestureDetector(
+                  onTap: () {
+                    final userId = int.tryParse(widget.post.postedUserId ?? '0');
+                    if (userId != null && userId.toString() != AmityCoreClient.getUserId()) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PeopleProfileScreen(
+                                userId: int.parse(widget.post.postedUserId ?? '0'),
+                              ),
+                        ),
+                      );
+                    }
+                  },
+                  child: _buildAvatarSection()),
+
+              // Expanded(child: PostDisplayName(post: post, theme: theme)),
+              Expanded(child: Container(padding: EdgeInsets.only(right: 15),
+                  child: _postTitle)),
+            ],
+          )),
+          if(widget.post.metadata?["type"] == "joined_match")
+            Container(
+              margin: EdgeInsets.only(top: isJoinedMatchPost ? 5 : 0, left: 51),
+              child: RichText(
+                text: TextSpan(
+                    text: "",
+                    children: [
+                      TextSpan(
+                        text: 'Created by ',
+                        style: Styles.fontInterRegular(
+                            12, lineHeightInPxl: 20, color: Styles.gray8B9197),
+                      ),
+                      TextSpan(
+                        text: "${widget.match?.getPlayers().firstWhere((element) =>
+                        element.user.id == widget.match?.createdUserId).user.fullName ?? ""}",
+                        style: Styles.fontInterSemiBold(
+                            12, lineHeightInPxl: 20, color: Styles.green),
+                      ),
+                      TextSpan(
+                        text: " in ",
+                        style: Styles.fontInterRegular(
+                            12, lineHeightInPxl: 20, color: Styles.gray8B9197),
+                      ),
+                      TextSpan(
+                        text: "${widget.match?.getCourt()?.name ?? ""}",
+                        style: Styles.fontInterSemiBold(
+                            12, lineHeightInPxl: 20, color: Styles.green),
+                      ),
+                    ]
+                ),
+              ),
+            )
         ],
       ),
     );
@@ -118,7 +219,7 @@ class AmityPostHeader extends StatelessWidget {
     }
 
     if (post.postedUserId == currentUserId) {
-      showPostOwnerAction(context, post, theme, isModerator);
+      showPostOwnerAction(context, post, widget.theme, isModerator);
     } else {
       showPostGeneralAction(context, post, isModerator);
     }
@@ -138,7 +239,7 @@ class AmityPostHeader extends StatelessWidget {
     onDelete() {
       context
           .read<PostItemBloc>()
-          .add(PostItemDelete(post: post, action: action));
+          .add(PostItemDelete(post: post, action: widget.action));
     }
 
     double height = 0;
@@ -280,7 +381,7 @@ class AmityPostHeader extends StatelessWidget {
     onDelete() {
       context
           .read<PostItemBloc>()
-          .add(PostItemDelete(post: post, action: action));
+          .add(PostItemDelete(post: post, action: widget.action));
     }
 
     double height = 0;
@@ -393,7 +494,7 @@ class AmityPostHeader extends StatelessWidget {
                   child: Text(
                     "Delete",
                     style: TextStyle(
-                      color: theme.alertColor,
+                      color: widget.theme.alertColor,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
@@ -424,19 +525,498 @@ class AmityPostHeader extends StatelessWidget {
                 width: 24,
                 height: 20,
                 colorFilter:
-                    ColorFilter.mode(theme.alertColor, BlendMode.srcIn),
+                    ColorFilter.mode(widget.theme.alertColor, BlendMode.srcIn),
               ),
             ),
             const SizedBox(width: 12),
             Text(
               'Delete post',
               style: TextStyle(
-                color: theme.alertColor,
+                color: widget.theme.alertColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  String getPostOwnerName(GeneratePostType type) {
+    switch (type) {
+      case GeneratePostType.event_created:
+      case GeneratePostType.weekly_ranking:
+        return (widget.post.target as CommunityTarget).targetCommunity?.displayName ?? "";
+      default:
+        return widget.post.postedUser?.displayName ?? "";
+    }
+  }
+
+  String getRevenueName(GeneratePostType type){
+    switch (type) {
+      case GeneratePostType.event_created:
+        return widget.event?.club?.name ?? "";
+      default:
+        return widget.post.postedUser?.displayName ?? "";
+    }
+  }
+
+  RichText get _postTitle {
+    final type = getGeneratePostType(widget.post);
+
+    switch(type){
+      case GeneratePostType.event_created:
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+               TextSpan(
+                text: ' created a new ',
+                 style: Styles.fontInterRegular(
+                     14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: "event",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        );
+      case GeneratePostType.match_looking_for_players:
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: ' created a match at ',
+                style: Styles.fontInterRegular(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: widget.match?.getCourt()?.name ?? "",
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+            ],
+          ),
+        );
+      case GeneratePostType.event_standing:
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: ' won the ${widget.eventStanding?.first.event?.tournament ?? "event"} tournament in ',
+                style: Styles.fontInterRegular(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: widget.eventStanding?.first.event.club?.name ?? "",
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+            ],
+          ),
+        );
+      case GeneratePostType.start_following_user:
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: ' started following ',
+                style: Styles.fontInterRegular(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: widget.followingUser?.fullName ?? "",
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+            ],
+          ),
+        );
+      case GeneratePostType.level_up:
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: ' just leveled up!',
+                style: Styles.fontInterRegular(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+            ],
+          ),
+        );
+      case GeneratePostType.joined_match:
+        final joinedCount = _joinedUsers?.length ?? 0;
+        
+        return RichText(
+            softWrap: true,
+            overflow: TextOverflow.visible,
+            maxLines: 2,
+            text: TextSpan(
+              children: [
+                if (joinedCount >= 2) ...[
+                  // Last joined user
+                  TextSpan(
+                    text: _joinedUsers![joinedCount - 1].fullName,
+                    style: Styles.fontInterSemiBold(
+                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                  ),
+                  TextSpan(
+                    text: ' just joined a match with ',
+                    style: Styles.fontInterRegular(
+                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                  ),
+                  // Show other players (all except last one)
+                  if (joinedCount == 2) ...[
+                    TextSpan(
+                      text: _joinedUsers![0].fullName,
+                      style: Styles.fontInterSemiBold(
+                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    ),
+                  ] else if (joinedCount == 3) ...[
+                    // Show "A & B"
+                    TextSpan(
+                      text: _joinedUsers![0].fullName,
+                      style: Styles.fontInterSemiBold(
+                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    ),
+                    TextSpan(
+                      text: ' & ',
+                      style: Styles.fontInterRegular(
+                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    ),
+                    TextSpan(
+                      text: _joinedUsers![1].fullName,
+                      style: Styles.fontInterSemiBold(
+                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    ),
+                  ] else ...[
+                    // Show "A & N other players"
+                    TextSpan(
+                      text: _joinedUsers![0].fullName,
+                      style: Styles.fontInterSemiBold(
+                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    ),
+                    TextSpan(
+                      text: ' & ${joinedCount - 2} other player${joinedCount - 2 > 1 ? 's' : ''}',
+                      style: Styles.fontInterSemiBold(
+                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    ),
+                  ],
+                ] else ...[
+                  // Fallback to posted user
+                  TextSpan(
+                    text: getPostOwnerName(type),
+                    style: Styles.fontInterSemiBold(
+                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                  ),
+                  TextSpan(
+                    text: ' just joined a match',
+                    style: Styles.fontInterRegular(
+                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                  ),
+                ],
+              ],
+            ),
+        );
+
+      case GeneratePostType.joined_event:
+        final joinedCount = _joinedUsers?.length ?? 0;
+        
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              if (joinedCount == 2) ...[
+                // Show "A & B"
+                TextSpan(
+                  text: _joinedUsers![0].fullName,
+                  style: Styles.fontInterSemiBold(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+                TextSpan(
+                  text: ' & ',
+                  style: Styles.fontInterRegular(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+                TextSpan(
+                  text: _joinedUsers![1].fullName,
+                  style: Styles.fontInterSemiBold(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+              ] else if (joinedCount >= 3) ...[
+                // Show "A, B & N players"
+                TextSpan(
+                  text: _joinedUsers![0].fullName,
+                  style: Styles.fontInterSemiBold(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+                TextSpan(
+                  text: ', ',
+                  style: Styles.fontInterRegular(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+                TextSpan(
+                  text: _joinedUsers![1].fullName,
+                  style: Styles.fontInterSemiBold(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+                TextSpan(
+                  text: ' & ${joinedCount - 2} player${joinedCount - 2 > 1 ? 's' : ''}',
+                  style: Styles.fontInterSemiBold(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+              ] else ...[
+                // Fallback to posted user
+                TextSpan(
+                  text: getPostOwnerName(type),
+                  style: Styles.fontInterSemiBold(
+                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                ),
+              ],
+              TextSpan(
+                text: ' joined ',
+                style: Styles.fontInterRegular(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: widget.event?.name ?? "",
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+            ],
+          ),
+        );
+      case GeneratePostType.weekly_ranking:
+        return RichText(
+          softWrap: true,
+          overflow: TextOverflow.visible,
+          maxLines: 2,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: "Weekly rankings update",
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: ' in ',
+                style: Styles.fontInterRegular(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+            ],
+          ),
+        );
+      default:
+        return RichText(
+          text: TextSpan(
+            text: "",
+            children: [
+              TextSpan(
+                text: getPostOwnerName(type),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+              ),
+              if(widget.post.targetType == AmityPostTargetType.COMMUNITY) TextSpan(
+                text: " posted in ",
+                style: Styles.fontInterRegular(14, lineHeightInPxl: 21, color: Styles.blackNeutral)
+              ),
+              if(widget.post.targetType == AmityPostTargetType.COMMUNITY) TextSpan(
+                text: "${(widget.post.target as CommunityTarget).targetCommunity?.displayName ?? ""}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ]
+          ),
+        );
+    }
+  }
+
+  Widget _buildAvatarSection() {
+    final type = getGeneratePostType(widget.post);
+    
+    // For joined_event and joined_match posts, show stacked avatars of joined users
+    if ((type == GeneratePostType.joined_event) &&
+        _joinedUsers != null && _joinedUsers!.length >= 2) {
+      final displayCount = _joinedUsers!.length > 2 ? 2 : _joinedUsers!.length;
+      final remainingCount = _joinedUsers!.length - 2;
+      
+      return Container(
+        padding: const EdgeInsets.only(left: 12),
+        child: SizedBox(
+          width: displayCount == 2 && remainingCount > 0 ? 56 : 46, // Extra width for overlay
+          height: 32,
+          child: Stack(
+            children: [
+              // First avatar
+              Positioned(
+                left: 0,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: AmityNetworkImage(
+                      imageUrl: _joinedUsers![0].avatar,
+                      placeHolderPath: "assets/Icons/amity_ic_user_avatar_placeholder.svg",
+                    ),
+                  ),
+                ),
+              ),
+              // Second avatar (stacked)
+              Positioned(
+                left: 14,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: Stack(
+                      children: [
+                        AmityNetworkImage(
+                          imageUrl: _joinedUsers![1].avatar,
+                          placeHolderPath: "assets/Icons/amity_ic_user_avatar_placeholder.svg",
+                        ),
+                        // Overlay if more than 2 users
+                        if (remainingCount > 0)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(32),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '+$remainingCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if(type == GeneratePostType.joined_match) {
+      final joinedCount = _joinedUsers?.length ?? 0;
+      return Container(
+          padding: const EdgeInsets.only(left: 12, right: 7),
+          clipBehavior: Clip.antiAlias,
+          decoration: const BoxDecoration(color: Colors.white),
+          child: SizedBox(
+            width: 32,
+            height: 32,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: AmityNetworkImage(
+                imageUrl: _joinedUsers?[joinedCount - 1].avatar ?? "",
+                placeHolderPath: "assets/Icons/amity_ic_user_avatar_placeholder.svg",
+              ),
+            ),
+          ),
+      );
+    }
+    
+    if(type == GeneratePostType.weekly_ranking){
+      final target = widget.post.target as CommunityTarget;
+      return Container(
+        padding: const EdgeInsets.only(left: 12, right: 7),
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(color: Colors.white),
+        child: ShadowAvatar(
+            borderWidth: 0,
+            height: 32,
+            width: 32,
+            url: target.targetCommunity?.avatarImage
+                ?.getUrl(AmityImageSize.SMALL) ?? "",
+            fullName: target.targetCommunity?.displayName ?? ""),
+      );
+    }
+
+    // Default: single avatar of poster
+    return Container(
+      padding: const EdgeInsets.only(left: 12, right: 7),
+      clipBehavior: Clip.antiAlias,
+      decoration: const BoxDecoration(color: Colors.white),
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: AmityNetworkImage(
+            imageUrl: widget.post.postedUser?.avatarUrl ??
+                widget.post.postedUser?.avatarCustomUrl,
+            placeHolderPath: "assets/Icons/amity_ic_user_avatar_placeholder.svg",
+          ),
         ),
       ),
     );

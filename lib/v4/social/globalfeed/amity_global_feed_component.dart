@@ -14,19 +14,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class AmityGlobalFeedComponent extends NewBaseComponent {
-  AmityGlobalFeedComponent({Key? key, String? pageId}) : super(key: key, pageId: pageId, componentId: 'global_feed_component');
+  AmityGlobalFeedComponent({Key? key, String? pageId, this.isNestedScroll}) : super(key: key, pageId: pageId, componentId: 'global_feed_component');
 
   List<String> viewedPost = [];
+  final bool? isNestedScroll;
 
   @override
   Widget buildComponent(BuildContext context) {
-    final scrollController = ScrollController();
     context.read<GlobalFeedBloc>().add(GlobalFeedInit());
-    scrollController.addListener(() {
-      if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
-      }
-    });
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
     });
@@ -47,9 +42,18 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
                 context.read<GlobalFeedBloc>().add(GlobalFeedInit());
                 context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
               },
-              child: CustomScrollView(
-                controller: scrollController,
-                slivers: [
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (ScrollNotification scrollInfo) {
+                  if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 100) {
+                    context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
+                  }
+                  return false;
+                },
+                child: CustomScrollView(
+                  slivers: [
+                  if(isNestedScroll == true) SliverOverlapInjector(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                  ),
                   SliverToBoxAdapter(
                     child: AmityStoryTabComponent(
                       type: GlobalFeedStoryTab(),
@@ -118,7 +122,7 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
                 ],
               ),
             ),
-          ));
+          )));
         }
       }),
     );
@@ -215,6 +219,15 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
     if (visiblePercentage > 60 && !viewedPost.contains(post.postId)) {
       viewedPost.add(post.postId!);
       post.analytics().markPostAsViewed();
+    }
+  }
+
+  bool _hasNestedScrollView(BuildContext context) {
+    try {
+      NestedScrollView.sliverOverlapAbsorberHandleFor(context);
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 }

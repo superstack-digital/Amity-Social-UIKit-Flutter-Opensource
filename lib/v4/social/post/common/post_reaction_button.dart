@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:mobile_app_padel/shared/asset_keys.dart';
+import 'package:mobile_app_padel/shared/styles.dart';
 
 class PostReactionButton extends StatelessWidget {
   final AmityPost post;
@@ -26,31 +28,31 @@ class PostReactionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var reactionIcon = SvgPicture.asset(
-      'assets/Icons/amity_ic_post_quick_reaction.svg',
+      'assets/Icons/heart_outline.svg',
       package: 'amity_uikit_beta_service',
-      width: 20,
-      height: 16,
+      width: 22,
+      height: 22,
     );
     if (post.myReactions?.isNotEmpty ?? false) {
       reactionIcon = post.myReactions!.first == 'like'
           ? SvgPicture.asset(
-              'assets/Icons/amity_ic_post_reaction_like.svg',
+              'assets/Icons/heart_filled.svg',
               package: 'amity_uikit_beta_service',
-              width: 20,
-              height: 20,
+              width: 22,
+              height: 22,
             )
           : SvgPicture.asset(
-              'assets/Icons/amity_ic_post_reaction_like.svg',
+              'assets/Icons/heart_outline.svg',
               package: 'amity_uikit_beta_service',
-              width: 20,
-              height: 20,
+              width: 22,
+              height: 22,
             );
     }
-    var iconAsset = 'assets/Icons/amity_ic_post_quick_reaction.svg';
+    var iconAsset = 'assets/Icons/heart_outline.svg';
     if (post.myReactions?.isNotEmpty ?? false) {
       iconAsset = post.myReactions!.first == 'like'
-          ? 'assets/Icons/amity_ic_post_reaction_like.svg'
-          : 'assets/Icons/amity_ic_post_reaction_heart.svg';
+          ? 'assets/Icons/heart_filled.svg'
+          : 'assets/Icons/heart_outline.svg';
     }
     return GestureDetector(
       onTap: () {
@@ -74,14 +76,14 @@ class PostReactionButton extends StatelessWidget {
             (isReacting && isOptimisticUi)
                 ? Container(
                     alignment: Alignment.center,
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     child: loadingIndicator(
                         context, !(post.myReactions?.isNotEmpty ?? false)))
                 : Container(
                     alignment: Alignment.center,
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     child: reactionIcon),
             const SizedBox(width: 4),
             (isReacting && isOptimisticUi)
@@ -104,9 +106,10 @@ class PostReactionButton extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-        color: hasMyReaction ? appTheme.primaryColor : const Color(0xFF898E9E),
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
+        // color: hasMyReaction ? appTheme.primaryColor : const Color(0xFF898E9E),
+        fontSize: 12,
+        height: 1.8,
+        fontWeight: FontWeight.w400,
       ),
     );
   }
@@ -129,9 +132,10 @@ class PostReactionButton extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-        color: !hasMyReaction ? appTheme.primaryColor : const Color(0xFF898E9E),
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
+        // color: !hasMyReaction ? appTheme.primaryColor : const Color(0xFF898E9E),
+        fontSize: 12,
+        height: 1.8,
+        fontWeight: FontWeight.w400,
       ),
     );
   }
@@ -142,20 +146,20 @@ class PostReactionButton extends StatelessWidget {
             alignment: Alignment.center,
             height: 44,
             child: SvgPicture.asset(
-              'assets/Icons/amity_ic_post_reaction_like.svg',
+              'assets/Icons/heart_filled.svg',
               package: 'amity_uikit_beta_service',
-              width: 20,
-              height: 20,
+              width: 22,
+              height: 22,
             ),
           )
         : Container(
             alignment: Alignment.center,
             height: 44,
             child: SvgPicture.asset(
-              'assets/Icons/amity_ic_post_quick_reaction.svg',
+              'assets/Icons/heart_outline.svg',
               package: 'amity_uikit_beta_service',
-              width: 20,
-              height: 16,
+              width: 22,
+              height: 22,
             ),
           );
   }

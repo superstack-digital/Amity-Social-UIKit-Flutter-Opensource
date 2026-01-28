@@ -28,15 +28,16 @@ class AmityGeneralCompomemt {
 class TimeAgoWidget extends StatelessWidget {
   final DateTime createdAt; // Assuming createdAt is a DateTime object
   final Color? textColor;
+  final TextStyle? textStyle;
 
-  const TimeAgoWidget({Key? key, required this.createdAt, this.textColor})
+  const TimeAgoWidget({Key? key, required this.createdAt, this.textColor, this.textStyle})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Text(
       _formatDate(createdAt),
-      style: TextStyle(
+      style: textStyle ?? TextStyle(
         color: textColor ?? Colors.grey,
       ),
     );

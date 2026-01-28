@@ -5,6 +5,8 @@ import 'package:amity_uikit_beta_service/v4/social/post/common/post_reaction_but
 import 'package:amity_uikit_beta_service/v4/utils/compact_string_converter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mobile_app_padel/shared/functions.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
 
 class PostItemBottom extends NewBaseComponent {
   final AmityPost post;
@@ -12,6 +14,7 @@ class PostItemBottom extends NewBaseComponent {
   final bool isReacting;
   final bool hideReactionCount;
   final bool isOptimisticUi;
+  final bool? hideDivider;
 
   PostItemBottom({
     Key? key,
@@ -22,6 +25,7 @@ class PostItemBottom extends NewBaseComponent {
     String? pageId,
     required String componentId,
     required this.isOptimisticUi,
+    this.hideDivider,
   }) : super(key: key, pageId: pageId, componentId: componentId);
 
   @override
@@ -32,7 +36,7 @@ class PostItemBottom extends NewBaseComponent {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
+        if(hideDivider != true)Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
@@ -51,7 +55,7 @@ class PostItemBottom extends NewBaseComponent {
             children: [
               PostReactionButton(post: post, action: action, isReacting: isReacting, showLabel: hideReactionCount, isOptimisticUi: isOptimisticUi,),
               const SizedBox(width: 12),
-              getCommentButton(hideReactionCount),
+              if(getGeneratePostType(post) != GeneratePostType.event_created) getCommentButton(hideReactionCount),
             ],
           )
         )
@@ -66,10 +70,10 @@ class PostItemBottom extends NewBaseComponent {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SvgPicture.asset(
-          'assets/Icons/amity_ic_post_comment.svg',
+          'assets/Icons/comment_outline.svg',
           package: 'amity_uikit_beta_service',
-          width: 20,
-          height: 17,
+          width: 19,
+          height: 19,
         ),
         const SizedBox(width: 4),
         Text(
@@ -91,10 +95,10 @@ class PostItemBottom extends NewBaseComponent {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SvgPicture.asset(
-          'assets/Icons/amity_ic_post_share.svg',
+          'assets/Icons/send_outline.svg',
           package: 'amity_uikit_beta_service',
-          width: 20,
-          height: 18,
+          width: 22,
+          height: 22,
         ),
         const SizedBox(width: 4),
         Text(
