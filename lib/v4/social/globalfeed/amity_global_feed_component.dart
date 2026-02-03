@@ -14,10 +14,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class AmityGlobalFeedComponent extends NewBaseComponent {
-  AmityGlobalFeedComponent({Key? key, String? pageId, this.isNestedScroll}) : super(key: key, pageId: pageId, componentId: 'global_feed_component');
+  AmityGlobalFeedComponent(
+      {Key? key, String? pageId, this.isNestedScroll, this.onScroll})
+      : super(key: key, pageId: pageId, componentId: 'global_feed_component');
 
   List<String> viewedPost = [];
   final bool? isNestedScroll;
+  Function(double)? onScroll;
 
   @override
   Widget buildComponent(BuildContext context) {
@@ -44,6 +47,7 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
               },
               child: NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollInfo) {
+                  onScroll?.call(scrollInfo.metrics.pixels);
                   if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 100) {
                     context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
                   }
