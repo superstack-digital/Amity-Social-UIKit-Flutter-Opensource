@@ -208,7 +208,7 @@ class PostItem extends NewBaseComponent {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: mentions.isNotEmpty
           ? _buildTextWithMentions(textContent, mentions)
           : Text(
@@ -410,7 +410,7 @@ class PostItem extends NewBaseComponent {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           // Match component

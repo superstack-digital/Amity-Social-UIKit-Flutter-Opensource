@@ -894,7 +894,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
       final remainingCount = _joinedUsers!.length - 2;
       
       return Container(
-        padding: const EdgeInsets.only(left: 12),
+        padding: const EdgeInsets.only(left: 20),
         child: SizedBox(
           width: displayCount == 2 && remainingCount > 0 ? 56 : 46, // Extra width for overlay
           height: 32,
@@ -969,7 +969,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
     if(type == GeneratePostType.joined_match) {
       final joinedCount = _joinedUsers?.length ?? 0;
       return Container(
-          padding: const EdgeInsets.only(left: 12, right: 7),
+          padding: const EdgeInsets.only(left: 20, right: 7),
           clipBehavior: Clip.antiAlias,
           decoration: const BoxDecoration(color: Colors.white),
           child: SizedBox(
@@ -989,7 +989,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
     if(type == GeneratePostType.weekly_ranking){
       final target = widget.post.target as CommunityTarget;
       return Container(
-        padding: const EdgeInsets.only(left: 12, right: 7),
+        padding: const EdgeInsets.only(left: 20, right: 7),
         clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(color: Colors.white),
         child: ShadowAvatar(
@@ -1004,7 +1004,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
 
     // Default: single avatar of poster
     return Container(
-      padding: const EdgeInsets.only(left: 12, right: 7),
+      padding: const EdgeInsets.only(left: 20, right: 7),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(color: Colors.white),
       child: SizedBox(
