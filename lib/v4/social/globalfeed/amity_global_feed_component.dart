@@ -134,7 +134,7 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
 
   Widget skeletonList() {
     return Container(
-      decoration: BoxDecoration(color: theme.backgroundColor),
+      decoration: BoxDecoration(color: Colors.white),
       child: Column(children: [
         Container(
           color: theme.baseColorShade4,
@@ -144,13 +144,27 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
           child: Container(
             alignment: Alignment.topCenter,
             child: Shimmer(
-              linearGradient: configProvider.getShimmerGradient(),
+              linearGradient: const LinearGradient(
+                colors: [
+                  Color(0xFFEBEBF4),
+                  Color(0xFFF4F4F4),
+                  Color(0xFFEBEBF4),
+                ],
+                stops: [
+                  0.1,
+                  0.3,
+                  0.4,
+                ],
+                begin: Alignment(-1.0, -0.3),
+                end: Alignment(1.0, 0.3),
+                tileMode: TileMode.clamp,
+              ),
               child: ListView.separated(
                 physics: const NeverScrollableScrollPhysics(),
                 separatorBuilder: (context, index) {
                   return Divider(
-                    color: theme.baseColorShade4,
-                    thickness: 8,
+                    color: Styles.grayD5D5D5,
+                    thickness: 1,
                     height: 24,
                   );
                 },

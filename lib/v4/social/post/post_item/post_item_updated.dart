@@ -235,7 +235,7 @@ class PostItem extends NewBaseComponent {
                     children: _buildTextSpansWithLinks(
                       textContent,
                       TextStyle(
-                        color: theme.baseColor,
+                        color: Colors.black,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                       ),
