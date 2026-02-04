@@ -12,6 +12,7 @@ import 'package:amity_uikit_beta_service/v4/utils/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:mobile_app_padel/shared/styles.dart';
 
 class AmityGlobalFeedComponent extends NewBaseComponent {
   AmityGlobalFeedComponent(
@@ -39,7 +40,7 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
           return BaseComponent(
               child: Container(
             width: double.infinity,
-            decoration: BoxDecoration(color: theme.baseColorShade4),
+            decoration: BoxDecoration(color: Styles.grayD5D5D5),
             child: RefreshIndicator(
               onRefresh: () async {
                 context.read<GlobalFeedBloc>().add(GlobalFeedInit());
@@ -96,7 +97,6 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
                                         onPostUpdated: (post) {},
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
                                   ],
                                 ),
                               ),

@@ -14,6 +14,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:linkify/linkify.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_branch_sdk/flutter_branch_sdk.dart';
+import 'package:amity_uikit_beta_service/viewmodel/community_feed_viewmodel.dart';
+import 'package:provider/provider.dart';
 
 // Import custom components from mobile_app_padel
 import 'package:mobile_app_padel/features/profile/data/match.dart';
@@ -45,6 +48,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:mobile_app_padel/features/community/data/models/community_ranking_data.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_ranking_leaderboard.dart';
+import 'package:mobile_app_padel/shared/widgets/link_preview_image.dart';
+import 'package:any_link_preview/any_link_preview.dart';
 
 
 class PostItem extends NewBaseComponent {
@@ -128,7 +133,8 @@ class PostItem extends NewBaseComponent {
     );
 
     return GestureDetector(
-      onTap: isPostDetail ? null : () {
+      onTap: isPostDetail ||
+          getGeneratePostType(post) == GeneratePostType.start_following_user ? null : () {
         Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => PopScope(
             canPop: true,
@@ -147,7 +153,7 @@ class PostItem extends NewBaseComponent {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.only(top: 10),
-        decoration: BoxDecoration(color: theme.backgroundColor),
+        decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Styles.grayD5D5D5, width: 1))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -164,6 +170,17 @@ class PostItem extends NewBaseComponent {
               followingUser: followingUser,
             ),
             getTextPostContent(post),
+            // Add link preview if text post contains URL
+            Builder(
+              builder: (context) {
+                final hasChildren = post.children?.isNotEmpty ?? false;
+                // Only show link preview if post has no image/video children
+                if (!hasChildren && post.data is TextData) {
+                  return _getLinkPreview(context, post);
+                }
+                return const SizedBox();
+              },
+            ),
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: post.children?.isEmpty == true ? 0 : 4),
@@ -206,24 +223,39 @@ class PostItem extends NewBaseComponent {
     // Get mentions from post metadata
     final mentions = post.metadata?["mentions"] as List<dynamic>? ?? [];
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: mentions.isNotEmpty
-          ? _buildTextWithMentions(textContent, mentions)
-          : Text(
-              textContent,
-              style: TextStyle(
-                color: theme.baseColor,
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+    return Builder(
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: mentions.isNotEmpty
+              ? _buildTextWithMentions(context, textContent, mentions)
+              : RichText(
+                  text: TextSpan(
+                    children: _buildTextSpansWithLinks(
+                      textContent,
+                      TextStyle(
+                        color: theme.baseColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      TextStyle(
+                        color: Styles.green,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        decoration: TextDecoration.underline,
+                      ),
+                      context,
+                    ),
+                  ),
+                ),
+        );
+      },
     );
   }
 
   /// Build text with mentions support
-  Widget _buildTextWithMentions(String text, List<dynamic> mentionsData) {
+  Widget _buildTextWithMentions(BuildContext context, String text, List<dynamic> mentionsData) {
     final mentionsList = mentionsData
         .map((mention) => Mention(
               index: mention['index'] as int,
@@ -237,6 +269,7 @@ class PostItem extends NewBaseComponent {
 
     return RichText(
       text: _buildMentionsTextSpan(
+        context,
         text,
         mentionsList,
         TextStyle(
@@ -255,6 +288,7 @@ class PostItem extends NewBaseComponent {
 
   /// Build TextSpan with mentions highlighting
   TextSpan _buildMentionsTextSpan(
+    BuildContext context,
     String currentText,
     List<Mention> mentionsList,
     TextStyle textStyle,
@@ -279,6 +313,7 @@ class PostItem extends NewBaseComponent {
             fontWeight: FontWeight.w400,
             decoration: TextDecoration.underline,
           ),
+          context,
         );
         children.addAll(textSpans);
       }
@@ -314,6 +349,7 @@ class PostItem extends NewBaseComponent {
           fontWeight: FontWeight.w400,
           decoration: TextDecoration.underline,
         ),
+        context,
       );
       children.addAll(textSpans);
     }
@@ -326,19 +362,42 @@ class PostItem extends NewBaseComponent {
     String text,
     TextStyle textStyle,
     TextStyle linkStyle,
+    BuildContext context,
   ) {
     final elements = linkify(text);
 
     return elements.map((element) {
       if (element is LinkableElement) {
-        return TextSpan(
-          text: element.text,
-          style: linkStyle,
-          recognizer: TapGestureRecognizer()
-            ..onTap = () {
-              _handleLinkTap(element.url);
-            },
-        );
+        // Check if the URL contains deeplink host
+        if (element.url.contains(deeplinkHost)) {
+          // Return WidgetSpan for deeplink handling with loading state
+          return WidgetSpan(
+            child: Consumer<CommuFeedVM>(
+              builder: (context, vm, _) {
+                return InkWell(
+                  onTap: () {
+                    vm.setLoadingValue(true);
+                    FlutterBranchSdk.handleDeepLink(element.url);
+                    Future.delayed(Duration(seconds: 3), () {
+                      vm.setLoadingValue(false);
+                    });
+                  },
+                  child: Text(element.text, style: linkStyle),
+                );
+              },
+            ),
+          );
+        } else {
+          // Regular external link
+          return TextSpan(
+            text: element.text,
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                _handleLinkTap(element.url);
+              },
+          );
+        }
       } else {
         return TextSpan(
           text: element.text,
@@ -368,6 +427,58 @@ class PostItem extends NewBaseComponent {
     } catch (e) {
       print('Could not launch $url: $e');
     }
+  }
+
+  /// Extract link from post text
+  String _extractLink(AmityPost post) {
+    if (post.data is! TextData) return "";
+    
+    final textdata = post.data as TextData;
+    final text = textdata.text ?? "";
+    var elements = linkify(text,
+        options: const LinkifyOptions(
+          humanize: false,
+          defaultToHttps: true,
+        ));
+    for (var e in elements) {
+      if (e is LinkableElement) {
+        return e.url;
+      }
+    }
+    return "";
+  }
+
+  /// Check if post contains a valid URL
+  bool _urlValidation(AmityPost post) {
+    final url = _extractLink(post);
+    return AnyLinkPreview.isValidLink(url);
+  }
+
+  /// Render link preview thumbnail
+  Widget _getLinkPreview(BuildContext context, AmityPost post) {
+    if (!_urlValidation(post)) {
+      return const SizedBox();
+    }
+
+    final url = _extractLink(post);
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Consumer<CommuFeedVM>(
+        builder: (context, vm, _) {
+          return LinkPreviewImage(
+            url: url.toLowerCase(),
+            onTap: () {
+              vm.setLoadingValue(true);
+              FlutterBranchSdk.handleDeepLink(url);
+              Future.delayed(Duration(seconds: 3), () {
+                vm.setLoadingValue(false);
+              });
+            },
+          );
+        },
+      ),
+    );
   }
 
   Widget getImagePostContent(List<ImageData> images) {
@@ -410,7 +521,8 @@ class PostItem extends NewBaseComponent {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: metadata['eventId'] != null ? EdgeInsets.zero : const EdgeInsets.symmetric(
+          horizontal: 20),
       child: Column(
         children: [
           // Match component
@@ -501,11 +613,12 @@ class PostItem extends NewBaseComponent {
           if (metadata['eventId'] != null && metadata?["type"] == "joined_event")
             event != null
                 ? event!.deleted == true
-                ? DeletedContentPlaceholder(
-              type: DeletedContentType.event,
-              margin: EdgeInsets.zero,
-              subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
-            )
+                ? Padding(padding: EdgeInsets.symmetric(horizontal: 20),
+                child: DeletedContentPlaceholder(
+                  type: DeletedContentType.event,
+                  margin: EdgeInsets.zero,
+                  subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
+                ))
                 : PostEventItem(event: event!,
                 communityName: (post.target as CommunityTarget).targetCommunity
                     ?.displayName ?? "",
@@ -513,16 +626,20 @@ class PostItem extends NewBaseComponent {
                 : SizedBox.shrink()
 
           // Event component
-           else if (metadata['eventId'] != null)
-            event != null
-                ? event!.deleted == true
-                ? DeletedContentPlaceholder(
-              type: DeletedContentType.event,
-              margin: EdgeInsets.zero,
-              subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
-            )
-                : PostEventItem(event: event!, communityName: (post.target as CommunityTarget).targetCommunity?.displayName ?? "")
-                : SizedBox.shrink(),
+          else
+            if (metadata['eventId'] != null)
+              event != null
+                  ? event!.deleted == true
+                  ? Padding(padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: DeletedContentPlaceholder(
+                    type: DeletedContentType.event,
+                    margin: EdgeInsets.zero,
+                    subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
+                  ))
+                  : PostEventItem(event: event!,
+                  communityName: (post.target as CommunityTarget).targetCommunity
+                      ?.displayName ?? "")
+                  : SizedBox.shrink(),
 
           // Weekly Ranking component
           if (metadata?['type'] == 'weekly_ranking')

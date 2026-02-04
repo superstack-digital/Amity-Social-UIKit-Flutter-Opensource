@@ -26,7 +26,8 @@ import 'package:mobile_app_padel/features/onboarding/data/models/user.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/profile_repository.dart';
 import 'package:amity_uikit_beta_service/v4/utils/post_data_cache_manager.dart';
 import 'package:mobile_app_padel/shared/widgets/shadow_avatar.dart';
-
+import 'package:amity_uikit_beta_service/view/social/community_feedV2.dart';
+import 'package:mobile_app_padel/shared/deeplink.dart';
 
 
 class AmityPostHeader extends StatefulWidget {
@@ -116,11 +117,14 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                     textStyle: Styles.fontInterRegular(10, lineHeightInPxl: 21, color: Styles.tpsBrown)),
                 alignment: Alignment.centerRight,
               )),
-              Container(
-                padding: EdgeInsets.only(right: 10, left: 7),
-                child: Icon(
-                  Icons.more_vert,
-                  color: HexColor("B3B3B3"),
+              GestureDetector(
+                onTap: () => showPostAction(context, widget.post),
+                child: Container(
+                  padding: EdgeInsets.only(right: 10, left: 7),
+                  child: Icon(
+                    Icons.more_vert,
+                    color: HexColor("B3B3B3"),
+                  ),
                 ),
               )
             ],
@@ -242,12 +246,22 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           .add(PostItemDelete(post: post, action: widget.action));
     }
 
+    onShare() {
+      handleShareContent(
+          metadata: {"type": "communityPost", "postId": post.postId ?? ""},
+          title: "Join Community",
+          shouldShare: true,
+          description: "Let's join our match to play together");
+    }
+
     double height = 0;
     double baseHeight = 80;
     double itemHeight = 48;
     if (isModerator) {
       itemHeight += 48;
     }
+    // Add height for Share option
+    itemHeight += 48;
     height = baseHeight + itemHeight;
 
     showModalBottomSheet(
@@ -360,6 +374,41 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                           ),
                         ),
                       ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    onShare();
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 20),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.only(top: 2, bottom: 2),
+                          child: Icon(
+                            Icons.ios_share_outlined,
+                            size: 24,
+                            color: Color(0xFF292B32),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Share post',
+                          style: TextStyle(
+                            color: Color(0xFF292B32),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 if (isModerator) _getDeletetedPost(context, post, onDelete)
               ],
             ),
@@ -384,9 +433,17 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           .add(PostItemDelete(post: post, action: widget.action));
     }
 
+    onShare() {
+      handleShareContent(
+          metadata: {"type": "communityPost", "postId": post.postId ?? ""},
+          title: "Join Community",
+          shouldShare: true,
+          description: "Let's join our match to play together");
+    }
+
     double height = 0;
     double baseHeight = 80;
-    double itemsHeight = 96;
+    double itemsHeight = 144; // 3 items: Edit + Share + Delete
     height = baseHeight + itemsHeight;
 
     showModalBottomSheet(
@@ -450,6 +507,41 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                         const SizedBox(width: 12),
                         const Text(
                           'Edit post',
+                          style: TextStyle(
+                            color: Color(0xFF292B32),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    onShare();
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 20),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.only(top: 2, bottom: 2),
+                          child: Icon(
+                            Icons.ios_share_outlined,
+                            size: 24,
+                            color: Color(0xFF292B32),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Share post',
                           style: TextStyle(
                             color: Color(0xFF292B32),
                             fontSize: 15,
@@ -985,6 +1077,26 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           ),
       );
     }
+
+
+    if(type == GeneratePostType.event_created){
+      final target = widget.post.target as CommunityTarget;
+      return Container(
+        padding: const EdgeInsets.only(left: 20, right: 7),
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(color: Colors.white),
+        child: ShadowAvatar(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => CommunityScreen(
+                    community: target.targetCommunity!))),
+            borderWidth: 0,
+            height: 32,
+            width: 32,
+            url: target.targetCommunity?.avatarImage
+                ?.getUrl(AmityImageSize.SMALL) ?? "",
+            fullName: target.targetCommunity?.displayName ?? ""),
+      );
+    }
     
     if(type == GeneratePostType.weekly_ranking){
       final target = widget.post.target as CommunityTarget;
@@ -1007,18 +1119,8 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
       padding: const EdgeInsets.only(left: 20, right: 7),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(color: Colors.white),
-      child: SizedBox(
-        width: 32,
-        height: 32,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: AmityNetworkImage(
-            imageUrl: widget.post.postedUser?.avatarUrl ??
-                widget.post.postedUser?.avatarCustomUrl,
-            placeHolderPath: "assets/Icons/amity_ic_user_avatar_placeholder.svg",
-          ),
-        ),
-      ),
+      child: ShadowAvatar(height: 32, width: 32, url: widget.post.postedUser?.avatarUrl ??
+          widget.post.postedUser?.avatarCustomUrl ?? "", fullName: widget.post.postedUser?.displayName ?? ""),
     );
   }
 }

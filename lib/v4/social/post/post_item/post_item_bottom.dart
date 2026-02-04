@@ -47,7 +47,7 @@ class PostItemBottom extends NewBaseComponent {
         ),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.only(left: 16, top: 0, right: 16, bottom: 0),
+          padding: const EdgeInsets.only(left: 20, top: 0, right: 20, bottom: 0),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -55,7 +55,7 @@ class PostItemBottom extends NewBaseComponent {
             children: [
               PostReactionButton(post: post, action: action, isReacting: isReacting, showLabel: hideReactionCount, isOptimisticUi: isOptimisticUi,),
               const SizedBox(width: 12),
-              if(getGeneratePostType(post) != GeneratePostType.event_created) getCommentButton(hideReactionCount),
+              if(getGeneratePostType(post) != GeneratePostType.start_following_user) getCommentButton(hideReactionCount),
             ],
           )
         )

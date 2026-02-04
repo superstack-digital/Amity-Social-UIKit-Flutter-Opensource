@@ -46,6 +46,9 @@ import 'package:mobile_app_padel/features/community/presentation/controllers/tea
 import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/post_item/post_item_updated.dart';
+import 'package:amity_uikit_beta_service/v4/social/post/post_item/bloc/post_item_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -1069,19 +1072,16 @@ class _StickyHeaderList extends StatelessWidget {
                                       final matchResult = snapshot1.data?[2] as IMatch?;
                                       final eventStanding = snapshot1.data?[3] as List<EventStanding>?;
 
-                                      return PostWidget(
-                                        isPostDetail: false,
-                                        showCommunity: false,
-                                        showlatestComment: true,
-                                        isFromFeed: true,
-                                        post: snapshot.data!,
-                                        theme: theme,
-                                        postIndex: index,
-                                        feedType: FeedType.community,
-                                        match: match,
-                                        matchResult: matchResult,
-                                        event: event,
-                                        eventStanding: eventStanding,
+                                      return BlocProvider(
+                                        create: (context) => PostItemBloc(),
+                                        child: PostItem(
+                                          post: snapshot.data!,
+                                          match: match,
+                                          matchResult: matchResult,
+                                          event: event,
+                                          eventStanding: eventStanding,
+                                          isPostDetail: false,
+                                        ),
                                       );
                                     });
                               });
