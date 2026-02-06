@@ -121,32 +121,24 @@ class PostItem extends NewBaseComponent {
             onPostDeleted: (String) {},
             onPostUpdated: onPostUpdated);
 
-    var page = CommentScreenV2(
-      amityPost: post,
-      theme: ThemeData(),
-      isFromFeed: true,
-      feedType: FeedType.community,
-      eventStanding: eventStanding,
-      event: event,
-      match: match,
-      matchResult: matchResult,
-    );
-
     return GestureDetector(
       onTap: isPostDetail ||
           getGeneratePostType(post) == GeneratePostType.start_following_user ? null : () {
+        // Use the latest post from state instead of closure
+        final latestPost = context.read<PostItemBloc>().state is PostItemStateLoaded
+            ? (context.read<PostItemBloc>().state as PostItemStateLoaded).post
+            : post;
+        
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => PopScope(
-            canPop: true,
-            child: page,
-            onPopInvoked: (didPop) => {
-              if (didPop)
-                {
-                  context
-                      .read<GlobalFeedBloc>()
-                      .add(GlobalFeedReloadThePost(post: post))
-                }
-            },
+          builder: (context) => CommentScreenV2(
+            amityPost: latestPost,
+            theme: ThemeData(),
+            isFromFeed: true,
+            feedType: FeedType.community,
+            eventStanding: eventStanding,
+            event: event,
+            match: match,
+            matchResult: matchResult,
           ),
         ));
       },

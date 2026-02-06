@@ -37,6 +37,7 @@ import 'package:mobile_app_padel/features/community/data/repositories/event_repo
 import 'package:amity_uikit_beta_service/v4/social/post/post_item/post_item_updated.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/post_item/bloc/post_item_bloc.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/common/post_action.dart';
+import 'package:amity_uikit_beta_service/v4/social/globalfeed/bloc/global_feed_bloc.dart';
 import 'package:mobile_app_padel/features/community/data/models/community_ranking_data.dart';
 import 'package:amity_uikit_beta_service/v4/utils/post_data_cache_manager.dart';
 
@@ -76,17 +77,26 @@ class CommentScreenV2State extends State<CommentScreenV2> {
   final _commentTextEditController = TextEditingController();
   final GlobalKey<MentionTextFieldState> commentTextFieldKey = GlobalKey();
   List<CommunityRankingData>? _communityRanking;
+  bool _isPopping = false;
+  late PostItemBloc _postItemBloc;
 
 
   @override
   void initState() {
+    super.initState();
+    _postItemBloc = PostItemBloc();
     Provider.of<ReplyVM>(context, listen: false).clearReply();
     //query comment here
     Provider.of<PostVM>(context, listen: false)
         .getPost(widget.amityPost.postId!, widget.amityPost);
 
     _loadWeeklyRankingIfNeeded();
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _postItemBloc.close();
+    super.dispose();
   }
 
   Future<void> _loadWeeklyRankingIfNeeded() async {
@@ -164,15 +174,15 @@ class CommentScreenV2State extends State<CommentScreenV2> {
     final bHeight = mediaQuery.size.height - mediaQuery.padding.top;
 
       return Consumer<PostVM>(builder: (context, vm, _) {
-        return Stack(
-          children: [
-            StreamBuilder<AmityPost>(
-                key: Key(postData.postId),
-                stream: vm.amityPost.listen.stream,
-                initialData: vm.amityPost,
-                builder: (context, snapshot) {
-                  var snapshotPostData = snapshot.data?.data as TextData;
-                  var actionSection = Column(
+          return Stack(
+            children: [
+              StreamBuilder<AmityPost>(
+                  key: Key(widget.amityPost.postId!),
+                  stream: _isPopping ? Stream.value(vm.amityPost) : vm.amityPost.listen.stream,
+                  initialData: vm.amityPost,
+                  builder: (context, snapshot) {
+                    var snapshotPostData = snapshot.data?.data as TextData;
+                    var actionSection = Column(
                     children: [
                       Container(
                         color: widget.feedType == FeedType.user
@@ -288,23 +298,67 @@ class CommentScreenV2State extends State<CommentScreenV2> {
                     ],
                   );
 
-                  return Scaffold(
-                    backgroundColor: Provider.of<AmityUIConfiguration>(context)
-                        .appColors
-                        .baseBackground,
-                    body: FadedSlideAnimation(
-                      beginOffset: const Offset(0, 0.3),
-                      endOffset: const Offset(0, 0),
-                      slideCurve: Curves.linearToEaseOut,
-                      child: SafeArea(
-                        child: Column(
-                          children: [
-                            Container(
-                              alignment: Alignment.topLeft,
-                              child: IconButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
+                  return PopScope(
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, result) async {
+                      if (!didPop && !_isPopping) {
+                        _isPopping = true;
+                        
+                        // Update GlobalFeed with latest post data before popping
+                        try {
+                          // Get latest post from PostVM (has updated reactions/comments)
+                          final latestPost = Provider.of<PostVM>(context, listen: false).amityPost;
+                          context.read<GlobalFeedBloc>().add(
+                            GlobalFeedReloadThePost(post: latestPost)
+                          );
+                        } catch (e) {
+                          print("Error updating global feed: $e");
+                        }
+                        
+                        // Unfocus to dismiss keyboard
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        // Small delay to let keyboard dismiss animation start
+                        await Future.delayed(const Duration(milliseconds: 50));
+                        if (mounted && context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      }
+                    },
+                    child: Scaffold(
+                      backgroundColor: Provider.of<AmityUIConfiguration>(context)
+                          .appColors
+                          .baseBackground,
+                      body: FadedSlideAnimation(
+                        beginOffset: const Offset(0, 0.3),
+                        endOffset: const Offset(0, 0),
+                        slideCurve: Curves.linearToEaseOut,
+                        child: SafeArea(
+                          child: Column(
+                            children: [
+                              Container(
+                                alignment: Alignment.topLeft,
+                                child: IconButton(
+                                  onPressed: () async {
+                                    if (_isPopping) return;
+                                    _isPopping = true;
+                                    
+                                    // Update GlobalFeed with latest post data before popping
+                                    try {
+                                      final latestPost = Provider.of<PostVM>(context, listen: false).amityPost;
+                                      context.read<GlobalFeedBloc>().add(
+                                        GlobalFeedReloadThePost(post: latestPost)
+                                      );
+                                    } catch (e) {
+                                      print("Error updating global feed: $e");
+                                    }
+                                    
+                                    // Unfocus before popping
+                                    FocusManager.instance.primaryFocus?.unfocus();
+                                    await Future.delayed(const Duration(milliseconds: 50));
+                                    if (mounted && context.mounted) {
+                                      Navigator.of(context).pop();
+                                    }
+                                  },
                                 icon: Icon(Icons.chevron_left,
                                     color: Provider.of<AmityUIConfiguration>(context)
                                         .appColors
@@ -336,9 +390,9 @@ class CommentScreenV2State extends State<CommentScreenV2> {
                                             crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
                                             children: [
-                                              // Use PostItem from post_item_updated.dart
-                                              BlocProvider(
-                                                create: (context) => PostItemBloc(),
+                                              // Use PostItem with stable BlocProvider
+                                              BlocProvider.value(
+                                                value: _postItemBloc,
                                                 child: PostItem(
                                                   post: snapshot.data!,
                                                   match: widget.match,
@@ -435,8 +489,9 @@ class CommentScreenV2State extends State<CommentScreenV2> {
                         ),
                       ),
                     ),
-                  );
-                }),
+                  ),
+                );
+              }),
             if(vm.isLoading)
               Container(
                 color: Colors.black.withValues(alpha: 0.3),

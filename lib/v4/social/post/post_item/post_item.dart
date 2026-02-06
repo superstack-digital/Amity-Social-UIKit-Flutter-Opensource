@@ -65,24 +65,17 @@ class PostItem extends NewBaseComponent {
             onPostDeleted: (String) {},
             onPostUpdated: onPostUpdated);
 
-            var page = AmityPostDetailPage(
-              postId: post.postId!,
-              action: postAction,
-            );
     return GestureDetector(
       onTap: () {
+        // Use the latest post from state instead of closure
+        final latestPost = context.read<PostItemBloc>().state is PostItemStateLoaded
+            ? (context.read<PostItemBloc>().state as PostItemStateLoaded).post
+            : post;
+        
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => PopScope(
-            canPop: true,
-            child: page,
-            onPopInvoked: (didPop) => {
-              if (didPop)
-                {
-                  context
-                      .read<GlobalFeedBloc>()
-                      .add(GlobalFeedReloadThePost(post: post))
-                }
-            },
+          builder: (context) => AmityPostDetailPage(
+            postId: latestPost.postId!,
+            action: postAction,
           ),
         ));
       },

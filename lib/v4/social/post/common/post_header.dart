@@ -670,19 +670,17 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               TextSpan(
                 text: getPostOwnerName(type),
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
                TextSpan(
                 text: ' created a new ',
                  style: Styles.fontInterRegular(
-                     14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                     14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: "event",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: Styles.fontInterSemiBold(
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
             ],
           ),
@@ -697,17 +695,17 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               TextSpan(
                 text: getPostOwnerName(type),
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: ' created a match at ',
                 style: Styles.fontInterRegular(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: widget.match?.getCourt()?.name ?? "",
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
             ],
           ),
@@ -722,17 +720,17 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               TextSpan(
                 text: getPostOwnerName(type),
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: ' won the ${widget.eventStanding?.first.event?.tournament ?? "event"} tournament in ',
                 style: Styles.fontInterRegular(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: widget.eventStanding?.first.event.club?.name ?? "",
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
             ],
           ),
@@ -747,17 +745,17 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               TextSpan(
                 text: getPostOwnerName(type),
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: ' started following ',
                 style: Styles.fontInterRegular(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: widget.followingUser?.fullName ?? "",
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
             ],
           ),
@@ -772,12 +770,12 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               TextSpan(
                 text: getPostOwnerName(type),
                 style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
                 text: ' just leveled up!',
                 style: Styles.fontInterRegular(
-                    14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
             ],
           ),
@@ -796,48 +794,48 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                   TextSpan(
                     text: _joinedUsers![joinedCount - 1].fullName,
                     style: Styles.fontInterSemiBold(
-                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                        14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                   ),
                   TextSpan(
                     text: ' just joined a match with ',
                     style: Styles.fontInterRegular(
-                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                        14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                   ),
                   // Show other players (all except last one)
                   if (joinedCount == 2) ...[
                     TextSpan(
                       text: _joinedUsers![0].fullName,
                       style: Styles.fontInterSemiBold(
-                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                   ] else if (joinedCount == 3) ...[
                     // Show "A & B"
                     TextSpan(
                       text: _joinedUsers![0].fullName,
                       style: Styles.fontInterSemiBold(
-                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                     TextSpan(
                       text: ' & ',
                       style: Styles.fontInterRegular(
-                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                     TextSpan(
                       text: _joinedUsers![1].fullName,
                       style: Styles.fontInterSemiBold(
-                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                   ] else ...[
                     // Show "A & N other players"
                     TextSpan(
                       text: _joinedUsers![0].fullName,
                       style: Styles.fontInterSemiBold(
-                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                     TextSpan(
                       text: ' & ${joinedCount - 2} other player${joinedCount - 2 > 1 ? 's' : ''}',
                       style: Styles.fontInterSemiBold(
-                          14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                   ],
                 ] else ...[
@@ -845,12 +843,12 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                   TextSpan(
                     text: getPostOwnerName(type),
                     style: Styles.fontInterSemiBold(
-                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                        14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                   ),
                   TextSpan(
                     text: ' just joined a match',
                     style: Styles.fontInterRegular(
-                        14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                        14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                   ),
                 ],
               ],
@@ -871,17 +869,17 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                 TextSpan(
                   text: _joinedUsers![0].fullName,
                   style: Styles.fontInterSemiBold(
-                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                      14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                 ),
                 TextSpan(
                   text: ' & ',
                   style: Styles.fontInterRegular(
-                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                      14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                 ),
                 TextSpan(
                   text: _joinedUsers![1].fullName,
                   style: Styles.fontInterSemiBold(
-                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                      14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                 ),
               ] else if (joinedCount >= 3) ...[
                 // Show "A, B & N players"

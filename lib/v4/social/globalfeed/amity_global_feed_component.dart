@@ -25,18 +25,31 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
 
   @override
   Widget buildComponent(BuildContext context) {
-    context.read<GlobalFeedBloc>().add(GlobalFeedInit());
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
-    });
+    // Only init once when first mounted
+    final bloc = context.read<GlobalFeedBloc>();
+    
+    // Init only if never initialized before
+    if (!bloc.hasInitialized) {
+      bloc.add(GlobalFeedInit());
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        bloc.add(GlobalFeedFetch());
+      });
+    }
 
     return Container(
       color: theme.backgroundColor,
-      child: BlocBuilder<GlobalFeedBloc, GlobalFeedState>(builder: (context, state) {
+      child: BlocBuilder<GlobalFeedBloc, GlobalFeedState>(
+        buildWhen: (previous, current) {
+          // Always rebuild - needed for GlobalFeedReloadThePost to update individual posts
+          // Optimization happens at PostItem level via proper keys
+          return true;
+        },
+        builder: (context, state) {
         if (state.isFetching && state.list.isEmpty) {
           viewedPost = [];
           return skeletonList();
         } else {
+          // Feed renders with ${state.list.length} posts
           return BaseComponent(
               child: Container(
             width: double.infinity,

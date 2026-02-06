@@ -11,6 +11,7 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
 
   late List<AmityPost> posts = [];
   late List<AmityPost> localCreatedPost = [];
+  bool hasInitialized = false;
 
   final int pageSize = 20;
   GlobalFeedBloc()
@@ -60,6 +61,7 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
     });
 
     on<GlobalFeedInit>((event, emit) async {
+      hasInitialized = true;
       _controller.reset();
       _controller.fetchNextPage();
       localCreatedPost.clear();
@@ -90,7 +92,7 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
           updatedList.add(element);
         }
       }
-      emit(state.copyWith(list: []));
+      // Only emit once to avoid flickering and lag
       emit(state.copyWith(list: updatedList));
     });
   }
