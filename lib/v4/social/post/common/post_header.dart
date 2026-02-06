@@ -640,6 +640,8 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
       case GeneratePostType.event_created:
       case GeneratePostType.weekly_ranking:
         return (widget.post.target as CommunityTarget).targetCommunity?.displayName ?? "";
+      case GeneratePostType.event_standing:
+        return widget.eventStanding?.first.user.fullName ?? "";
       default:
         return widget.post.postedUser?.displayName ?? "";
     }
