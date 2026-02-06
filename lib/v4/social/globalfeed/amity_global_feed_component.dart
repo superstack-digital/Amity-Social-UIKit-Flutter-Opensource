@@ -49,7 +49,7 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
               child: NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollInfo) {
                   onScroll?.call(scrollInfo.metrics.pixels);
-                  if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 100) {
+                  if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 500) {
                     context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
                   }
                   return false;
