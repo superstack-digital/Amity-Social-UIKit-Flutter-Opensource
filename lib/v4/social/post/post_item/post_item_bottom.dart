@@ -15,6 +15,7 @@ class PostItemBottom extends NewBaseComponent {
   final bool hideReactionCount;
   final bool isOptimisticUi;
   final bool? hideDivider;
+  final bool? isStatusUpdatePost;
 
   PostItemBottom({
     Key? key,
@@ -26,11 +27,17 @@ class PostItemBottom extends NewBaseComponent {
     required String componentId,
     required this.isOptimisticUi,
     this.hideDivider,
+    this.isStatusUpdatePost
   }) : super(key: key, pageId: pageId, componentId: componentId);
 
   @override
   Widget buildComponent(
       BuildContext context) {
+
+    if(isStatusUpdatePost == true) return Container(
+      height: 20
+    );
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,

@@ -50,6 +50,7 @@ import 'package:mobile_app_padel/features/community/data/models/community_rankin
 import 'package:mobile_app_padel/features/community/presentation/screens/community_ranking_leaderboard.dart';
 import 'package:mobile_app_padel/shared/widgets/link_preview_image.dart';
 import 'package:any_link_preview/any_link_preview.dart';
+import 'package:mobile_app_padel/shared/font_mapper.dart';
 
 
 class PostItem extends NewBaseComponent {
@@ -81,6 +82,7 @@ class PostItem extends NewBaseComponent {
 
   @override
   Widget buildComponent(BuildContext context) {
+
     return BlocBuilder<PostItemBloc, PostItemState>(builder: (context, state) {
       if (state is PostItemStateLoaded) {
         return renderPost(context: context, post: state.post);
@@ -163,16 +165,16 @@ class PostItem extends NewBaseComponent {
             ),
             getTextPostContent(post),
             // Add link preview if text post contains URL
-            Builder(
-              builder: (context) {
-                final hasChildren = post.children?.isNotEmpty ?? false;
-                // Only show link preview if post has no image/video children
-                if (!hasChildren && post.data is TextData) {
-                  return _getLinkPreview(context, post);
-                }
-                return const SizedBox();
-              },
-            ),
+            // Builder(
+            //   builder: (context) {
+            //     final hasChildren = post.children?.isNotEmpty ?? false;
+            //     // Only show link preview if post has no image/video children
+            //     if (!hasChildren && post.data is TextData) {
+            //       return _getLinkPreview(context, post);
+            //     }
+            //     return const SizedBox();
+            //   },
+            // ),
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: post.children?.isEmpty == true ? 0 : 4),
@@ -192,6 +194,7 @@ class PostItem extends NewBaseComponent {
     final type = getGeneratePostType(post);
     if (type == GeneratePostType.event_created ||
         type == GeneratePostType.match_looking_for_players ||
+        type == GeneratePostType.match_completed ||
         type == GeneratePostType.event_standing ||
         type == GeneratePostType.start_following_user ||
         type == GeneratePostType.level_up || 
@@ -226,16 +229,13 @@ class PostItem extends NewBaseComponent {
                   text: TextSpan(
                     children: _buildTextSpansWithLinks(
                       textContent,
-                      TextStyle(
-                        color: Colors.black,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacing: 0),
                       TextStyle(
                         color: Styles.green,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                         decoration: TextDecoration.underline,
+                        fontFamily: FontFamily.interRegular,
                       ),
                       context,
                     ),
@@ -264,16 +264,8 @@ class PostItem extends NewBaseComponent {
         context,
         text,
         mentionsList,
-        TextStyle(
-          color: theme.baseColor,
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-        ),
-        TextStyle(
-          color: Styles.green,
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-        ),
+        Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacingInPercent: -1),
+        Styles.fontInterSemiBold(15, color: Styles.green, letterSpacingInPercent: -1),
       ),
     );
   }
@@ -507,6 +499,10 @@ class PostItem extends NewBaseComponent {
   /// New method to render metadata components (match, matchResult, event, eventStanding)
   Widget getMetadataComponents(BuildContext context, AmityPost post) {
 
+    if(post.metadata?["type"] == "weekly_ranking") {
+      print("${communityRanking != null} ${communityRanking!.isNotEmpty}");
+    }
+
     final metadata = post.metadata;
 
     if (metadata == null) return Container();
@@ -523,7 +519,6 @@ class PostItem extends NewBaseComponent {
                 ? match!.status == MatchStatus.cancelled
                 ? DeletedContentPlaceholder(
               type: DeletedContentType.match,
-              margin: const EdgeInsets.symmetric(vertical: 12),
               subtitle: _formatMatchDateTime(match!),
             )
                 :
@@ -554,6 +549,7 @@ class PostItem extends NewBaseComponent {
                           buttonTitle: "",
                           onClickButton: (match) {},
                           isComplete: true,
+                          backgroundColor: HexColor("FDFBF9"),
                           hideAddDetails: true,
                         ),
                       )
@@ -608,7 +604,6 @@ class PostItem extends NewBaseComponent {
                 ? Padding(padding: EdgeInsets.symmetric(horizontal: 20),
                 child: DeletedContentPlaceholder(
                   type: DeletedContentType.event,
-                  margin: EdgeInsets.zero,
                   subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
                 ))
                 : PostEventItem(event: event!,
@@ -625,7 +620,6 @@ class PostItem extends NewBaseComponent {
                   ? Padding(padding: EdgeInsets.symmetric(horizontal: 20),
                   child: DeletedContentPlaceholder(
                     type: DeletedContentType.event,
-                    margin: EdgeInsets.zero,
                     subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
                   ))
                   : PostEventItem(event: event!,
@@ -636,14 +630,31 @@ class PostItem extends NewBaseComponent {
           // Weekly Ranking component
           if (metadata?['type'] == 'weekly_ranking')
             communityRanking != null && communityRanking!.isNotEmpty
-                ? CommunityRankingLeaderboard(
-                isSharing: true,
-                flexibleWidth: true,
-                title: "${(post.target as CommunityTarget).targetCommunity?.displayName ??
-                    ""} Rankings",
-                community: (post.target as CommunityTarget).targetCommunity,
-                data: communityRanking!.take(3).toList(),
-                leaderboardType: LeaderboardType.team)
+                ? Stack(
+              children: [
+                CommunityRankingLeaderboard(
+                    isSharing: true,
+                    flexibleWidth: true,
+                    title: "${(post.target as CommunityTarget).targetCommunity?.displayName ??
+                        ""} Rankings",
+                    community: (post.target as CommunityTarget).targetCommunity,
+                    data: communityRanking!.take(3).toList(),
+                    leaderboardType: LeaderboardType.team),
+                Positioned.fill(
+                  child: Container(decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [
+                      Colors.white.withOpacity(0.0),
+                      Colors.white.withOpacity(0.4),
+                      Colors.white,
+                    ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.6, 0.7, 1.0]
+                    ),
+                  )),
+                )
+              ],
+            )
                 : Container(
                   height: 100,
                   alignment: Alignment.center,
@@ -657,14 +668,24 @@ class PostItem extends NewBaseComponent {
   Widget getPostBottom(
       {required AmityPost post,
       required AmityPostAction action,
-      bool isReacting = false}) {
+        bool isReacting = false}) {
+    final matchCancelled = match?.status == MatchStatus.cancelled;
+    final eventDeleted = event?.deleted == true;
+    final eventStandingDeleted = eventStanding != null &&
+        eventStanding!.isNotEmpty &&
+        eventStanding!.first.event.deleted == true;
+
+    final isStatusUpdatePost = matchCancelled ||
+        eventDeleted || eventStandingDeleted;
+
     return PostItemBottom(
-      post: post,
-      action: action,
-      isReacting: isReacting,
-      componentId: '',
-      isOptimisticUi: true,
-      hideDivider: true
+        post: post,
+        action: action,
+        isReacting: isReacting,
+        componentId: '',
+        isOptimisticUi: true,
+        hideDivider: true,
+        isStatusUpdatePost: isStatusUpdatePost
     );
   }
 
@@ -817,9 +838,8 @@ class PostItem extends NewBaseComponent {
 
       return Container(
         decoration: BoxDecoration(
-            color: HexColor("FDFBF9"),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(width: 1, color: Styles.level2)
+            color: Styles.green20,
+            borderRadius: BorderRadius.circular(8)
         ),
         margin: EdgeInsets.only(top: 12),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -841,7 +861,7 @@ class PostItem extends NewBaseComponent {
                         nationalityCode: secondNationalityCode,
                         fullName: top3[1].user.fullName,
                         borderSize: 2,
-                        size: 56
+                        size: 43
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -866,7 +886,7 @@ class PostItem extends NewBaseComponent {
                             avatarUrl: top3[0].user.avatar ?? '',
                             nationalityCode: firstNationalityCode,
                             fullName: top3[0].user.fullName,
-                            size: 71
+                            size: 56
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -891,7 +911,7 @@ class PostItem extends NewBaseComponent {
                         nationalityCode: thirdNationalityCode,
                         fullName: top3[2].user.fullName,
                         borderSize: 2,
-                        size: 56
+                        size: 43
                       ),
                       const SizedBox(height: 4),
                       Text(

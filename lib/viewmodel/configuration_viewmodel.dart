@@ -99,7 +99,7 @@ class AmityIconConfig {
       Color color = Colors.grey,
       BlendMode blendmode = BlendMode.srcIn}) {
     return SvgPicture.asset(
-      "assets/Icons/like.svg",
+      "assets/Icons/heart_outline.svg",
       height: iconSize,
       colorFilter: ColorFilter.mode(color, blendmode),
       package: 'amity_uikit_beta_service',
@@ -183,7 +183,7 @@ class AmityIconConfig {
       Color color = Colors.grey,
       BlendMode blendmode = BlendMode.srcIn}) {
     return SvgPicture.asset(
-      "assets/Icons/liked.svg",
+      "assets/Icons/heart_filled.svg",
       height: iconSize,
       colorFilter: ColorFilter.mode(color, blendmode),
       package: 'amity_uikit_beta_service',

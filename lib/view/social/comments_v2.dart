@@ -78,6 +78,7 @@ class CommentScreenV2State extends State<CommentScreenV2> {
   final GlobalKey<MentionTextFieldState> commentTextFieldKey = GlobalKey();
   List<CommunityRankingData>? _communityRanking;
   bool _isPopping = false;
+  bool _isLoadingRanking = false;
   late PostItemBloc _postItemBloc;
 
 
@@ -101,7 +102,17 @@ class CommentScreenV2State extends State<CommentScreenV2> {
 
   Future<void> _loadWeeklyRankingIfNeeded() async {
     final metadata = widget.amityPost.metadata;
-    if (metadata?['type'] != 'weekly_ranking') return;
+    if (metadata?['type'] != 'weekly_ranking') {
+      // Not a weekly ranking post, no need to load
+      return;
+    }
+
+    // Set loading state
+    if (mounted) {
+      setState(() {
+        _isLoadingRanking = true;
+      });
+    }
 
     final communityId = metadata?['communityId'] as String?;
     final eventType = metadata?['eventType'] as String?;
@@ -110,6 +121,7 @@ class CommentScreenV2State extends State<CommentScreenV2> {
 
     if (communityId != null && eventType != null && startDate != null && endDate != null) {
       final cacheManager = PostDataCacheManager();
+      print("Loading weekly ranking data for communityId: $communityId, eventType: $eventType");
       final rankings = await cacheManager.getCommunityRankingData(
         communityId,
         eventType,
@@ -120,6 +132,14 @@ class CommentScreenV2State extends State<CommentScreenV2> {
       if (mounted) {
         setState(() {
           _communityRanking = rankings;
+          _isLoadingRanking = false;
+        });
+      }
+    } else {
+      // Missing required data, stop loading
+      if (mounted) {
+        setState(() {
+          _isLoadingRanking = false;
         });
       }
     }
@@ -390,25 +410,33 @@ class CommentScreenV2State extends State<CommentScreenV2> {
                                             crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
                                             children: [
-                                              // Use PostItem with stable BlocProvider
-                                              BlocProvider.value(
-                                                value: _postItemBloc,
-                                                child: PostItem(
-                                                  post: snapshot.data!,
-                                                  match: widget.match,
-                                                  matchResult: widget.matchResult,
-                                                  event: widget.event,
-                                                  eventStanding: widget.eventStanding,
-                                                  communityRanking: _communityRanking,
-                                                  isPostDetail: true,
-                                                  action: AmityPostAction(
-                                                    onAddReaction: (String) {},
-                                                    onRemoveReaction: (String) {},
-                                                    onPostDeleted: (AmityPost post) {},
-                                                    onPostUpdated: (AmityPost post) {},
+                                              // Show loading indicator while fetching ranking data
+                                              if (_isLoadingRanking)
+                                                Container(
+                                                  height: 200,
+                                                  alignment: Alignment.center,
+                                                  child: CupertinoActivityIndicator(color: Styles.green),
+                                                )
+                                              else
+                                                // Use PostItem with stable BlocProvider
+                                                BlocProvider.value(
+                                                  value: _postItemBloc,
+                                                  child: PostItem(
+                                                    post: snapshot.data!,
+                                                    match: widget.match,
+                                                    matchResult: widget.matchResult,
+                                                    event: widget.event,
+                                                    eventStanding: widget.eventStanding,
+                                                    communityRanking: _communityRanking,
+                                                    isPostDetail: true,
+                                                    action: AmityPostAction(
+                                                      onAddReaction: (String) {},
+                                                      onRemoveReaction: (String) {},
+                                                      onPostDeleted: (AmityPost post) {},
+                                                      onPostUpdated: (AmityPost post) {},
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
 
                                               Divider(
                                                 color: Colors.grey.withValues(alpha: 0.2),
