@@ -498,11 +498,6 @@ class PostItem extends NewBaseComponent {
 
   /// New method to render metadata components (match, matchResult, event, eventStanding)
   Widget getMetadataComponents(BuildContext context, AmityPost post) {
-
-    if(post.metadata?["type"] == "weekly_ranking") {
-      print("${communityRanking != null} ${communityRanking!.isNotEmpty}");
-    }
-
     final metadata = post.metadata;
 
     if (metadata == null) return Container();

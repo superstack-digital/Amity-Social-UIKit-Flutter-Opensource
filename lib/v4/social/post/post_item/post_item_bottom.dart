@@ -71,6 +71,10 @@ class PostItemBottom extends NewBaseComponent {
   }
 
   Widget getCommentButton(bool hideCommentCount) {
+    if(post.commentCount == 0){
+      return SizedBox.shrink();
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,

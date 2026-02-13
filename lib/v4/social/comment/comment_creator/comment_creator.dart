@@ -161,7 +161,7 @@ class _AmityCommentCreatorInternalState
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 0, vertical: 0),
-                          hintText: 'Say something nice...',
+                          hintText: 'Post your reply…',
                           border: InputBorder.none,
                           hintStyle: TextStyle(
                             color: widget.theme.baseColorShade2,

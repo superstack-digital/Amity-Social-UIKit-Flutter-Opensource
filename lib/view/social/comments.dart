@@ -492,7 +492,7 @@ class CommentTextField extends StatelessWidget {
                                 color: Styles.grayD1D3D5
                             ),
                           ),
-                          hintText: "Say something nice...",
+                          hintText: "Post your reply…",
                           hintStyle: Styles.fontSFProRegular(
                             15,
                             lineHeightInPxl: 20,
@@ -623,7 +623,7 @@ class CommentTextField extends StatelessWidget {
                 //         ),
                 //         onPressed: navigateToFullCommentPage,
                 //       ),
-                //       hintText: 'Say something nice...',
+                //       hintText: 'Post your reply…',
                 //       fillColor:
                 //           Colors.grey[300], // Set the background color to grey
                 //       filled: true, // Enable the fill color

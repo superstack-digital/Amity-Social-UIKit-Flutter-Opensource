@@ -31,7 +31,7 @@ import 'package:mobile_app_padel/shared/deeplink.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 import 'package:amity_uikit_beta_service/view/social/community_feedV2.dart';
 import 'package:collection/collection.dart';
-
+import 'package:mobile_app_padel/features/community/presentation/widgets/players_sheet.dart';
 
 
 class AmityPostHeader extends StatefulWidget {
@@ -122,6 +122,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
   @override
   Widget build(BuildContext context) {
     final isJoinedMatchPost = widget.post.metadata?["type"] == "joined_match";
+    final isCreatedEvent = getGeneratePostType(widget.post) == GeneratePostType.event_created;
 
     return Container(
       height: isJoinedMatchPost ? 87 : 60,
@@ -678,6 +679,11 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
   RichText get _postTitle {
     final type = getGeneratePostType(widget.post);
 
+    void openPlayersSheet(List<User> players) {
+      if(players.isEmpty) return;
+      showCommonModalBottomSheet(PlayersSheet(players: players));
+    }
+
     switch(type){
       case GeneratePostType.event_created:
         return RichText(
@@ -687,17 +693,15 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           text: TextSpan(
             children: [
               WidgetSpan(
-                child: SizedBox(
-                  height: 19,
-                  child: InkWell(
-                    onTap: () =>
-                        goToCommunityPage(
-                            (widget.post.target as CommunityTarget).targetCommunity),
-                    child: Text(
-                        getPostOwnerName(type),
-                        style: Styles.fontInterSemiBold(
-                            14, lineHeightInPxl: 21, color: Styles.gray2E3944)),
-                  ),
+                alignment: PlaceholderAlignment.middle,
+                child: InkWell(
+                  onTap: () =>
+                      goToCommunityPage(
+                          (widget.post.target as CommunityTarget).targetCommunity),
+                  child: Text(
+                      getPostOwnerName(type),
+                      style: Styles.fontInterSemiBold(
+                          14, lineHeightInPxl: 21, color: Styles.gray2E3944)),
                 ),
               ),
                TextSpan(
@@ -721,10 +725,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           text: TextSpan(
             children: [
               WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
                   child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
+                  InkWell(
                         onTap: () => goToUserProfile(widget.post.postedUserId),
                         child: Text(
                             getPostOwnerName(type),
@@ -732,7 +735,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                                 14, lineHeightInPxl: 21, color: Styles.gray2E3944)
                         ),
                       ),
-                    )
+
               ),
               TextSpan(
                 text: ' created a match at ',
@@ -819,18 +822,18 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
             children: [
               ...winningTeamUsers.mapIndexed((index, user) => [
                 WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
                     child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
-                        onTap: () => goToUserProfile(user.id?.toString()),
+                    InkWell(
+                        onTap: () => openPlayersSheet(winningTeamUsers),
                         child: Text(
-                            user.fullName ?? "",
+                            winningTeamUsers.map((u) => u.fullName?.split(' ').first ?? '')
+                                .where((name) => name.isNotEmpty)
+                                .join(' & '),
                             style: Styles.fontInterSemiBold(
                                 14, lineHeightInPxl: 21, color: Styles.gray2E3944)
                         ),
                       ),
-                    )
                 ),
                   if(winningTeamUsers.length == 2 && index == 0) ...[
                     TextSpan(
@@ -847,26 +850,19 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               ),
               ...losingTeamUsers.mapIndexed((index, user) => [
                 WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
                     child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
+                    InkWell(
                         onTap: () => goToUserProfile(user.id?.toString()),
                         child: Text(
-                            user.fullName ?? "",
+                            losingTeamUsers.map((u) => u.fullName?.split(' ').first ?? '')
+                                .where((name) => name.isNotEmpty)
+                                .join(' & '),
                             style: Styles.fontInterSemiBold(
                                 14, lineHeightInPxl: 21, color: Styles.gray2E3944)
                         ),
                       ),
-                    )
                 ),
-                  if(losingTeamUsers.length == 2 && index == 0) ...[
-                    TextSpan(
-                      text: ' & ',
-                      style: Styles.fontInterRegular(
-                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                    )
-                  ]
               ]).expand((element) => element).toList(),
               TextSpan(
                 text: ' in ',
@@ -874,9 +870,8 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                     14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               WidgetSpan(
-                child: Container(
-                  height: 19,
-                  child: InkWell(
+                alignment: PlaceholderAlignment.middle,
+                child:InkWell(
                     onTap: () => goToCommunityPage(
                         (widget.post.target as CommunityTarget?)?.targetCommunity),
                     child: Text(
@@ -885,7 +880,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                           14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                   ),
-                ),
+
               ),
             ],
           ),
@@ -898,10 +893,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           text: TextSpan(
             children: [
               WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
                   child:
-                  Container(
-                    height: 19,
-                    child: InkWell(
+                InkWell(
                       onTap: () => goToUserProfile(widget.eventStanding?.first.user.id?.toString()),
                       child: Text(
                         getPostOwnerName(type),
@@ -909,7 +903,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                             14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                       ),
                     ),
-                  )
               ),
               TextSpan(
                 text: ' won the ${widget.eventStanding?.first.event?.tournament ?? "event"} tournament in ',
@@ -932,17 +925,15 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           text: TextSpan(
             children: [
               WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
                   child:
-                  Container(
-                    height: 19,
-                    child: InkWell(
+                 InkWell(
                       onTap: () => goToUserProfile(widget.post.postedUserId),
                       child: Text(
                         getPostOwnerName(type),
                         style: Styles.fontInterSemiBold(
                             14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                       ),
-                    ),
                   )
               ),
               TextSpan(
@@ -966,10 +957,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
           text: TextSpan(
             children: [
               WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
                   child:
-                  Container(
-                    height: 19,
-                    child: InkWell(
+                 InkWell(
                       onTap: () => goToUserProfile(widget.post.postedUserId),
                       child: Text(
                         getPostOwnerName(type),
@@ -977,7 +967,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                             14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                       ),
                     ),
-                  )
               ),
               TextSpan(
                 text: ' just leveled up!',
@@ -999,10 +988,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                 if (joinedCount >= 2) ...[
                   // Last joined user
                   WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
                       child:
-                      Container(
-                        height: 19,
-                        child: InkWell(
+                    InkWell(
                           onTap: () => goToUserProfile(_joinedUsers![joinedCount - 1].id.toString()),
                           child: Text(
                             _joinedUsers![joinedCount - 1].fullName ?? "",
@@ -1010,7 +998,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                                 14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                           ),
                         ),
-                      )
                   ),
                   TextSpan(
                     text: ' just joined a match with ',
@@ -1020,10 +1007,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                   // Show other players (all except last one)
                   if (joinedCount == 2) ...[
                     WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
                         child:
-                        Container(
-                          height: 19,
-                          child: InkWell(
+                        InkWell(
                             onTap: () => goToUserProfile(_joinedUsers![0].id.toString()),
                             child: Text(
                               _joinedUsers![0].fullName ?? "",
@@ -1031,15 +1017,13 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                                   14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                             ),
                           ),
-                        )
                     ),
                   ] else if (joinedCount == 3) ...[
                     // Show "A & B"
                     WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
                         child:
-                        Container(
-                          height: 19,
-                          child: InkWell(
+                        InkWell(
                             onTap: () => goToUserProfile(_joinedUsers![0].id.toString()),
                             child: Text(
                               _joinedUsers![0].fullName ?? "",
@@ -1047,7 +1031,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                                   14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                             ),
                           ),
-                        )
                     ),
                     TextSpan(
                       text: ' & ',
@@ -1055,10 +1038,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                           14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                     ),
                     WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
                         child:
-                        Container(
-                          height: 19,
-                          child: InkWell(
+                      InkWell(
                             onTap: () => goToUserProfile(_joinedUsers![1].id.toString()),
                             child: Text(
                               _joinedUsers![1].fullName ?? "",
@@ -1066,7 +1048,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                                   14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                             ),
                           ),
-                        )
                     ),
                   ] else ...[
                     // Show "A & N other players"
@@ -1075,7 +1056,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                         Container(
                           height: 19,
                           child: InkWell(
-                            onTap: () => goToUserProfile(_joinedUsers![0].id.toString()),
+                            onTap: () => openPlayersSheet(_joinedUsers ?? []),
                             child: Text(
                               _joinedUsers![0].fullName ?? "",
                               style: Styles.fontInterSemiBold(
@@ -1084,11 +1065,18 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                           ),
                         )
                     ),
-                    TextSpan(
-                      text: ' & ${joinedCount - 2} other player${joinedCount - 2 > 1 ? 's' : ''}',
-                      style: Styles.fontInterSemiBold(
-                          14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                    ),
+                    WidgetSpan(
+                        child:
+                          InkWell(
+                            onTap: () => openPlayersSheet(_joinedUsers ?? []),
+                            child: Text(
+                              ' & ${joinedCount - 2} other player${joinedCount - 2 > 1
+                                  ? 's'
+                                  : ''}',
+                              style: Styles.fontInterSemiBold(
+                                  14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+                            ),
+                          ))
                   ],
                 ] else ...[
                   // Fallback to posted user
@@ -1119,85 +1107,71 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               if (joinedCount == 2) ...[
                 // Show "A & B"
                 WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
                     child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
-                        onTap: () => goToUserProfile(_joinedUsers![0].id.toString()),
-                        child: Text(
-                          _joinedUsers![0].fullName ?? "",
-                          style: Styles.fontInterSemiBold(
-                              14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                        ),
+                   InkWell(
+                        onTap: () => openPlayersSheet(_joinedUsers ?? []),
+                        child:
+                        RichText(text: TextSpan(
+                            text: _joinedUsers![0].fullName ?? "",
+                            style: Styles.fontInterSemiBold(
+                            14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+                            children: [
+                              TextSpan(
+                                text: ' & ',
+                                style: Styles.fontInterRegular(
+                                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+                              ),
+                              TextSpan(
+                                text: _joinedUsers![1].fullName ?? "",
+                                style: Styles.fontInterSemiBold(
+                                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+                              )
+                            ]
+                        )),
+
                       ),
-                    )
-                ),
-                TextSpan(
-                  text: ' & ',
-                  style: Styles.fontInterRegular(
-                      14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                ),
-                WidgetSpan(
-                    child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
-                        onTap: () => goToUserProfile(_joinedUsers![1].id.toString()),
-                        child: Text(
-                          _joinedUsers![1].fullName ?? "",
-                          style: Styles.fontInterSemiBold(
-                              14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                        ),
-                      ),
-                    )
                 ),
               ] else if (joinedCount >= 3) ...[
                 // Show "A, B & N players"
                 WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
                     child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
-                        onTap: () => goToUserProfile(_joinedUsers![0].id.toString()),
-                        child: Text(
-                          _joinedUsers![0].fullName ?? "",
-                          style: Styles.fontInterSemiBold(
-                              14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                        ),
+                   InkWell(
+                        onTap: () => openPlayersSheet(_joinedUsers ?? []),
+                        child: RichText(text:
+                        TextSpan(
+                            text: _joinedUsers![0].fullName ?? "",
+                            style: Styles.fontInterSemiBold(
+                                14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+                            children: [
+                              TextSpan(
+                                  text: ', ',
+                                  style: Styles.fontInterRegular(
+                                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                                ),
+                                TextSpan(
+                                  text: _joinedUsers![1].fullName ?? "",
+                                  style: Styles.fontInterSemiBold(
+                                      14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+                                ),
+                                TextSpan(
+                                  text: ' & ${joinedCount - 2} player${joinedCount - 2 > 1 ? 's' : ''}',
+                                  style: Styles.fontInterSemiBold(
+                                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+                                ),
+                              ]
+                            )
+                        )
                       ),
-                    )
-                ),
-                TextSpan(
-                  text: ', ',
-                  style: Styles.fontInterRegular(
-                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
-                ),
-                WidgetSpan(
-                    child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
-                        onTap: () => goToUserProfile(_joinedUsers![1].id.toString()),
-                        child: Text(
-                          _joinedUsers![1].fullName ?? "",
-                          style: Styles.fontInterSemiBold(
-                              14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                        ),
-                      ),
-                    )
-                ),
-                TextSpan(
-                  text: ' & ${joinedCount - 2} player${joinedCount - 2 > 1 ? 's' : ''}',
-                  style: Styles.fontInterSemiBold(
-                      14, lineHeightInPxl: 21, color: Styles.blackNeutral),
+
                 ),
               ] else ...[
                 // Fallback to posted user
                 WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
                     child:
-                    Container(
-                      height: 19,
-                      child: InkWell(
+                   InkWell(
                         onTap: () => goToUserProfile(widget.post.postedUserId),
                         child: Text(
                           getPostOwnerName(type),
@@ -1205,7 +1179,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                               14, lineHeightInPxl: 21, color: Styles.gray2E3944),
                         ),
                       ),
-                    )
                 ),
               ],
               TextSpan(
@@ -1239,9 +1212,8 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                     14, lineHeightInPxl: 21, color: Styles.blackNeutral),
               ),
               WidgetSpan(
-                child: SizedBox(
-                  height: 19,
-                  child: InkWell(
+                alignment: PlaceholderAlignment.middle,
+                child: InkWell(
                     onTap: () =>
                         goToCommunityPage(
                             (widget.post.target as CommunityTarget).targetCommunity),
@@ -1250,7 +1222,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                         style: Styles.fontInterSemiBold(
                             14, lineHeightInPxl: 21, color: Styles.gray2E3944)),
                   ),
-                ),
               )
             ],
           ),
@@ -1261,9 +1232,9 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
             text: "",
             children: [
               WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
                   child:
                   Container(
-                    height: 19,
                     child: InkWell(
                       onTap: () => goToUserProfile(widget.post.postedUserId),
                       child: Text(

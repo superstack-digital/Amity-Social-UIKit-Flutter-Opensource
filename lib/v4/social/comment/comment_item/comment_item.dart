@@ -207,7 +207,7 @@ class CommentItem extends BaseElement {
                                                             horizontal: 0,
                                                             vertical: 0),
                                                     hintText:
-                                                        'Say something nice...',
+                                                        'Post your reply…',
                                                     border: InputBorder.none,
                                                     hintStyle: TextStyle(
                                                       color:
@@ -276,7 +276,7 @@ class CommentItem extends BaseElement {
                                             contentPadding:
                                                 const EdgeInsets.symmetric(
                                                     horizontal: 0, vertical: 0),
-                                            hintText: 'Say something nice... ',
+                                            hintText: 'Post your reply… ',
                                             border: InputBorder.none,
                                             hintStyle: TextStyle(
                                               color: theme.baseColor,
