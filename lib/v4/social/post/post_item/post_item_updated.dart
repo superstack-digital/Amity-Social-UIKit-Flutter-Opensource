@@ -591,8 +591,8 @@ class PostItem extends NewBaseComponent {
             ),
           if(metadata?['type'] == 'level_up')
             LeveledUpPostItem(user: post.postedUser,
-                oldLevel: metadata?["oldLevel"] ?? 0,
-                newLevel: metadata?["newLevel"] ?? 0),
+                oldLevel: double.tryParse(metadata?["oldLevel"]?.toString() ?? "") ?? 0,
+                newLevel: double.tryParse(metadata?["newLevel"]?.toString() ?? "") ?? 0),
           if (metadata['eventId'] != null && metadata?["type"] == "joined_event")
             event != null
                 ? event!.deleted == true
