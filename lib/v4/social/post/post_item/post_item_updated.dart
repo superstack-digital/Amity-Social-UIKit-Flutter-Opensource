@@ -229,13 +229,14 @@ class PostItem extends NewBaseComponent {
                   text: TextSpan(
                     children: _buildTextSpansWithLinks(
                       textContent,
-                      Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacing: 0),
+                      Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacing: 0, lineHeightInPxl: 21),
                       TextStyle(
                         color: Styles.green,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                         decoration: TextDecoration.underline,
                         fontFamily: FontFamily.interRegular,
+                        height: 1.5
                       ),
                       context,
                     ),
@@ -264,8 +265,8 @@ class PostItem extends NewBaseComponent {
         context,
         text,
         mentionsList,
-        Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacingInPercent: -1),
-        Styles.fontInterSemiBold(15, color: Styles.green, letterSpacingInPercent: -1),
+        Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacingInPercent: -1, lineHeightInPxl: 21),
+        Styles.fontInterSemiBold(15, color: Styles.green, letterSpacingInPercent: -1, lineHeightInPxl: 21),
       ),
     );
   }
@@ -296,6 +297,7 @@ class PostItem extends NewBaseComponent {
             fontSize: 15,
             fontWeight: FontWeight.w400,
             decoration: TextDecoration.underline,
+            height: 1.5
           ),
           context,
         );
@@ -858,16 +860,16 @@ class PostItem extends NewBaseComponent {
                         borderSize: 2,
                         size: 43
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        '${top3[1].points} pts',
-                        style: Styles.fontSFProSemiBold(14,
-                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                        _getUserDisplayName(top3[1].user),
+                        style: Styles.fontSFProRegular(12,
+                            letterSpacingInPercent: -2, color: Styles.primaryGrayColor, lineHeightInPxl: 20),
                       ),
                       Text(
-                        top3[1].user.fullName?.split(' ').first ?? '',
-                        style: Styles.fontSFProRegular(10,
-                            letterSpacingInPercent: -2, color: Styles.trafficGrey, lineHeightInPxl: 20),
+                        '${top3[1].points} pts',
+                        style: Styles.fontSFProSemiBold(12,
+                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
                       ),
                     ],
                   ),
@@ -884,16 +886,16 @@ class PostItem extends NewBaseComponent {
                             size: 56
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        '${top3[0].points} pts',
-                        style: Styles.fontSFProSemiBold(14,
-                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                        _getUserDisplayName(top3[0].user),
+                        style: Styles.fontSFProRegular(12,
+                            letterSpacingInPercent: -2, color: Styles.primaryGrayColor, lineHeightInPxl: 20),
                       ),
                       Text(
-                        top3[0].user.fullName?.split(' ').first ?? '',
-                        style: Styles.fontSFProRegular(10,
-                            letterSpacingInPercent: -2, color: Styles.trafficGrey, lineHeightInPxl: 20),
+                        '${top3[0].points} pts',
+                        style: Styles.fontSFProSemiBold(12,
+                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
                       ),
                     ],
                   ),
@@ -908,16 +910,16 @@ class PostItem extends NewBaseComponent {
                         borderSize: 2,
                         size: 43
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        '${top3[2].points} pts',
-                        style: Styles.fontSFProSemiBold(14,
-                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                        _getUserDisplayName(top3[2].user),
+                        style: Styles.fontSFProRegular(12,
+                            letterSpacingInPercent: -2, color: Styles.primaryGrayColor, lineHeightInPxl: 20),
                       ),
                       Text(
-                        top3[2].user.fullName?.split(' ').first ?? '',
-                        style: Styles.fontSFProRegular(10,
-                            letterSpacingInPercent: -2, color: Styles.trafficGrey, lineHeightInPxl: 20),
+                        '${top3[2].points} pts',
+                        style: Styles.fontSFProSemiBold(12,
+                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
                       ),
                     ],
                   ),
@@ -1201,6 +1203,22 @@ class PostItem extends NewBaseComponent {
         return 'assets/images/fileType/zip_large.png';
       default:
         return 'assets/images/fileType/default.png';
+    }
+  }
+
+  String _getUserDisplayName(User? user) {
+    if (user == null) return "Unknown User";
+    final splittedName = user.fullName?.split(' ') ?? [];
+    if (splittedName.length > 1) {
+      if(splittedName.first.isNotEmpty){
+        return splittedName.first;
+       } else if(splittedName.last.isNotEmpty){
+        return splittedName.last;
+       } else {
+         return "Unknown User";
+       }
+    } else {
+      return user.fullName ?? "Unknown User";
     }
   }
 }
