@@ -13,6 +13,10 @@ import 'package:amity_uikit_beta_service/viewmodel/my_community_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/community_controller.dart';
+import 'package:amity_uikit_beta_service/v4/social/globalfeed/bloc/global_feed_bloc.dart';
+import 'package:amity_uikit_beta_service/amity_uikit_beta_service.dart';
 
 class CommunitySettingPage extends StatelessWidget {
   final AmityCommunity community;
@@ -221,6 +225,15 @@ class CommunitySettingPage extends StatelessWidget {
                                     }
                                   }
                                 });
+                                if(Get.isRegistered<CommunityController>()){
+                                  final communityController = Get.find<CommunityController>();
+                                  Future.delayed(Duration(seconds: 2), () {
+                                    communityController.getMyCommunities();
+                                    AmityUikitBetaService.clearFeedCache();
+                                    context.read<GlobalFeedBloc>().add(GlobalFeedInit());
+                                    context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
+                                  });
+                                }
                               });
                         },
                       ),

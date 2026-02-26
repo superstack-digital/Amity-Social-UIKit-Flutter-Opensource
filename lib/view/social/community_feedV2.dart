@@ -49,6 +49,7 @@ import 'package:mobile_app_padel/features/community/data/models/event_standing.d
 import 'package:amity_uikit_beta_service/v4/social/post/post_item/post_item_updated.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/post_item/bloc/post_item_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile_app_padel/features/community/presentation/controllers/community_controller.dart';
 
 
 class CommunityScreen extends StatefulWidget {
@@ -307,6 +308,12 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                 explorePageVM.getRecommendedCommunities();
                 explorePageVM.getTrendingCommunities();
               });
+              if(Get.isRegistered<CommunityController>()){
+                final communityController = Get.find<CommunityController>();
+                Future.delayed(Duration(seconds: 1), () {
+                  communityController.getMyCommunities();
+                });
+              }
             }).onError((error, stackTrace) {
               //handle error
               log(error.toString());

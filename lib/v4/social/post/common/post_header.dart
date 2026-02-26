@@ -32,6 +32,7 @@ import 'package:mobile_app_padel/features/community/presentation/screens/people_
 import 'package:amity_uikit_beta_service/view/social/community_feedV2.dart';
 import 'package:collection/collection.dart';
 import 'package:mobile_app_padel/features/community/presentation/widgets/players_sheet.dart';
+import 'package:flutter/gestures.dart';
 
 
 class AmityPostHeader extends StatefulWidget {
@@ -125,7 +126,6 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
     final isCreatedEvent = getGeneratePostType(widget.post) == GeneratePostType.event_created;
 
     return Container(
-      height: isJoinedMatchPost ? 87 : 60,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -149,7 +149,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               )
             ],
           ),
-          SizedBox(height: 36, child: Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
@@ -173,10 +173,10 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
               Expanded(child: Container(padding: EdgeInsets.only(right: 15),
                   child: _postTitle)),
             ],
-          )),
+    ),
           if(widget.post.metadata?["type"] == "joined_match")
             Container(
-              margin: EdgeInsets.only(top: isJoinedMatchPost ? 5 : 0, left: 51),
+              margin: EdgeInsets.only(top: 4, left: 58),
               child: RichText(
                 text: TextSpan(
                     text: "",
@@ -941,10 +941,11 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                 style: Styles.fontInterRegular(
                     14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
-              TextSpan(
-                text: widget.followingUser?.fullName ?? "",
-                style: Styles.fontInterSemiBold(
-                    14, lineHeightInPxl: 21, color: Styles.gray2E3944),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Text(widget.followingUser?.fullName ?? "",
+                    style: Styles.fontInterSemiBold(
+                        14, lineHeightInPxl: 21, color: Styles.gray2E3944))
               ),
             ],
           ),
@@ -1168,17 +1169,15 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                 ),
               ] else ...[
                 // Fallback to posted user
-                WidgetSpan(
-                    alignment: PlaceholderAlignment.middle,
-                    child:
-                   InkWell(
-                        onTap: () => goToUserProfile(widget.post.postedUserId),
-                        child: Text(
-                          getPostOwnerName(type),
-                          style: Styles.fontInterSemiBold(
-                              14, lineHeightInPxl: 21, color: Styles.gray2E3944),
-                        ),
-                      ),
+                TextSpan(
+                  text: getPostOwnerName(type),
+                  style: Styles.fontInterSemiBold(
+                    14,
+                    lineHeightInPxl: 21,
+                    color: Styles.gray2E3944,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => goToUserProfile(widget.post.postedUserId),
                 ),
               ],
               TextSpan(
