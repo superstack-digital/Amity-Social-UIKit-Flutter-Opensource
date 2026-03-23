@@ -137,16 +137,19 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                     textStyle: Styles.fontInterRegular(10, lineHeightInPxl: 21, color: Styles.tpsBrown)),
                 alignment: Alignment.centerRight,
               )),
-              GestureDetector(
-                onTap: () => showPostAction(context, widget.post),
-                child: Container(
-                  padding: EdgeInsets.only(right: 10, left: 7),
-                  child: Icon(
-                    Icons.more_vert,
-                    color: HexColor("B3B3B3"),
-                  ),
-                ),
-              )
+              // GestureDetector(
+              //   onTap: () => showPostAction(context, widget.post),
+              //   child: Container(
+              //     padding: EdgeInsets.only(right: 10, left: 7),
+              //     child: Icon(
+              //       Icons.more_vert,
+              //       color: HexColor("B3B3B3"),
+              //     ),
+              //   ),
+              // )
+              // TODO: Temp hide post option for generated post
+              Container(
+                  padding: EdgeInsets.only(right: 10, left: 7))
             ],
           ),
           Row(
