@@ -55,9 +55,10 @@ import 'package:mobile_app_padel/features/community/presentation/controllers/com
 class CommunityScreen extends StatefulWidget {
   final AmityCommunity community;
   final bool isFromFeed;
+  final Function(String communityId, bool isMuted)? onMuteChanged;
   static const routeName = '/CommunityScreen';
 
-  const CommunityScreen({Key? key, required this.community, this.isFromFeed = false})
+  const CommunityScreen({Key? key, required this.community, this.isFromFeed = false, this.onMuteChanged})
       : super(key: key);
 
   @override
