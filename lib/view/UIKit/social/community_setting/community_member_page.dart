@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:mobile_app_padel/shared/widgets/initial_avatar.dart';
-
+import 'package:mobile_app_padel/shared/shared_preferences.dart';
 
 class MemberManagementPage extends StatefulWidget {
   final String communityId;
@@ -269,10 +269,22 @@ class ModeratorList extends StatelessWidget {
           itemCount: viewModel.moderatorList.length,
           controller: viewModel.scrollControllerForModerator,
           itemBuilder: (context, index) {
-            final avatarUrl =viewModel.moderatorList[index].user?.avatarUrl;
+            final moderator = viewModel.moderatorList[index];
+            final avatarUrl = moderator.user?.avatarUrl;
             return ListTile(
-              onTap: () {
+              onTap: () async {
+                final userId = int.tryParse(moderator.user?.userId ?? '0');
+                final currentUser = await PreferenceUtils().getUserInfo();
+                final currentUserId = currentUser?.id;
 
+                if(userId != null && userId != currentUserId){
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider(
+                          create: (context) => UserFeedVM(),
+                          child: PeopleProfileScreen(
+                            userId: int.parse(moderator.user!.userId!),
+                          ))));
+                }
               },
               leading: avatarUrl == null ? InitialAvatar(height: 40, width: 40, fullName: viewModel.moderatorList[index].user?.displayName ?? "") : CircleAvatar(
                 backgroundColor: Provider.of<AmityUIConfiguration>(context)
@@ -352,11 +364,14 @@ void _showOptionsBottomSheet(BuildContext context, AmityCommunityMember member,
                                 await viewModel.promoteToModerator(
                                     viewModel.communityId, [member.userId!]);
                               }
-                              await viewModel.initModerators(
-                                  communityId: viewModel.communityId);
-                              await viewModel.initMember(
-                                communityId: viewModel.communityId,
-                              );
+
+                              Future.delayed(Duration(seconds: 3), () async{
+                                await viewModel.initModerators(
+                                    communityId: viewModel.communityId);
+                                await viewModel.initMember(
+                                  communityId: viewModel.communityId
+                                );
+                              });
                             },
                           ),
                     ListTile(

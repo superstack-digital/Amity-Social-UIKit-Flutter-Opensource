@@ -2,6 +2,7 @@ import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/components/alert_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_app_padel/shared/shared_preferences.dart';
+import 'package:mobile_app_padel/shared/shared_preferences.dart';
 
 class MemberManagementVM extends ChangeNotifier {
   final ScrollController scrollController = ScrollController();
@@ -17,7 +18,7 @@ class MemberManagementVM extends ChangeNotifier {
   late String communityId;
 
   Future<void> initMember({
-    required String communityId,
+    required String communityId
   }) async {
     this.communityId = communityId;
     _amityUsersController = PagingController(
@@ -32,6 +33,7 @@ class MemberManagementVM extends ChangeNotifier {
     print("initMember");
 
     final cachedMembers = await PreferenceUtils().getCommunityMembers(communityId);
+
     if(cachedMembers != null && cachedMembers.isNotEmpty) {
       print("Using cached members");
       _userList.clear();
@@ -127,8 +129,14 @@ class MemberManagementVM extends ChangeNotifier {
       await AmitySocialClient.newCommunityRepository()
           .moderation(communityId)
           .addRole('community-moderator', userIds)
-          .then((value) {
+          .then((value) async {
         // handle result
+        final promotedUsers = _userList.where((user) => userIds.contains(user.userId)).toList();
+        final alreadyModerator = _moderatorList.map((u) => u.userId).toSet();
+        final newModerators = promotedUsers.where((u) => !alreadyModerator.contains(u.userId)).toList();
+        _moderatorList.addAll(newModerators);
+        await PreferenceUtils().clearCommunityMembers(communityId);
+        notifyListeners();
         print("promoteToModerator: success");
       }).onError((error, stackTrace) async {
         print("promoteToModerator: fail");
@@ -149,7 +157,15 @@ class MemberManagementVM extends ChangeNotifier {
     await AmitySocialClient.newCommunityRepository()
         .moderation(communityId)
         .removeRole('community-moderator', userIds)
-        .then((value) {
+        .then((value) async {
+          final demotedUsers = _moderatorList.where((user) => userIds.contains(user.userId)).toList();
+          final alreadyUser = _userList.map((u) => u.userId).toSet();
+          final newUsers = demotedUsers.where((u) => !alreadyUser.contains(u.userId)).toList();
+          _userList.addAll(newUsers);
+          _moderatorList.removeWhere((user) => userIds.contains(user.userId));
+          await PreferenceUtils().clearCommunityMembers(communityId);
+          notifyListeners();
+          print("demoteFromModerator: success");
       AmityLoadingDialog.hideLoadingDialog();
     }).onError((error, stackTrace) async {
       AmityDialog()
