@@ -1103,21 +1103,24 @@ class _StickyHeaderList extends StatelessWidget {
                           .isEmpty) {
                         return EmptyCommunityEventView();
                       }
-                      return ListView.builder(
-                        padding: const EdgeInsets.only(top: 0),
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: vm
-                            .getCommunityEventList()
-                            .length,
-                        itemBuilder: (context, index) {
-                          final event = vm.getCommunityEventList()[index];
-                          return EventItem(event: event, onEventDeleted: () {
-                            if(communityId != null){
-                              vm.getUpcomingEvents(communityId!);
-                            }
-                          });
-                        },
+                      return Container(
+                        color: Colors.white,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(top: 16),
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: vm
+                              .getCommunityEventList()
+                              .length,
+                          itemBuilder: (context, index) {
+                            final event = vm.getCommunityEventList()[index];
+                            return EventItem(event: event, onEventDeleted: () {
+                              if(communityId != null){
+                                vm.getUpcomingEvents(communityId!);
+                              }
+                            });
+                          },
+                        ),
                       );
                     }
                         final int _tabIndex = vm.userFeedTabController?.index ?? -1;
