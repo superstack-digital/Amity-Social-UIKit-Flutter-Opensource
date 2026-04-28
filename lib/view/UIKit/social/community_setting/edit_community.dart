@@ -74,10 +74,13 @@ class AmityEditCommunityScreenState extends State<AmityEditCommunityScreen> {
             int.parse(item.toString())).toList() ?? [];
 
 
-    var category = widget.community.categories!;
     var categories = widget.community.categories;
     if (categories != null && categories.isNotEmpty) {
       _categoryController.text = categories[0]!.name ?? "No Name";
+      final categoryId = categories[0]?.categoryId;
+      if (categoryId != null) {
+        Provider.of<CategoryVM>(context, listen: false).setSelectedCategory(categoryId);
+      }
     } else {
       _categoryController.text = "No Category";
     }

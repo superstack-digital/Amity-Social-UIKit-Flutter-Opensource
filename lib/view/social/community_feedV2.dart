@@ -28,8 +28,10 @@ import 'package:mobile_app_padel/features/play/presentation/widgets/upcoming_eve
 import 'package:mobile_app_padel/features/community/widgets/share_match_modal.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_matches_view.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_event_view.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/community_league_standings_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_matches_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_rankings_screen.dart';
+import 'package:mobile_app_padel/features/competitions/presentations/controllers/competition_standings_controller.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:mobile_app_padel/features/chat/presentations/screens/chat_screen.dart';
 import 'package:mobile_app_padel/shared/deeplink.dart';
@@ -73,7 +75,6 @@ class CommunityScreenState extends State<CommunityScreen>
   void initState() {
     Provider.of<CommuFeedVM>(context, listen: false)
         .initAmityCommunityFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community);
     Provider.of<CommuFeedVM>(context, listen: false)
         .getReviewingPostCount(widget.community);
     Provider.of<CommuFeedVM>(context, listen: false)
@@ -82,15 +83,17 @@ class CommunityScreenState extends State<CommunityScreen>
         .initAmityCommunityVideoFeed(widget.community.communityId!);
     Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
         widget.community.communityId!, AmityFeedType.REVIEWING);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .checkRankingsEnabled().then((val) {
-      Provider
-          .of<CommuFeedVM>(context, listen: false)
-          .userFeedTabController =
-          TabController(
-            length: val ? 5 : 4,
-            vsync: this,
-          );
+    Future.wait([
+      Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community),
+      Provider.of<CommuFeedVM>(context, listen: false).checkRankingsEnabled(),
+    ]).then((results) {
+      final rankingEnabled = results[1] as bool;
+      final vm = Provider.of<CommuFeedVM>(context, listen: false);
+      int tabCount = 4; // Timeline + Events + Matches + Gallery
+      if (rankingEnabled) tabCount++; // + Rankings
+      if (vm.isLeagueCommunity) tabCount++; // + Standing
+      vm.userFeedTabController = TabController(length: tabCount, vsync: this);
+      vm.notifyListeners();
     });
 
 
@@ -201,6 +204,13 @@ class CommunityScreenState extends State<CommunityScreen>
             Get.delete<AmericanoRankingsController>(tag: widget.community?.communityId?.toString());
             Get.delete<MexicanoRankingsController>(tag: widget.community?.communityId?.toString());
             Get.delete<TeamRankingsController>(tag: widget.community?.communityId?.toString());
+            final vm = Provider.of<CommuFeedVM>(context, listen: false);
+            if (vm.isLeagueCommunity && vm.latestCompetitionId != null) {
+              final tag = 'league_standings_${widget.community?.communityId}_${vm.latestCompetitionId}';
+              if (Get.isRegistered<CompetitionStandingsController>(tag: tag)) {
+                Get.delete<CompetitionStandingsController>(tag: tag);
+              }
+            }
           },
           child: Stack(children: [
             StreamBuilder<AmityCommunity>(
@@ -1125,39 +1135,84 @@ class _StickyHeaderList extends StatelessWidget {
                     }
                         final int _tabIndex = vm.userFeedTabController?.index ?? -1;
 
+                        final rankingEnabled = vm.communityRankingEnabled.value;
+                        final isLeague = vm.isLeagueCommunity;
+
+                        Widget leagueStandingsWidget() {
+                          if (vm.isLoadingStandings) {
+                            return const SizedBox(
+                              height: 200,
+                              child: Center(child: CupertinoActivityIndicator()),
+                            );
+                          }
+                          if (vm.latestCompetitionId == null || communityId == null) {
+                            return const EmptyCommunityStandingsView();
+                          }
+                          return CommunityLeagueStandingsTab(
+                            competitionId: vm.latestCompetitionId!,
+                            communityId: communityId!,
+                          );
+                        }
+
+                        // Tab order: Timeline(0) | Events(1) | Standings?(2 if league) | Rankings?(2/3 if enabled) | Matches | Gallery
                         switch (_tabIndex) {
                           case 0:
                             return buildContent(context, bheight);
                           case 1:
                             return buildEventLists(context, bheight);
                           case 2:
-                            if(vm.communityRankingEnabled.value)
-                              {
-                                return CommunityRankingsScreen(communityId: communityId!,
-                                    onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                              } else {
+                            if (isLeague) {
+                              return leagueStandingsWidget();
+                            } else if (rankingEnabled) {
+                              return CommunityRankingsScreen(
+                                  communityId: communityId!,
+                                  onViewUpcomingPressed: vm.onSwitchToEventsTab);
+                            } else {
                               return CommunityMatchesScreen(
                                 communityId: communityId!,
-                                isLeagueCommunity: vm.isLeagueCommunity,
+                                isLeagueCommunity: false,
                               );
                             }
                           case 3:
-                            if(vm.communityRankingEnabled.value){
-                              if (communityId != null) {
-                                return CommunityMatchesScreen(
+                            if (isLeague && rankingEnabled) {
+                              return CommunityRankingsScreen(
                                   communityId: communityId!,
-                                  isLeagueCommunity: vm.isLeagueCommunity,
-                                );
-                              } else {
-                                return Container();
-                              }
+                                  onViewUpcomingPressed: vm.onSwitchToEventsTab);
+                            } else if (isLeague) {
+                              // league, no rankings: tab 3 = Matches
+                              return CommunityMatchesScreen(
+                                communityId: communityId!,
+                                isLeagueCommunity: true,
+                              );
+                            } else if (rankingEnabled) {
+                              // no league, rankings: tab 3 = Matches
+                              return CommunityMatchesScreen(
+                                communityId: communityId!,
+                                isLeagueCommunity: false,
+                              );
                             } else {
+                              // no league, no rankings: tab 3 = Gallery
+                              return MediaGalleryPage(
+                                galleryFeed: GalleryFeed.community,
+                                onRefresh: () {},
+                              );
+                            }
+                          case 4:
+                            if (isLeague && rankingEnabled) {
+                              // league + rankings: tab 4 = Matches
+                              return CommunityMatchesScreen(
+                                communityId: communityId!,
+                                isLeagueCommunity: true,
+                              );
+                            } else {
+                              // league only or rankings only: tab 4 = Gallery
                               return MediaGalleryPage(
                                 galleryFeed: GalleryFeed.community,
                                 onRefresh: () {},
                               );
                             }
                           default:
+                            // case 5: league + rankings: Gallery
                             return MediaGalleryPage(
                               galleryFeed: GalleryFeed.community,
                               onRefresh: () {},
@@ -1491,6 +1546,8 @@ class Header extends StatelessWidget {
                   tabs: [
                     Tab(text: "Timeline"),
                     Tab(text: "Events"),
+                    if(vm.isLeagueCommunity)
+                      Tab(text: "Standings"),
                     if(vm.communityRankingEnabled.value)
                       Tab(text: "Rankings"),
                     Tab(text: "Matches"),

@@ -29,6 +29,8 @@ class CommuFeedVM extends ChangeNotifier {
   MediaType getMediaType() => _selectedMediaType;
   bool isCurrentUserIsAdmin = false;
   bool isLeagueCommunity = false;
+  int? latestCompetitionId;
+  bool isLoadingStandings = false;
   var _amityCommunityFeedPosts = <AmityPost>[];
 
   var _communityEventList = <Event>[];
@@ -102,7 +104,13 @@ class CommuFeedVM extends ChangeNotifier {
   }
 
   int postCount = 0;
-  void getPostCount(AmityCommunity community) async {
+  Future<void> getPostCount(AmityCommunity community) async {
+    // Reset per-community state to avoid stale data from previous community
+    isLeagueCommunity = false;
+    latestCompetitionId = null;
+    isLoadingStandings = false;
+    notifyListeners();
+
     getUpcomingEvents(community.communityId!);
     final rankingEnabled =
         await FeatureFlagService.isEnabled(FeatureFlagKeys.communityRanking);
@@ -116,6 +124,15 @@ class CommuFeedVM extends ChangeNotifier {
       isLeagueCommunity = (community?.categories?.indexWhere((item) => item?.name == "League") ?? -1) > -1;
       notifyListeners();
     });
+
+    if (isLeagueCommunity) {
+      isLoadingStandings = true;
+      notifyListeners();
+      latestCompetitionId = await CommunityRepository.getInstance()
+          .getLatestCompetitionIdByCommunity(community.communityId!);
+      isLoadingStandings = false;
+      notifyListeners();
+    }
     community.getPostCount(AmityFeedType.PUBLISHED).then((value) async {
       //success
       postCount = value;
