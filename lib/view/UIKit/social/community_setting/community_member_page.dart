@@ -84,61 +84,7 @@ class _MemberManagementPageState extends State<MemberManagementPage> {
         backgroundColor:
             Provider.of<AmityUIConfiguration>(context).appColors.baseBackground,
         appBar: AppBar(
-          actions: [
-            !Provider.of<MemberManagementVM>(context)
-                    .currentUserRoles
-                    .contains('community-moderator')
-                ? const SizedBox()
-                : IconButton(
-                    icon: Icon(
-                      Icons.add,
-                      color: Provider.of<AmityUIConfiguration>(context)
-                          .appColors
-                          .base,
-                    ),
-                    onPressed: () async {
-                      var userList = Provider.of<MemberManagementVM>(context,
-                              listen: false)
-                          .userList;
-                      List<AmityUser> userIdList =
-                          userList.map((user) => user.user!).toList();
-                      Navigator.of(context)
-                          .push<List<AmityUser>>(MaterialPageRoute(
-                              builder: (context) => UserListPage(
-                                    preSelectMember: userIdList,
-                                    onDonePressed: (users) async {
-                                      List<String> userIds = users
-                                          .map((user) => user.userId!)
-                                          .toList();
-                                      if (users.isNotEmpty) {
-                                        await Provider.of<CommunityVM>(context,
-                                                listen: false)
-                                            .addMembers(
-                                                widget.communityId, userIds);
-                                        await Provider.of<MemberManagementVM>(
-                                                context,
-                                                listen: false)
-                                            .initMember(
-                                          communityId: widget.communityId,
-                                        );
-                                        await Provider.of<MemberManagementVM>(
-                                                context,
-                                                listen: false)
-                                            .initModerators(
-                                          communityId: widget.communityId,
-                                        );
-                                        Navigator.of(context).pop();
-                                        if(widget.channelId != null){
-                                          AmityChatClient.newChannelRepository().addMembers(widget.channelId!, userIds);
-                                        }
-                                      } else {
-                                        log('Failed to add members');
-                                      }
-                                    },
-                                  )));
-                    },
-                  ),
-          ],
+          actions: const [],
           elevation: 0.0,
           iconTheme: const IconThemeData(color: Colors.black),
           backgroundColor: Provider.of<AmityUIConfiguration>(context)
