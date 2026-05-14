@@ -1133,10 +1133,10 @@ class _StickyHeaderList extends StatelessWidget {
                         ),
                       );
                     }
-                        final int _tabIndex = vm.userFeedTabController?.index ?? -1;
-
-                        final rankingEnabled = vm.communityRankingEnabled.value;
-                        final isLeague = vm.isLeagueCommunity;
+                        if (vm.userFeedTabController == null) {
+                          return const SizedBox();
+                        }
+                        final _tabController = vm.userFeedTabController!;
 
                         Widget leagueStandingsWidget() {
                           if (vm.isLoadingStandings) {
@@ -1154,70 +1154,75 @@ class _StickyHeaderList extends StatelessWidget {
                           );
                         }
 
-                        // Tab order: Timeline(0) | Events(1) | Standings?(2 if league) | Rankings?(2/3 if enabled) | Matches | Gallery
-                        switch (_tabIndex) {
-                          case 0:
-                            return buildContent(context, bheight);
-                          case 1:
-                            return buildEventLists(context, bheight);
-                          case 2:
-                            if (isLeague) {
-                              return leagueStandingsWidget();
-                            } else if (rankingEnabled) {
-                              return CommunityRankingsScreen(
-                                  communityId: communityId!,
-                                  onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                            } else {
-                              return CommunityMatchesScreen(
-                                communityId: communityId!,
-                                isLeagueCommunity: false,
-                              );
+                        // Listen directly to TabController so tab switches always
+                        // update the content, regardless of notifyListeners() timing.
+                        return ListenableBuilder(
+                          listenable: _tabController,
+                          builder: (context, _) {
+                            final int _tabIndex = _tabController.index;
+                            final rankingEnabled = vm.communityRankingEnabled.value;
+                            final isLeague = vm.isLeagueCommunity;
+
+                            // Tab order: Timeline(0) | Events(1) | Standings?(2 if league) | Rankings?(2/3 if enabled) | Matches | Gallery
+                            switch (_tabIndex) {
+                              case 0:
+                                return buildContent(context, bheight);
+                              case 1:
+                                return buildEventLists(context, bheight);
+                              case 2:
+                                if (isLeague) {
+                                  return leagueStandingsWidget();
+                                } else if (rankingEnabled) {
+                                  return CommunityRankingsScreen(
+                                      communityId: communityId!,
+                                      onViewUpcomingPressed: vm.onSwitchToEventsTab);
+                                } else {
+                                  return CommunityMatchesScreen(
+                                    communityId: communityId!,
+                                    isLeagueCommunity: false,
+                                  );
+                                }
+                              case 3:
+                                if (isLeague && rankingEnabled) {
+                                  return CommunityRankingsScreen(
+                                      communityId: communityId!,
+                                      onViewUpcomingPressed: vm.onSwitchToEventsTab);
+                                } else if (isLeague) {
+                                  return CommunityMatchesScreen(
+                                    communityId: communityId!,
+                                    isLeagueCommunity: true,
+                                  );
+                                } else if (rankingEnabled) {
+                                  return CommunityMatchesScreen(
+                                    communityId: communityId!,
+                                    isLeagueCommunity: false,
+                                  );
+                                } else {
+                                  return MediaGalleryPage(
+                                    galleryFeed: GalleryFeed.community,
+                                    onRefresh: () {},
+                                  );
+                                }
+                              case 4:
+                                if (isLeague && rankingEnabled) {
+                                  return CommunityMatchesScreen(
+                                    communityId: communityId!,
+                                    isLeagueCommunity: true,
+                                  );
+                                } else {
+                                  return MediaGalleryPage(
+                                    galleryFeed: GalleryFeed.community,
+                                    onRefresh: () {},
+                                  );
+                                }
+                              default:
+                                return MediaGalleryPage(
+                                  galleryFeed: GalleryFeed.community,
+                                  onRefresh: () {},
+                                );
                             }
-                          case 3:
-                            if (isLeague && rankingEnabled) {
-                              return CommunityRankingsScreen(
-                                  communityId: communityId!,
-                                  onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                            } else if (isLeague) {
-                              // league, no rankings: tab 3 = Matches
-                              return CommunityMatchesScreen(
-                                communityId: communityId!,
-                                isLeagueCommunity: true,
-                              );
-                            } else if (rankingEnabled) {
-                              // no league, rankings: tab 3 = Matches
-                              return CommunityMatchesScreen(
-                                communityId: communityId!,
-                                isLeagueCommunity: false,
-                              );
-                            } else {
-                              // no league, no rankings: tab 3 = Gallery
-                              return MediaGalleryPage(
-                                galleryFeed: GalleryFeed.community,
-                                onRefresh: () {},
-                              );
-                            }
-                          case 4:
-                            if (isLeague && rankingEnabled) {
-                              // league + rankings: tab 4 = Matches
-                              return CommunityMatchesScreen(
-                                communityId: communityId!,
-                                isLeagueCommunity: true,
-                              );
-                            } else {
-                              // league only or rankings only: tab 4 = Gallery
-                              return MediaGalleryPage(
-                                galleryFeed: GalleryFeed.community,
-                                onRefresh: () {},
-                              );
-                            }
-                          default:
-                            // case 5: league + rankings: Gallery
-                            return MediaGalleryPage(
-                              galleryFeed: GalleryFeed.community,
-                              onRefresh: () {},
-                            );
-                        }
+                          },
+                        );
                   },
                 ),
               );
@@ -1512,7 +1517,7 @@ class Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<CommuFeedVM>(builder: (context, vm, _) {
-      return index == 0
+      return index == 0 || vm.userFeedTabController == null
           ? const SizedBox()
           : Row(
         mainAxisAlignment: MainAxisAlignment.start,
