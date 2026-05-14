@@ -341,8 +341,19 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                 .joinCommunity(widget.community.communityId!)
                 .then((value) async {
               if (widget.community.metadata?["channel_id"] != null) {
-                await AmityChatClient.newChannelRepository().joinChannel(
-                    widget.community.metadata?["channel_id"]);
+                final channelId = widget.community.metadata!["channel_id"] as String;
+                await AmityChatClient.newChannelRepository().joinChannel(channelId);
+                // Register user as a proper channel member via admin API so their
+                // messages are visible to others and they receive notifications.
+                final userId = AmityCoreClient.getCurrentUser().userId;
+                if (userId != null) {
+                  try {
+                    await MatchRepository.getInstance()
+                        .addUsersToChatChannel(channelId, [userId]);
+                  } catch (e) {
+                    log('addUsersToChatChannel error: $e');
+                  }
+                }
               }
               setState(() {
                 if (widget.updateLoadingState != null) {
