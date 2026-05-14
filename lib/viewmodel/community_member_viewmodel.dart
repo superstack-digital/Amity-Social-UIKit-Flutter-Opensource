@@ -168,8 +168,17 @@ class MemberManagementVM extends ChangeNotifier {
           print("demoteFromModerator: success");
       AmityLoadingDialog.hideLoadingDialog();
     }).onError((error, stackTrace) async {
-      AmityDialog()
-          .showAlertErrorDialog(title: "Error!", message: error.toString());
+      AmityLoadingDialog.hideLoadingDialog();
+      final msg = error.toString().toLowerCase();
+      // If the user is already not a member, the role is effectively removed — treat as success.
+      if (msg.contains('not member') || msg.contains('not a member')) {
+        _moderatorList.removeWhere((user) => userIds.contains(user.userId));
+        await PreferenceUtils().clearCommunityMembers(communityId);
+        notifyListeners();
+      } else {
+        AmityDialog()
+            .showAlertErrorDialog(title: "Error!", message: error.toString());
+      }
     });
 
     notifyListeners();
