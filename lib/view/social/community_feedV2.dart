@@ -83,14 +83,9 @@ class CommunityScreenState extends State<CommunityScreen>
         .initAmityCommunityVideoFeed(widget.community.communityId!);
     Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
         widget.community.communityId!, AmityFeedType.REVIEWING);
-    Future.wait([
-      Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community),
-      Provider.of<CommuFeedVM>(context, listen: false).checkRankingsEnabled(),
-    ]).then((results) {
-      final rankingEnabled = results[1] as bool;
+    Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community).then((_) {
       final vm = Provider.of<CommuFeedVM>(context, listen: false);
-      int tabCount = 4; // Timeline + Events + Matches + Gallery
-      if (rankingEnabled) tabCount++; // + Rankings
+      int tabCount = 5; // Timeline + Events + Rankings + Matches + Gallery
       if (vm.isLeagueCommunity) tabCount++; // + Standing
       vm.userFeedTabController = TabController(length: tabCount, vsync: this);
       vm.notifyListeners();
@@ -1171,10 +1166,9 @@ class _StickyHeaderList extends StatelessWidget {
                           listenable: _tabController,
                           builder: (context, _) {
                             final int _tabIndex = _tabController.index;
-                            final rankingEnabled = vm.communityRankingEnabled.value;
                             final isLeague = vm.isLeagueCommunity;
 
-                            // Tab order: Timeline(0) | Events(1) | Standings?(2 if league) | Rankings?(2/3 if enabled) | Matches | Gallery
+                            // Tab order: Timeline(0) | Events(1) | Standings?(2 if league) | Rankings(2/3) | Matches | Gallery
                             switch (_tabIndex) {
                               case 0:
                                 return buildContent(context, bheight);
@@ -1183,39 +1177,24 @@ class _StickyHeaderList extends StatelessWidget {
                               case 2:
                                 if (isLeague) {
                                   return leagueStandingsWidget();
-                                } else if (rankingEnabled) {
+                                } else {
                                   return CommunityRankingsScreen(
                                       communityId: communityId!,
                                       onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                                } else {
-                                  return CommunityMatchesScreen(
-                                    communityId: communityId!,
-                                    isLeagueCommunity: false,
-                                  );
                                 }
                               case 3:
-                                if (isLeague && rankingEnabled) {
+                                if (isLeague) {
                                   return CommunityRankingsScreen(
                                       communityId: communityId!,
                                       onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                                } else if (isLeague) {
-                                  return CommunityMatchesScreen(
-                                    communityId: communityId!,
-                                    isLeagueCommunity: true,
-                                  );
-                                } else if (rankingEnabled) {
+                                } else {
                                   return CommunityMatchesScreen(
                                     communityId: communityId!,
                                     isLeagueCommunity: false,
-                                  );
-                                } else {
-                                  return MediaGalleryPage(
-                                    galleryFeed: GalleryFeed.community,
-                                    onRefresh: () {},
                                   );
                                 }
                               case 4:
-                                if (isLeague && rankingEnabled) {
+                                if (isLeague) {
                                   return CommunityMatchesScreen(
                                     communityId: communityId!,
                                     isLeagueCommunity: true,
@@ -1564,8 +1543,7 @@ class Header extends StatelessWidget {
                     Tab(text: "Events"),
                     if(vm.isLeagueCommunity)
                       Tab(text: "Standings"),
-                    if(vm.communityRankingEnabled.value)
-                      Tab(text: "Rankings"),
+                    Tab(text: "Rankings"),
                     Tab(text: "Matches"),
                     Tab(text: "Gallery"),
                   ],
