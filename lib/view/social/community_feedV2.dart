@@ -1293,6 +1293,7 @@ class _StickyHeaderList extends StatelessWidget {
                                 return CommunityRankingsScreen(
                                   communityId: communityId!,
                                   onViewUpcomingPressed: vm.onSwitchToEventsTab,
+                                  isAdmin: vm.isCurrentUserIsAdmin,
                                 );
                               case CommunityTabType.matches:
                                 return CommunityMatchesScreen(
