@@ -32,6 +32,9 @@ import 'package:mobile_app_padel/features/community/presentation/screens/communi
 import 'package:mobile_app_padel/features/community/presentation/screens/community_matches_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_rankings_screen.dart';
 import 'package:mobile_app_padel/features/competitions/presentations/controllers/competition_standings_controller.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/general_rankings_screen.dart';
+import 'package:mobile_app_padel/shared/feature_flags.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:mobile_app_padel/features/chat/presentations/screens/chat_screen.dart';
 import 'package:mobile_app_padel/shared/deeplink.dart';
@@ -1290,10 +1293,21 @@ class _StickyHeaderList extends StatelessWidget {
                               case CommunityTabType.standings:
                                 return leagueStandingsWidget();
                               case CommunityTabType.rankings:
-                                return CommunityRankingsScreen(
-                                  communityId: communityId!,
-                                  onViewUpcomingPressed: vm.onSwitchToEventsTab,
-                                  isAdmin: vm.isCurrentUserIsAdmin,
+                                return FutureBuilder<bool>(
+                                  future: FeatureFlagService.isEnabled(
+                                      FeatureFlagKeys.simplifiedRanking),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.data == true) {
+                                      return GeneralRankingsScreen(
+                                          communityId: communityId!);
+                                    }
+                                    return CommunityRankingsScreen(
+                                      communityId: communityId!,
+                                      onViewUpcomingPressed:
+                                          vm.onSwitchToEventsTab,
+                                      isAdmin: vm.isCurrentUserIsAdmin,
+                                    );
+                                  },
                                 );
                               case CommunityTabType.matches:
                                 return CommunityMatchesScreen(
