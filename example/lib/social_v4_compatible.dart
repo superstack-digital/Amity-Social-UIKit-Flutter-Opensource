@@ -452,7 +452,7 @@ class TrendingSection extends StatelessWidget {
                     ),
                     subtitle: community.categories!.isEmpty
                         ? Text(
-                            'no category • ${community.membersCount} ${community.membersCount == 1 ? "member" : "members"}',
+                            'Community • ${community.membersCount} ${community.membersCount == 1 ? "member" : "members"}',
                             style: const TextStyle(
                                 fontSize: 13, color: Color(0xff636878)),
                           )
