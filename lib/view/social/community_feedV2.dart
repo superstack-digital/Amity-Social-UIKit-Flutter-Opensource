@@ -756,7 +756,7 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
                         : Text(
                         widget.community.displayName != null
                             ? widget.community.categories!.isEmpty
-                            ? "no category"
+                            ? "Community"
                             : widget.community.categories![0]?.name ?? ""
                             : "",
                         style: const TextStyle(
