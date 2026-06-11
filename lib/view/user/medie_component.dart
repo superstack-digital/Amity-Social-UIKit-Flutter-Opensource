@@ -86,12 +86,12 @@ class MediaGalleryPage extends StatelessWidget {
                 : const Color(0xff636878),
         backgroundColor: galleryFeed == GalleryFeed.community
             ? Provider.of<CommuFeedVM>(context).getMediaType() == type
-                ? Provider.of<AmityUIConfiguration>(context).primaryColor
+                ? const Color(0xFF4E8A6D)
                 : Provider.of<AmityUIConfiguration>(context)
                     .appColors
                     .baseShade4
             : Provider.of<UserFeedVM>(context).getMediaType() == type
-                ? Provider.of<AmityUIConfiguration>(context).primaryColor
+                ? const Color(0xFF4E8A6D)
                 : Provider.of<AmityUIConfiguration>(context)
                     .appColors
                     .baseShade4,
