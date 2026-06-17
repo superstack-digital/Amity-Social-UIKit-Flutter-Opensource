@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:amity_uikit_beta_service/view/user/medie_component.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../components/alert_dialog.dart';
@@ -86,14 +87,19 @@ class CommuFeedVM extends ChangeNotifier {
     return _communityEventList;
   }
 
+  /// Setpoint mirror events — hidden unless PostHog `tps-setpoint-programs` is on.
+  List<Event> get _setpointGatedEvents => setpointProgramsEnabled
+      ? _communityEventList
+      : _communityEventList.where((e) => !e.isSetpointProgram).toList();
+
   /// Academy community detail — Events tab: native + Setpoint programs except
   /// group coaching (clinic, league, camp, round_robin, other).
-  List<Event> get communityEventsForEventsTab => _communityEventList
+  List<Event> get communityEventsForEventsTab => _setpointGatedEvents
       .where((e) => !(e.isSetpointProgram && e.isGroupCoaching))
       .toList();
 
   /// Academy community detail — Coaching Sessions tab: Setpoint group_coaching only.
-  List<Event> get communityCoachingSessions => _communityEventList
+  List<Event> get communityCoachingSessions => _setpointGatedEvents
       .where((e) => e.isSetpointProgram && e.isGroupCoaching)
       .toList();
 
@@ -135,8 +141,8 @@ class CommuFeedVM extends ChangeNotifier {
       _communityEventList.addAll([...data]);
       notifyListeners();
     } catch (e) {
-      // showStyledSnackBar("", SnackBarType.error);
-      rethrow;
+      // Keep partial results; do not leave the tab blank after a fetch failure.
+      debugPrint('getUpcomingEvents failed for $communityId: $e');
     }
   }
 
