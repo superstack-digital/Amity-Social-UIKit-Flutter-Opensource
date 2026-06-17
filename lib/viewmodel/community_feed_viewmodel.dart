@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../../components/alert_dialog.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
+import 'package:mobile_app_padel/shared/constants.dart';
+import 'package:mobile_app_padel/shared/feature_flags.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
 
 
@@ -27,6 +29,8 @@ class CommuFeedVM extends ChangeNotifier {
   MediaType getMediaType() => _selectedMediaType;
   bool isCurrentUserIsAdmin = false;
   bool isLeagueCommunity = false;
+  bool isAcademyCommunity = false;
+  bool setpointProgramsEnabled = false;
   int? latestCompetitionId;
   bool isLoadingStandings = false;
   var _amityCommunityFeedPosts = <AmityPost>[];
@@ -82,6 +86,42 @@ class CommuFeedVM extends ChangeNotifier {
     return _communityEventList;
   }
 
+  /// Academy community detail — Events tab: native + Setpoint programs except
+  /// group coaching (clinic, league, camp, round_robin, other).
+  List<Event> get communityEventsForEventsTab => _communityEventList
+      .where((e) => !(e.isSetpointProgram && e.isGroupCoaching))
+      .toList();
+
+  /// Academy community detail — Coaching Sessions tab: Setpoint group_coaching only.
+  List<Event> get communityCoachingSessions => _communityEventList
+      .where((e) => e.isSetpointProgram && e.isGroupCoaching)
+      .toList();
+
+  bool get showCoachingSessionsTab =>
+      isAcademyCommunity && setpointProgramsEnabled;
+
+  /// Tab order: Timeline(0) | Events(1) | [Coaching Sessions(2)?] | ...
+  int get coachingSessionsTabIndex => 2;
+
+  int get _offsetAfterEvents => showCoachingSessionsTab ? 1 : 0;
+
+  int get standingsTabIndex =>
+      isLeagueCommunity ? 2 + _offsetAfterEvents : -1;
+
+  int get rankingsTabIndex =>
+      2 + _offsetAfterEvents + (isLeagueCommunity ? 1 : 0);
+
+  int get matchesTabIndex => rankingsTabIndex + 1;
+
+  int get galleryTabIndex => matchesTabIndex + 1;
+
+  int get communityDetailTabCount {
+    var count = 5; // Timeline + Events + Rankings + Matches + Gallery
+    if (isLeagueCommunity) count++;
+    if (showCoachingSessionsTab) count++;
+    return count;
+  }
+
   void addPostToFeed(AmityPost post) {
     _amityCommunityFeedPosts.insert(0, post);
     notifyListeners();
@@ -104,11 +144,18 @@ class CommuFeedVM extends ChangeNotifier {
   Future<void> getPostCount(AmityCommunity community) async {
     // Reset per-community state to avoid stale data from previous community
     isLeagueCommunity = false;
+    isAcademyCommunity = false;
+    setpointProgramsEnabled = false;
     latestCompetitionId = null;
     isLoadingStandings = false;
     notifyListeners();
 
     getUpcomingEvents(community.communityId!);
+
+    isAcademyCommunity = await CommunityRepository.getInstance()
+        .isSetpointAcademyCommunity(community.communityId!);
+    setpointProgramsEnabled =
+        await FeatureFlagService.isEnabled(FeatureFlagKeys.setpointPrograms);
 
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)

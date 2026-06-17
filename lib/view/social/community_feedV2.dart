@@ -85,9 +85,10 @@ class CommunityScreenState extends State<CommunityScreen>
         widget.community.communityId!, AmityFeedType.REVIEWING);
     Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community).then((_) {
       final vm = Provider.of<CommuFeedVM>(context, listen: false);
-      int tabCount = 5; // Timeline + Events + Rankings + Matches + Gallery
-      if (vm.isLeagueCommunity) tabCount++; // + Standing
-      vm.userFeedTabController = TabController(length: tabCount, vsync: this);
+      vm.userFeedTabController = TabController(
+        length: vm.communityDetailTabCount,
+        vsync: this,
+      );
       vm.notifyListeners();
     });
 
@@ -1113,10 +1114,12 @@ class _StickyHeaderList extends StatelessWidget {
                       );
                     }
 
-                    Widget buildEventLists(BuildContext context, double bheight) {
-                      if (vm
-                          .getCommunityEventList()
-                          .isEmpty) {
+                    Widget buildEventLists(
+                      BuildContext context,
+                      double bheight,
+                      List<Event> events,
+                    ) {
+                      if (events.isEmpty) {
                         return EmptyCommunityEventView();
                       }
                       return Container(
@@ -1125,13 +1128,11 @@ class _StickyHeaderList extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 16),
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
-                          itemCount: vm
-                              .getCommunityEventList()
-                              .length,
+                          itemCount: events.length,
                           itemBuilder: (context, index) {
-                            final event = vm.getCommunityEventList()[index];
+                            final event = events[index];
                             return EventItem(event: event, onEventDeleted: () {
-                              if(communityId != null){
+                              if (communityId != null) {
                                 vm.getUpcomingEvents(communityId!);
                               }
                             });
@@ -1168,49 +1169,45 @@ class _StickyHeaderList extends StatelessWidget {
                             final int _tabIndex = _tabController.index;
                             final isLeague = vm.isLeagueCommunity;
 
-                            // Tab order: Timeline(0) | Events(1) | Standings?(2 if league) | Rankings(2/3) | Matches | Gallery
-                            switch (_tabIndex) {
-                              case 0:
-                                return buildContent(context, bheight);
-                              case 1:
-                                return buildEventLists(context, bheight);
-                              case 2:
-                                if (isLeague) {
-                                  return leagueStandingsWidget();
-                                } else {
-                                  return CommunityRankingsScreen(
-                                      communityId: communityId!,
-                                      onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                                }
-                              case 3:
-                                if (isLeague) {
-                                  return CommunityRankingsScreen(
-                                      communityId: communityId!,
-                                      onViewUpcomingPressed: vm.onSwitchToEventsTab);
-                                } else {
-                                  return CommunityMatchesScreen(
-                                    communityId: communityId!,
-                                    isLeagueCommunity: false,
-                                  );
-                                }
-                              case 4:
-                                if (isLeague) {
-                                  return CommunityMatchesScreen(
-                                    communityId: communityId!,
-                                    isLeagueCommunity: true,
-                                  );
-                                } else {
-                                  return MediaGalleryPage(
-                                    galleryFeed: GalleryFeed.community,
-                                    onRefresh: () {},
-                                  );
-                                }
-                              default:
-                                return MediaGalleryPage(
-                                  galleryFeed: GalleryFeed.community,
-                                  onRefresh: () {},
-                                );
+                            // Tab order: Timeline | Events | [Coaching Sessions?] |
+                            // Standings?(league) | Rankings | Matches | Gallery
+                            if (_tabIndex == 0) {
+                              return buildContent(context, bheight);
                             }
+                            if (_tabIndex == 1) {
+                              return buildEventLists(
+                                context,
+                                bheight,
+                                vm.communityEventsForEventsTab,
+                              );
+                            }
+                            if (vm.showCoachingSessionsTab &&
+                                _tabIndex == vm.coachingSessionsTabIndex) {
+                              return buildEventLists(
+                                context,
+                                bheight,
+                                vm.communityCoachingSessions,
+                              );
+                            }
+                            if (isLeague && _tabIndex == vm.standingsTabIndex) {
+                              return leagueStandingsWidget();
+                            }
+                            if (_tabIndex == vm.rankingsTabIndex) {
+                              return CommunityRankingsScreen(
+                                communityId: communityId!,
+                                onViewUpcomingPressed: vm.onSwitchToEventsTab,
+                              );
+                            }
+                            if (_tabIndex == vm.matchesTabIndex) {
+                              return CommunityMatchesScreen(
+                                communityId: communityId!,
+                                isLeagueCommunity: isLeague,
+                              );
+                            }
+                            return MediaGalleryPage(
+                              galleryFeed: GalleryFeed.community,
+                              onRefresh: () {},
+                            );
                           },
                         );
                   },
@@ -1541,6 +1538,8 @@ class Header extends StatelessWidget {
                   tabs: [
                     Tab(text: "Timeline"),
                     Tab(text: "Events"),
+                    if (vm.showCoachingSessionsTab)
+                      Tab(text: "Coaching Sessions"),
                     if(vm.isLeagueCommunity)
                       Tab(text: "Standings"),
                     Tab(text: "Rankings"),
