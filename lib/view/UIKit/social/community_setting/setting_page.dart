@@ -17,6 +17,9 @@ import 'package:get/get.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/community_controller.dart';
 import 'package:amity_uikit_beta_service/v4/social/globalfeed/bloc/global_feed_bloc.dart';
 import 'package:amity_uikit_beta_service/amity_uikit_beta_service.dart';
+import 'package:get/get.dart';
+import 'package:mobile_app_padel/features/booking/data/models/community_metadata.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/community_tab_settings_screen.dart';
 
 class CommunitySettingPage extends StatelessWidget {
   final AmityCommunity community;
@@ -195,6 +198,32 @@ class CommunitySettingPage extends StatelessWidget {
                         onTap: () {
                           // Navigate to Post Review Page or perform an action
                           Navigator.of(context).push(MaterialPageRoute(builder: (context) => StoryCommentSettingPage(community: livecommunity)));
+                        },
+                      ),
+                !community.hasPermission(AmityPermission.EDIT_COMMUNITY)
+                    ? const SizedBox()
+                    : ListTile(
+                        leading: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xfff1f1f1),
+                            ),
+                            child: Icon(Icons.tab_outlined,
+                                color: Provider.of<AmityUIConfiguration>(context).appColors.base)),
+                        title: Text("Tab Customization",
+                            style: TextStyle(
+                              color: Provider.of<AmityUIConfiguration>(context).appColors.base,
+                            )),
+                        trailing: Icon(Icons.chevron_right,
+                            color: Provider.of<AmityUIConfiguration>(context).appColors.base),
+                        onTap: () {
+                          final isAcademy =
+                              CommunityMetadata.fromJson(community.metadata ?? {}).isAcademy;
+                          Get.to(() => CommunityTabSettingsScreen(
+                                communityId: community.communityId!,
+                                isAcademy: isAcademy,
+                              ));
                         },
                       ),
                 !community.isJoined!
