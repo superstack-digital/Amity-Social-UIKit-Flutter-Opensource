@@ -73,28 +73,29 @@ class CommunityScreenState extends State<CommunityScreen>
 
   @override
   void initState() {
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityCommunityFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .getReviewingPostCount(widget.community);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityCommunityImageFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityCommunityVideoFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
-        widget.community.communityId!, AmityFeedType.REVIEWING);
-    Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community).then((_) {
-      final vm = Provider.of<CommuFeedVM>(context, listen: false);
-      vm.userFeedTabController = TabController(
-        length: vm.communityDetailTabCount,
-        vsync: this,
-      );
-      vm.notifyListeners();
-    });
-
-
     super.initState();
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .initAmityCommunityFeed(widget.community.communityId!);
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .getReviewingPostCount(widget.community);
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .initAmityCommunityImageFeed(widget.community.communityId!);
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .initAmityCommunityVideoFeed(widget.community.communityId!);
+      Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
+          widget.community.communityId!, AmityFeedType.REVIEWING);
+      Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community).then((_) {
+        if (!mounted) return;
+        final vm = Provider.of<CommuFeedVM>(context, listen: false);
+        vm.userFeedTabController = TabController(
+          length: vm.communityDetailTabCount,
+          vsync: this,
+        );
+        vm.notifyListeners();
+      });
+    });
   }
 
   getAvatarImage(String? url) {
@@ -930,6 +931,105 @@ class _StickyHeaderList extends StatelessWidget {
   final double bheight;
   final String? communityId;
 
+  Widget _buildContentSkeleton(BuildContext context) {
+    return Container(
+      color: HexColor('#F4F6F9'),
+      child: ListView.builder(
+        padding: const EdgeInsets.only(top: 12),
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            width: 80,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 180,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SliverStickyHeader(
@@ -1140,8 +1240,9 @@ class _StickyHeaderList extends StatelessWidget {
                         ),
                       );
                     }
-                        if (vm.userFeedTabController == null) {
-                          return const SizedBox();
+                        if (vm.userFeedTabController == null ||
+                            vm.userFeedTabController!.length != vm.activeTabs.length) {
+                          return _buildContentSkeleton(context);
                         }
                         final _tabController = vm.userFeedTabController!;
 
@@ -1167,47 +1268,43 @@ class _StickyHeaderList extends StatelessWidget {
                           listenable: _tabController,
                           builder: (context, _) {
                             final int _tabIndex = _tabController.index;
-                            final isLeague = vm.isLeagueCommunity;
-
-                            // Tab order: Timeline | Events | [Coaching Sessions?] |
-                            // Standings?(league) | Rankings | Matches | Gallery
-                            if (_tabIndex == 0) {
-                              return buildContent(context, bheight);
+                            if (_tabIndex >= vm.activeTabs.length) {
+                              return const SizedBox();
                             }
-                            if (_tabIndex == 1) {
-                              return buildEventLists(
-                                context,
-                                bheight,
-                                vm.communityEventsForEventsTab,
-                              );
+                            final tabType = vm.activeTabs[_tabIndex];
+                            switch (tabType) {
+                              case CommunityTabType.timeline:
+                                return buildContent(context, bheight);
+                              case CommunityTabType.events:
+                                return buildEventLists(
+                                  context,
+                                  bheight,
+                                  vm.communityEventsForEventsTab,
+                                );
+                              case CommunityTabType.coaching:
+                                return buildEventLists(
+                                  context,
+                                  bheight,
+                                  vm.communityCoachingSessions,
+                                );
+                              case CommunityTabType.standings:
+                                return leagueStandingsWidget();
+                              case CommunityTabType.rankings:
+                                return CommunityRankingsScreen(
+                                  communityId: communityId!,
+                                  onViewUpcomingPressed: vm.onSwitchToEventsTab,
+                                );
+                              case CommunityTabType.matches:
+                                return CommunityMatchesScreen(
+                                  communityId: communityId!,
+                                  isLeagueCommunity: vm.isLeagueCommunity,
+                                );
+                              case CommunityTabType.gallery:
+                                return MediaGalleryPage(
+                                  galleryFeed: GalleryFeed.community,
+                                  onRefresh: () {},
+                                );
                             }
-                            if (vm.showCoachingSessionsTab &&
-                                _tabIndex == vm.coachingSessionsTabIndex) {
-                              return buildEventLists(
-                                context,
-                                bheight,
-                                vm.communityCoachingSessions,
-                              );
-                            }
-                            if (isLeague && _tabIndex == vm.standingsTabIndex) {
-                              return leagueStandingsWidget();
-                            }
-                            if (_tabIndex == vm.rankingsTabIndex) {
-                              return CommunityRankingsScreen(
-                                communityId: communityId!,
-                                onViewUpcomingPressed: vm.onSwitchToEventsTab,
-                              );
-                            }
-                            if (_tabIndex == vm.matchesTabIndex) {
-                              return CommunityMatchesScreen(
-                                communityId: communityId!,
-                                isLeagueCommunity: isLeague,
-                              );
-                            }
-                            return MediaGalleryPage(
-                              galleryFeed: GalleryFeed.community,
-                              onRefresh: () {},
-                            );
                           },
                         );
                   },
@@ -1501,12 +1598,67 @@ class Header extends StatelessWidget {
   final Color color;
   final VoidCallback onChangedTab;
 
+  Widget _buildTabBarSkeleton(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: Colors.white,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              width: 70,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Container(
+              width: 60,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Container(
+              width: 90,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Container(
+              width: 80,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CommuFeedVM>(builder: (context, vm, _) {
-      return index == 0 || vm.userFeedTabController == null
+      return index == 0
           ? const SizedBox()
-          : Row(
+          : vm.userFeedTabController == null ||
+                  vm.userFeedTabController!.length != vm.activeTabs.length
+              ? _buildTabBarSkeleton(context)
+              : Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Expanded(
@@ -1535,17 +1687,24 @@ class Header extends StatelessWidget {
                       fontFamily: 'SF Pro Text',
                       color: HexColor('#4E8A6D')
                   ),
-                  tabs: [
-                    Tab(text: "Timeline"),
-                    Tab(text: "Events"),
-                    if (vm.showCoachingSessionsTab)
-                      Tab(text: "Coaching Sessions"),
-                    if(vm.isLeagueCommunity)
-                      Tab(text: "Standings"),
-                    Tab(text: "Rankings"),
-                    Tab(text: "Matches"),
-                    Tab(text: "Gallery"),
-                  ],
+                  tabs: vm.activeTabs.map((tabType) {
+                    switch (tabType) {
+                      case CommunityTabType.timeline:
+                        return const Tab(text: "Timeline");
+                      case CommunityTabType.events:
+                        return const Tab(text: "Events");
+                      case CommunityTabType.coaching:
+                        return const Tab(text: "Coaching Sessions");
+                      case CommunityTabType.standings:
+                        return const Tab(text: "Standings");
+                      case CommunityTabType.rankings:
+                        return const Tab(text: "Rankings");
+                      case CommunityTabType.matches:
+                        return const Tab(text: "Matches");
+                      case CommunityTabType.gallery:
+                        return const Tab(text: "Gallery");
+                    }
+                  }).toList(),
                 ),
               ),
             ),
