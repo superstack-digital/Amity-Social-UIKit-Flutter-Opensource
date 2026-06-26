@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 import '../../components/alert_dialog.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
-import 'package:mobile_app_padel/shared/constants.dart';
-import 'package:mobile_app_padel/shared/feature_flags.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
 
 
@@ -31,7 +29,6 @@ class CommuFeedVM extends ChangeNotifier {
   bool isCurrentUserIsAdmin = false;
   bool isLeagueCommunity = false;
   bool isAcademyCommunity = false;
-  bool setpointProgramsEnabled = false;
   int? latestCompetitionId;
   bool isLoadingStandings = false;
   var _amityCommunityFeedPosts = <AmityPost>[];
@@ -87,10 +84,8 @@ class CommuFeedVM extends ChangeNotifier {
     return _communityEventList;
   }
 
-  /// Setpoint mirror events — hidden unless PostHog `tps-setpoint-programs` is on.
-  List<Event> get _setpointGatedEvents => setpointProgramsEnabled
-      ? _communityEventList
-      : _communityEventList.where((e) => !e.isSetpointProgram).toList();
+  /// Setpoint mirror events — always included (`tps-setpoint-programs` fully rolled out).
+  List<Event> get _setpointGatedEvents => _communityEventList;
 
   /// Academy community detail — Events tab: native + Setpoint programs except
   /// group coaching (clinic, league, camp, round_robin, other).
@@ -103,8 +98,7 @@ class CommuFeedVM extends ChangeNotifier {
       .where((e) => e.isSetpointProgram && e.isGroupCoaching)
       .toList();
 
-  bool get showCoachingSessionsTab =>
-      isAcademyCommunity && setpointProgramsEnabled;
+  bool get showCoachingSessionsTab => isAcademyCommunity;
 
   /// Tab order: Timeline(0) | Events(1) | [Coaching Sessions(2)?] | ...
   int get coachingSessionsTabIndex => 2;
@@ -151,7 +145,6 @@ class CommuFeedVM extends ChangeNotifier {
     // Reset per-community state to avoid stale data from previous community
     isLeagueCommunity = false;
     isAcademyCommunity = false;
-    setpointProgramsEnabled = false;
     latestCompetitionId = null;
     isLoadingStandings = false;
     notifyListeners();
@@ -160,8 +153,6 @@ class CommuFeedVM extends ChangeNotifier {
 
     isAcademyCommunity = await CommunityRepository.getInstance()
         .isSetpointAcademyCommunity(community.communityId!);
-    setpointProgramsEnabled =
-        await FeatureFlagService.isEnabled(FeatureFlagKeys.setpointPrograms);
 
     await AmitySocialClient.newCommunityRepository()
         .getCommunity(community.communityId!)
