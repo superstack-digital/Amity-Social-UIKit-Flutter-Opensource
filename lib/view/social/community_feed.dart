@@ -39,18 +39,21 @@ class CommunityScreen extends StatefulWidget {
 class CommunityScreenState extends State<CommunityScreen> {
   @override
   void initState() {
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityCommunityFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .getReviewingPostCount(widget.community);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityCommunityImageFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false)
-        .initAmityCommunityVideoFeed(widget.community.communityId!);
-    Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
-        widget.community.communityId!, AmityFeedType.REVIEWING);
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .initAmityCommunityFeed(widget.community.communityId!);
+      Provider.of<CommuFeedVM>(context, listen: false).getPostCount(widget.community);
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .getReviewingPostCount(widget.community);
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .initAmityCommunityImageFeed(widget.community.communityId!);
+      Provider.of<CommuFeedVM>(context, listen: false)
+          .initAmityCommunityVideoFeed(widget.community.communityId!);
+      Provider.of<CommuFeedVM>(context, listen: false).initAmityPendingCommunityFeed(
+          widget.community.communityId!, AmityFeedType.REVIEWING);
+    });
   }
 
   @override
