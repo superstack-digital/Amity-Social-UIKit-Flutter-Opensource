@@ -125,7 +125,7 @@ class CommuFeedVM extends ChangeNotifier {
     
     final showCoaching = _settings != null 
         ? _settings!.isCoachingEnabled 
-        : (isAcademyCommunity && setpointProgramsEnabled);
+        : isAcademyCommunity;
     if (showCoaching) {
       tabs.add(CommunityTabType.coaching);
     }
