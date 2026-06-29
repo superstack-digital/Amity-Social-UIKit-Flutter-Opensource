@@ -29,6 +29,7 @@ import 'package:mobile_app_padel/features/community/widgets/share_match_modal.da
 import 'package:mobile_app_padel/features/community/widgets/empty_community_matches_view.dart';
 import 'package:mobile_app_padel/features/community/widgets/empty_community_event_view.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_league_standings_screen.dart';
+import 'package:mobile_app_padel/features/community/presentation/screens/community_coaching_tab_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_matches_screen.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_rankings_screen.dart';
 import 'package:mobile_app_padel/features/competitions/presentations/controllers/competition_standings_controller.dart';
@@ -1285,10 +1286,9 @@ class _StickyHeaderList extends StatelessWidget {
                                   vm.communityEventsForEventsTab,
                                 );
                               case CommunityTabType.coaching:
-                                return buildEventLists(
-                                  context,
-                                  bheight,
-                                  vm.communityCoachingSessions,
+                                return CommunityCoachingTabScreen(
+                                  communityId: communityId!,
+                                  events: vm.communityCoachingSessions,
                                 );
                               case CommunityTabType.standings:
                                 return leagueStandingsWidget();
