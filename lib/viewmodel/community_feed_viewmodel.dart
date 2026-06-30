@@ -10,6 +10,7 @@ import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
 import 'package:mobile_app_padel/features/community/data/models/community_settings.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/community_settings_repository.dart';
+import 'package:mobile_app_padel/app_controller.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:mobile_app_padel/shared/feature_flags.dart';
 import 'package:mobile_app_padel/shared/functions.dart';
@@ -23,8 +24,6 @@ enum CommunityTabType {
   matches,
   gallery,
 }
-
-
 
 class CommuFeedVM extends ChangeNotifier {
   MediaType _selectedMediaType = MediaType.photos;
@@ -101,56 +100,55 @@ class CommuFeedVM extends ChangeNotifier {
   List<Event> get _setpointGatedEvents => _communityEventList;
 
   /// Events tab: everything that is NOT a group coaching session.
-  List<Event> get communityEventsForEventsTab => _setpointGatedEvents
-      .where((e) => !e.isGroupCoaching)
-      .toList();
+  List<Event> get communityEventsForEventsTab =>
+      _setpointGatedEvents.where((e) => !e.isGroupCoaching).toList();
 
   /// Coaching Sessions tab: any group coaching event (native TPS or Setpoint-mirrored).
-  List<Event> get communityCoachingSessions => _setpointGatedEvents
-      .where((e) => e.isGroupCoaching)
-      .toList();
+  List<Event> get communityCoachingSessions =>
+      _setpointGatedEvents.where((e) => e.isGroupCoaching).toList();
 
   CommunitySettings? _settings;
   CommunitySettings? get settings => _settings;
 
   List<CommunityTabType> get activeTabs {
     final tabs = [CommunityTabType.timeline];
-    
+
     final eventsEnabled = _settings?.isEventsEnabled ?? true;
     if (eventsEnabled) {
       tabs.add(CommunityTabType.events);
     }
-    
-    final showCoaching = _settings != null 
-        ? _settings!.isCoachingEnabled 
-        : isAcademyCommunity;
+
+    final showCoaching = AppController.isCommunityCoachingTabEnabled &&
+        (_settings != null ? _settings!.isCoachingEnabled : isAcademyCommunity);
     if (showCoaching) {
       tabs.add(CommunityTabType.coaching);
     }
-    
+
     final competitionsEnabled = _settings?.isCompetitionsEnabled ?? true;
     if (isLeagueCommunity && competitionsEnabled) {
       tabs.add(CommunityTabType.standings);
     }
-    
+
     final rankingsEnabled = _settings?.isRankingEnabled ?? true;
     if (rankingsEnabled) {
       tabs.add(CommunityTabType.rankings);
     }
-    
+
     final matchesEnabled = _settings?.isMatchesEnabled ?? true;
     if (matchesEnabled) {
       tabs.add(CommunityTabType.matches);
     }
-    
+
     tabs.add(CommunityTabType.gallery);
-    
+
     return tabs;
   }
 
-  bool get showCoachingSessionsTab => activeTabs.contains(CommunityTabType.coaching);
+  bool get showCoachingSessionsTab =>
+      activeTabs.contains(CommunityTabType.coaching);
 
-  int get coachingSessionsTabIndex => activeTabs.indexOf(CommunityTabType.coaching);
+  int get coachingSessionsTabIndex =>
+      activeTabs.indexOf(CommunityTabType.coaching);
 
   int get standingsTabIndex => activeTabs.indexOf(CommunityTabType.standings);
 
@@ -171,7 +169,8 @@ class CommuFeedVM extends ChangeNotifier {
     try {
       _communityEventList.clear();
       notifyListeners();
-      final data = await CommunityRepository.getInstance().getAllCommunityUpcomingEvents(communityId);
+      final data = await CommunityRepository.getInstance()
+          .getAllCommunityUpcomingEvents(communityId);
       _communityEventList.addAll([...data]);
       notifyListeners();
     } catch (e) {
@@ -196,7 +195,8 @@ class CommuFeedVM extends ChangeNotifier {
         .isSetpointAcademyCommunity(community.communityId!);
 
     try {
-      _settings = await CommunitySettingsRepository.getInstance().getSettings(community.communityId!);
+      _settings = await CommunitySettingsRepository.getInstance()
+          .getSettings(community.communityId!);
       notifyListeners();
     } catch (e) {
       debugPrint("Failed to fetch community settings: $e");
@@ -208,7 +208,10 @@ class CommuFeedVM extends ChangeNotifier {
         .getCommunity(community.communityId!)
         .then((value) {
       community = value;
-      isLeagueCommunity = (community?.categories?.indexWhere((item) => item?.name == "League") ?? -1) > -1;
+      isLeagueCommunity = (community?.categories
+                  ?.indexWhere((item) => item?.name == "League") ??
+              -1) >
+          -1;
       notifyListeners();
     });
 
@@ -290,7 +293,6 @@ class CommuFeedVM extends ChangeNotifier {
     notifyListeners();
     await checkIsCurrentUserIsAdmin(communityId);
   }
-
 
   Future<void> initAmityPendingCommunityFeed(
       String communityId, AmityFeedType amityFeedType) async {
@@ -559,6 +561,7 @@ class CommuFeedVM extends ChangeNotifier {
     isLoading.value = value;
     notifyListeners();
   }
+
   void onSwitchToEventsTab() {
     final index = activeTabs.indexOf(CommunityTabType.events);
     if (index != -1) {
