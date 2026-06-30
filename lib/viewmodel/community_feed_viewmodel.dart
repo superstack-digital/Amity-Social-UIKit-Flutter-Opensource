@@ -98,18 +98,16 @@ class CommuFeedVM extends ChangeNotifier {
     return _communityEventList;
   }
 
-  /// Setpoint mirror events — always included (`tps-setpoint-programs` fully rolled out).
   List<Event> get _setpointGatedEvents => _communityEventList;
 
-  /// Academy community detail — Events tab: native + Setpoint programs except
-  /// group coaching (clinic, league, camp, round_robin, other).
+  /// Events tab: everything that is NOT a group coaching session.
   List<Event> get communityEventsForEventsTab => _setpointGatedEvents
-      .where((e) => !(e.isSetpointProgram && e.isGroupCoaching))
+      .where((e) => !e.isGroupCoaching)
       .toList();
 
-  /// Academy community detail — Coaching Sessions tab: Setpoint group_coaching only.
+  /// Coaching Sessions tab: any group coaching event (native TPS or Setpoint-mirrored).
   List<Event> get communityCoachingSessions => _setpointGatedEvents
-      .where((e) => e.isSetpointProgram && e.isGroupCoaching)
+      .where((e) => e.isGroupCoaching)
       .toList();
 
   CommunitySettings? _settings;
