@@ -21,6 +21,7 @@ import 'package:amity_uikit_beta_service/v4/social/globalfeed/bloc/global_feed_b
 import 'package:amity_uikit_beta_service/amity_uikit_beta_service.dart';
 import 'package:mobile_app_padel/features/booking/data/models/community_metadata.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/community_tab_settings_screen.dart';
+import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
 
 class CommunitySettingPage extends StatelessWidget {
   final AmityCommunity community;
@@ -218,9 +219,13 @@ class CommunitySettingPage extends StatelessWidget {
                             )),
                         trailing: Icon(Icons.chevron_right,
                             color: Provider.of<AmityUIConfiguration>(context).appColors.base),
-                        onTap: () {
+                        onTap: () async {
+                          final isDbAcademy = await CommunityRepository.getInstance()
+                              .isAcademyCommunityFromDb(community.communityId!);
                           final isAcademy =
-                              CommunityMetadata.fromJson(community.metadata ?? {}).isAcademy;
+                              CommunityMetadata.fromJson(community.metadata ?? {}).isAcademy ||
+                              (community.tags?.contains('academy') ?? false) ||
+                              isDbAcademy;
                           Get.to(() => CommunityTabSettingsScreen(
                                 communityId: community.communityId!,
                                 isAcademy: isAcademy,

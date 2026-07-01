@@ -299,7 +299,7 @@ class _EditProfileButtonState extends State<EditProfileButton> {
   @override
   Widget build(BuildContext context) {
     return !widget.community.hasPermission(AmityPermission.EDIT_COMMUNITY)
-        ? widget.community.isJoined!
+        ? widget.community.isJoined == true
         ? const SizedBox()
         : InkWell(
       onTap: () {
@@ -860,9 +860,9 @@ class _CommunityDetailComponentState extends State<CommunityDetailComponent> {
                       ),
                     ),
                   ),
-                !widget.community.isJoined!
+                widget.community.isJoined != true
                     ? const SizedBox()
-                    : !widget.community.isPostReviewEnabled!
+                    : widget.community.isPostReviewEnabled != true
                     ? const SizedBox()
                     : Provider
                     .of<CommuFeedVM>(context)
