@@ -12,8 +12,13 @@ class ConfigRepository {
 
   ConfigRepository._internal();
 
-  late Map<String, dynamic> _config;
-  late Set<String> excludedList;
+  // Default to empty so every reader (getConfig / getTheme /
+  // availableReactions …) is safe to call before the async loadConfig()
+  // completes — each already falls back gracefully on an empty map. Prevents a
+  // LateInitializationError race when a component (e.g. AmityGlobalFeedComponent)
+  // builds before config finishes loading.
+  Map<String, dynamic> _config = {};
+  Set<String> excludedList = {};
 
   Future<void> loadConfig() async {
     _config = await _loadConfigFile('config');

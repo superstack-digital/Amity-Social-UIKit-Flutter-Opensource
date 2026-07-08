@@ -44,26 +44,19 @@ class UserFeedVM extends ChangeNotifier {
     if (userId == AmityCoreClient.getUserId()) {
       log("isCurrentUser:$userId");
       amityUser = AmityCoreClient.getCurrentUser();
-      print("get user from currentamityUser :$amityUser");
     } else {
       log("isNotCurrentUser:$userId");
       if (otherUser != null) {
-        print("set instant user object");
         amityUser = otherUser;
       } else {
-        print("get new user object");
         await AmityCoreClient.newUserRepository()
             .getUser(userId)
             .then((AmityUser user) {
-          print("get user success");
           amityUser = user;
-        }).onError<AmityException>((error, stackTrace) {
-          print("fail getting user Data");
-        });
+        }).onError<AmityException>((error, stackTrace) {});
       }
     }
     amityMyFollowInfo.id = null;
-    print("get following info");
     amityUser!.relationship().getFollowInfo(amityUser!.userId!).then((value) {
       amityMyFollowInfo = value;
 
@@ -222,14 +215,12 @@ class UserFeedVM extends ChangeNotifier {
       initUserFeed(userId: amityUser!.userId!);
       notifyListeners();
     } else if (amityFollowStatus == AmityFollowStatus.PENDING) {
-      print("withDraw");
       await withdrawFollowRequest(user);
       initUserFeed(userId: amityUser!.userId!);
       notifyListeners();
     } else if (amityFollowStatus == AmityFollowStatus.ACCEPTED) {
       await _getUser(userId: amityUser!.userId!);
 
-      print("clear post");
       initUserFeed(userId: amityUser!.userId!);
     } else if (amityFollowStatus == AmityFollowStatus.BLOCKED) {
       //do nothing
@@ -246,13 +237,8 @@ class UserFeedVM extends ChangeNotifier {
         .deletePost(postId: post.postId!)
         .then((value) {
       int postIndex = amityPosts.indexWhere((p) => p.postId == post.postId);
-      print("index:$postIndex");
-      print(amityPosts.length);
       amityPosts.removeAt(postIndex);
-      print("rmove");
-      print(amityPosts.length);
       notifyListeners();
-      print("notifyListeners");
       listenForUserFeed(amityUser!.userId!);
       callback(true, "Post deleted successfully.");
 
@@ -297,7 +283,6 @@ class UserFeedVM extends ChangeNotifier {
   }
 
   Future<void> unfollowUser(AmityUser user) async {
-    print(user.userId);
     await AmityCoreClient.newUserRepository()
         .relationship()
         .unfollow(user.userId!)
@@ -320,7 +305,6 @@ class UserFeedVM extends ChangeNotifier {
         .relationship()
         .blockUser(userId)
         .then((value) {
-      print(value);
       AmitySuccessDialog.showTimedDialog("Blocked user");
       _getUser(userId: userId);
       notifyListeners();
@@ -336,7 +320,6 @@ class UserFeedVM extends ChangeNotifier {
         .relationship()
         .unblockUser(userId)
         .then((value) {
-      print(value);
       AmitySuccessDialog.showTimedDialog("Unblock user");
       _getUser(userId: userId);
       notifyListeners();

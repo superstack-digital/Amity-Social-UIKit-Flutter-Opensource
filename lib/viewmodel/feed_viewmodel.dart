@@ -52,8 +52,6 @@ class FeedVM extends ChangeNotifier {
   Future<void> initAmityGlobalfeed({bool isCustomPostRanking = false}) async {
     isCustomPostRanking = isCustomPostRanking;
     isLoading = true;
-    print("isloading1: $isLoading");
-    print("isCustomPostRanking:$isCustomPostRanking");
     if (isCustomPostRanking) {
       customRankingLiveCollection = AmitySocialClient.newFeedRepository()
           .getCustomRankingGlobalFeed()

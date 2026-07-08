@@ -226,7 +226,6 @@ class CommuFeedVM extends ChangeNotifier {
     community.getPostCount(AmityFeedType.PUBLISHED).then((value) async {
       //success
       postCount = value;
-      print("postCount $postCount");
 
       // Update UI
     }).onError((error, stackTrace) {
@@ -239,7 +238,6 @@ class CommuFeedVM extends ChangeNotifier {
     community.getPostCount(AmityFeedType.REVIEWING).then((value) {
       //success
       reviewingPostCount = value;
-      print(reviewingPostCount);
       // Update UI
     }).onError((error, stackTrace) {
       // Handle error
@@ -363,7 +361,6 @@ class CommuFeedVM extends ChangeNotifier {
           if (_controllerVideoCommu.error == null) {
             //handle results, we suggest to clear the previous items
             //and add with the latest _controller.loadedItems
-            print(">>> video ${_controllerVideoCommu.loadedItems.length}");
             _amityCommunityVideoFeedPosts.clear();
             _amityCommunityVideoFeedPosts
                 .addAll(_controllerVideoCommu.loadedItems);
@@ -557,7 +554,6 @@ class CommuFeedVM extends ChangeNotifier {
   }
 
   void setLoadingValue(bool value) {
-    print("setLoadingValue: $value");
     isLoading.value = value;
     notifyListeners();
   }
