@@ -85,11 +85,14 @@ class NotificationVM extends ChangeNotifier {
 
   Future<void> addImageNotificationWorkAround(
       AmityNotifications notifications) async {
-    for (var i = 0; i < notifications.data!.length; i++) {
+    // Enrich all notifications concurrently instead of ~2N serial round-trips
+    // (one getCommunity/getPost per item). mapActor is now awaited so the actor
+    // name/avatar is reliably applied (previously fired without await).
+    await Future.wait(List.generate(notifications.data!.length, (i) async {
       var notification = notificationsObject?.data![i];
 
       if (notification != null) {
-        mapActor(notification);
+        await mapActor(notification);
         if (notification.targetId != null) {
           if (notification.targetType == "community") {
             log(">>>>>>>>>>is community targetType");
@@ -148,7 +151,7 @@ class NotificationVM extends ChangeNotifier {
           }
         }
       }
-    }
+    }));
   }
 
   String prefixStringBuilder(List<Actors> actors) {

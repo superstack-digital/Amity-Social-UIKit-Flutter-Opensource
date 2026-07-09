@@ -15,24 +15,33 @@ class AmityNotificationRepoImp implements AmityNotificationRepo {
   Future<void> fetchNotification(
       Function(AmityNotifications? notifications, String? error)
           callback) async {
-    var dio = Dio();
-    final response = await dio.get(
-      "https://beta.amity.services/notifications/history",
-      options: Options(
-        headers: {
-          "Authorization": "Bearer $accessToken" // set content-length
-        },
-      ),
-    );
-
-    if (response.statusCode == 200) {
-      var amityPushNotification = AmityNotifications.fromJson(response.data);
-      callback(amityPushNotification, null);
-    } else {
-      callback(
-        null,
-        response.data["message"],
+    var dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+    ));
+    try {
+      final response = await dio.get(
+        "https://beta.amity.services/notifications/history",
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $accessToken" // set content-length
+          },
+        ),
       );
+
+      if (response.statusCode == 200) {
+        var amityPushNotification = AmityNotifications.fromJson(response.data);
+        callback(amityPushNotification, null);
+      } else {
+        callback(
+          null,
+          response.data["message"],
+        );
+      }
+    } catch (e) {
+      // Timeout / network error: surface via callback instead of hanging or
+      // throwing uncaught on the notification-load path.
+      callback(null, e.toString());
     }
   }
 

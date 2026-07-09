@@ -12,8 +12,8 @@ part 'view_story_state.dart';
 class ViewStoryBloc extends Bloc<ViewStoryEvent, ViewStoryState> {
   late StoryLiveCollection storyLiveCollection;
     AmityStorySortingOrder _sortOption = AmityStorySortingOrder.FIRST_CREATED;
-    late StreamSubscription<List<AmityStory>> _subscription;
-    late StreamSubscription<AmityStoryTarget> _subscriptionTarget;
+    StreamSubscription<List<AmityStory>>? _subscription;
+    StreamSubscription<AmityStoryTarget>? _subscriptionTarget;
 
   ViewStoryBloc()
       : super(
@@ -279,8 +279,10 @@ class ViewStoryBloc extends Bloc<ViewStoryEvent, ViewStoryState> {
 
   @override
   Future<void> close() {
-    _subscription.cancel();
-    _subscriptionTarget.cancel();
+    // Guarded: the story view can be disposed before FetchActiveStories /
+    // FetchStoryTarget assign these, which previously threw LateInitializationError.
+    _subscription?.cancel();
+    _subscriptionTarget?.cancel();
     return super.close();
   }
 }

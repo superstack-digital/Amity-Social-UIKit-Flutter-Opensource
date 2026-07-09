@@ -70,9 +70,12 @@ class MemberManagementVM extends ChangeNotifier {
       _amityModeratorsController.fetchNextPage();
     });
 
-    // Considering that you might want a separate scrollController for moderators
-    // to manage their pagination independently.
-    scrollController.addListener(loadNextPage);
+    // Moderator list has its own scrollController (wired to the moderator
+    // ListView in community_member_page) and its own paging controller, so its
+    // pagination is independent of the members list. Previously this added a
+    // second loadNextPage listener to the members scrollController — double
+    // members fetch + moderators never paginated.
+    scrollControllerForModerator.addListener(loadNextPageForModerator);
   }
 
   void _handleMemberControllerUpdates() {
@@ -116,6 +119,20 @@ class MemberManagementVM extends ChangeNotifier {
       notifyListeners();
       await _amityUsersController.fetchNextPage().then((value) {
         loadingNextPage = false;
+        notifyListeners();
+      });
+    }
+  }
+
+  void loadNextPageForModerator() async {
+    if ((scrollControllerForModerator.position.pixels >
+            scrollControllerForModerator.position.maxScrollExtent - 800) &&
+        _amityModeratorsController.hasMoreItems &&
+        !loadingNextPageForModerator) {
+      loadingNextPageForModerator = true;
+      notifyListeners();
+      await _amityModeratorsController.fetchNextPage().then((value) {
+        loadingNextPageForModerator = false;
         notifyListeners();
       });
     }
