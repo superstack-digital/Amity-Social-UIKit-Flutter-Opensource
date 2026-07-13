@@ -29,12 +29,19 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
         () {
           if (_controller.isFetching == true &&
               _controller.loadedItems.isEmpty) {
-            emit(state.copyWith(isFetching: true));
+            emit(state.copyWith(isFetching: true, hasError: false));
           } else if (_controller.error == null) {
             // Distinct post list
             posts.addAll(_controller.loadedItems);
 
             add(GlobalFeedNotify(posts: []));
+          } else {
+            // Fetch finished with an error (e.g. the network was down while the
+            // initial page loaded). Without this branch isFetching stays true and
+            // the UI is stuck on the skeleton forever. Clear it and flag the error
+            // so the component drops out of the skeleton and auto-retries on
+            // reconnect (see AmityGlobalFeedComponent).
+            emit(state.copyWith(isFetching: false, hasError: true));
           }
         },
       );
@@ -51,7 +58,8 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
       emit(state.copyWith(
           list: allPost,
           hasMoreItems: _controller.hasMoreItems,
-          isFetching: _controller.isFetching));
+          isFetching: _controller.isFetching,
+          hasError: false));
     });
 
     on<GlobalFeedAddLocalPost>((event, emit) async {

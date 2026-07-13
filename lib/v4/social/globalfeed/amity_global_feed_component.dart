@@ -25,11 +25,15 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
 
   @override
   Widget buildComponent(BuildContext context) {
-    // Only init once when first mounted
+    // The GlobalFeedBloc is provided at app level, so it survives this component
+    // being torn down and rebuilt (e.g. when the Feed tab swaps to the offline
+    // placeholder and back on reconnect). Init on first mount, OR re-init when the
+    // last fetch failed (network was down) and left the feed stuck — that's the
+    // reconnect case. Without the hasError retry, hasInitialized stays true and the
+    // feed never reloads → stuck on the skeleton after the network returns.
     final bloc = context.read<GlobalFeedBloc>();
-    
-    // Init only if never initialized before
-    if (!bloc.hasInitialized) {
+
+    if (!bloc.hasInitialized || bloc.state.hasError) {
       bloc.add(GlobalFeedInit());
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
         bloc.add(GlobalFeedFetch());
