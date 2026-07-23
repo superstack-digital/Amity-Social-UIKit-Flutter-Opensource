@@ -268,7 +268,11 @@ class AmityUIKitProvider extends StatelessWidget {
                 create: ((context) => ChatRoomVM())),
             ChangeNotifierProvider<ConfigProvider>(
                 key: const ValueKey("global_config"),
-                create: (context) => ConfigProvider()),
+                create: (context) {
+                  final provider = ConfigProvider();
+                  provider.loadConfig();
+                  return provider;
+                }),
           ],
         ),
       ],
