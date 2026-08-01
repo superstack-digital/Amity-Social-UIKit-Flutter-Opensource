@@ -130,31 +130,8 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: [
-              Expanded(child:
-              Container(
-                child:  TimeAgoWidget(createdAt: widget.post.createdAt ?? DateTime.now(),
-                    textStyle: Styles.fontInterRegular(10, lineHeightInPxl: 21, color: Styles.tpsBrown)),
-                alignment: Alignment.centerRight,
-              )),
-              GestureDetector(
-                onTap: () => showPostAction(context, widget.post),
-                child: Container(
-                  padding: EdgeInsets.only(right: 10, left: 7),
-                  child: Icon(
-                    Icons.more_vert,
-                    color: HexColor("B3B3B3"),
-                  ),
-                ),
-              ),
-              // TODO: Temp hide post option for generated post
-              // Container(
-              //     padding: EdgeInsets.only(right: 10, left: 7))
-            ],
-          ),
-          Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               GestureDetector(
                   onTap: () {
@@ -173,8 +150,25 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                   child: _buildAvatarSection()),
 
               // Expanded(child: PostDisplayName(post: post, theme: theme)),
-              Expanded(child: Container(padding: EdgeInsets.only(right: 15),
+              Expanded(child: Container(padding: EdgeInsets.only(right: 10),
                   child: _postTitle)),
+              // Timestamp and the post-action menu sit on the SAME line as the
+              // avatar and title (top-aligned to the title's first line); the
+              // title still wraps to a second line when it needs to.
+              TimeAgoWidget(
+                  createdAt: widget.post.createdAt ?? DateTime.now(),
+                  textStyle: Styles.fontInterRegular(10,
+                      lineHeightInPxl: 21, color: Styles.tpsBrown)),
+              GestureDetector(
+                onTap: () => showPostAction(context, widget.post),
+                child: Container(
+                  padding: EdgeInsets.only(right: 10, left: 4),
+                  child: Icon(
+                    Icons.more_vert,
+                    color: HexColor("B3B3B3"),
+                  ),
+                ),
+              ),
             ],
     ),
           if(widget.post.metadata?["type"] == "joined_match")
