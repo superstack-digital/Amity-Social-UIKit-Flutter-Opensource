@@ -479,6 +479,13 @@ class CommunityVM extends ChangeNotifier {
         .deleteCommunity(communityId)
         .then((value) {
       //success
+      // Events live in our own database, so Amity deleting the community does
+      // not remove them - they would keep showing up in upcoming events, the
+      // feed and search. Fire and forget: the community is already gone, the
+      // user should not wait for the cleanup.
+      unawaited(
+          CommunityRepository.getInstance().deleteCommunityEvents(communityId));
+
       _amityMyCommunities
           .removeWhere((element) => element.communityId == communityId);
       AmitySuccessDialog.showTimedDialog("Community deleted");
