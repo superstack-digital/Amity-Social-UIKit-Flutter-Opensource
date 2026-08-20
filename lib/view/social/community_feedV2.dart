@@ -40,16 +40,14 @@ import 'package:mobile_app_padel/shared/deeplink.dart';
 import 'package:mobile_app_padel/features/chat/presentations/widgets/chat_screen_controller.dart';
 import 'package:get/get.dart';
 import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
-import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/share_open_matches_controller.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/community_rankings_controller.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/social_rankings_controller.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/americano_rankings_controller.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/mexicano_rankings_controller.dart';
 import 'package:mobile_app_padel/features/community/presentation/controllers/team_rankings_controller.dart';
-import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
-import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
+import 'package:amity_uikit_beta_service/v4/utils/post_extras_builder.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/post_item/post_item_updated.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/post_item/bloc/post_item_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -361,16 +359,9 @@ class _EditProfileButtonState extends State<EditProfileButton> {
                 widget.community.isJoined = !(widget.community.isJoined!);
                 explorePageVM.getRecommendedCommunities();
                 explorePageVM.getTrendingCommunities();
-                print(">>>>>>>>>>>>>>>callback");
-
                 var myCommunityList =
                 Provider.of<MyCommunityVM>(context, listen: false);
                 myCommunityList.initMyCommunity();
-
-                for (var i in myCommunityList.amityCommunities) {
-                  print(">>>>>>>>>>>>>>>${i.displayName}");
-                }
-                print(myCommunityList.amityCommunities);
 
                 explorePageVM.isLoading = false;
               });
@@ -1143,70 +1134,25 @@ class _StickyHeaderList extends StatelessWidget {
                               initialData: vm.getCommunityPosts()[index],
                               builder: (context, snapshot) {
                                 final metadata = snapshot.data?.metadata;
-                                final matchId = metadata?["matchId"];
-                                final matchResultId = metadata?["matchResultId"];
-                                final eventId = metadata?["eventId"];
-                                final eventStandingId = metadata?["eventStandingId"];
 
-                                _getMatchDetails(int? matchId) async {
-                                  if (matchId != null) {
-                                    return await MatchRepository
-                                        .getInstance()
-                                        .getMatchDetails(
-                                        matchId);
-                                  }
-                                  return null;
-                                }
-
-                                _getMatchResultDetails(int? matchResultId) async {
-                                  if (matchResultId != null) {
-                                    return await MatchRepository
-                                        .getInstance()
-                                        .getMatchDetails(
-                                        matchResultId);
-                                  }
-                                  return null;
-                                }
-
-                                _getEventDetails(int? eventId) async {
-                                  if (eventId != null) {
-                                    return await EventRepository
-                                        .getInstance()
-                                        .getEventDetails(eventId);
-                                  }
-                                  return null;
-                                }
-
-                                _getEventStandingDetails(int? eventStandingId) async {
-                                  if (eventStandingId != null) {
-                                    return await EventRepository
-                                        .getInstance()
-                                        .getEventStandingById(eventStandingId);
-                                  }
-                                  return null;
-                                }
-
-                                return FutureBuilder<List<dynamic>>(
-                                    future: Future.wait([
-                                      _getMatchDetails(matchId),
-                                      _getEventDetails(eventId),
-                                      _getMatchResultDetails(matchResultId),
-                                      _getEventStandingDetails(eventStandingId),
-                                    ]),
-                                    builder: (context, snapshot1) {
-                                      final match = snapshot1.data?[0] as IMatch?;
-                                      final event = snapshot1.data?[1] as Event?;
-                                      final matchResult = snapshot1.data?[2] as IMatch?;
-                                      final eventStanding = snapshot1.data?[3] as List<EventStanding>?;
-
+                                // PostExtrasBuilder resolves these once per
+                                // post instead of re-issuing up to four HTTP
+                                // requests on every rebuild of this Consumer.
+                                return PostExtrasBuilder(
+                                    matchId: metadata?["matchId"],
+                                    eventId: metadata?["eventId"],
+                                    matchResultId: metadata?["matchResultId"],
+                                    eventStandingId:
+                                        metadata?["eventStandingId"],
+                                    builder: (context, extras) {
                                       return BlocProvider(
                                         create: (context) => PostItemBloc(),
                                         child: PostItem(
                                           post: snapshot.data!,
-                                          match: match,
-                                          matchResult: matchResult,
-                                          event: event,
-                                          eventStanding: eventStanding,
+                                          match: extras.match,
+                                          matchResult: extras.matchResult,
+                                          event: extras.event,
+                                          eventStanding: extras.eventStanding,
                                           isPostDetail: false,
                                         ),
                                       );

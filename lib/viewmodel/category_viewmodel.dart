@@ -57,7 +57,6 @@ class CategoryVM extends ChangeNotifier {
   final scrollcontroller = ScrollController();
 
   void initCategoryList({List<String>? ids}) async {
-    print("initCategoryList");
     _communityCategoryController = PagingController(
       pageFuture: (token) => AmitySocialClient.newCommunityRepository()
           .getCategories()
@@ -73,8 +72,6 @@ class CategoryVM extends ChangeNotifier {
             _amityCategories.clear();
             _amityCategories.addAll(_communityCategoryController.loadedItems);
             //update widgets
-            print(
-                "has more item: ${_communityCategoryController.hasMoreItems}");
             notifyListeners();
           } else {
             //error on pagination controller
@@ -86,6 +83,9 @@ class CategoryVM extends ChangeNotifier {
     // fetch the data for the first page
     _communityCategoryController.fetchNextPage();
 
+    // initCategoryList can be called more than once for the same VM; detach
+    // first so the listener never stacks.
+    scrollcontroller.removeListener(pagination);
     scrollcontroller.addListener(pagination);
   }
 
@@ -100,11 +100,13 @@ class CategoryVM extends ChangeNotifier {
     // print(_communityCategoryController.hasMoreItems);
     if ((scrollcontroller.position.pixels >=
         (scrollcontroller.position.maxScrollExtent - 100))) {
-      print("load more");
-      if(_communityCategoryController.hasMoreItems){
+      // This fires on every scroll frame once the list is near its end.
+      // Only kick off work - and only rebuild listeners - when there is
+      // actually another page to fetch, instead of on every frame.
+      if (_communityCategoryController.hasMoreItems) {
         _communityCategoryController.fetchNextPage();
+        notifyListeners();
       }
-      notifyListeners();
     }
   }
 

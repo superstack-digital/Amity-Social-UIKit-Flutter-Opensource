@@ -12,17 +12,38 @@ class PostContentImage extends StatelessWidget {
 
     Widget backgroundImage(String fileUrl, int index,
         {BorderRadius? borderRadius}) {
+      // The grid paints these tiles at anything from a third of the screen
+      // (four-up) to full width, but every tile used to be decoded at the
+      // source resolution. Decode to the tile's real painted width instead.
+      // The tile size comes from AspectRatio/Expanded above, so the decode
+      // size cannot affect layout, and allowUpscaling stays off so a source
+      // that is already smaller than the tile is left alone.
       return Padding(
         padding: const EdgeInsets.all(2.0),
-        child: Container(
-          padding: const EdgeInsets.all(2.0),
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            image: DecorationImage(
-              image: NetworkImage(fileUrl),
-              fit: BoxFit.cover,
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            ImageProvider provider = NetworkImage(fileUrl);
+            if (maxWidth.isFinite && maxWidth > 0) {
+              provider = ResizeImage(
+                provider,
+                width:
+                    (maxWidth * MediaQuery.devicePixelRatioOf(context)).round(),
+                allowUpscaling: false,
+              );
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(2.0),
+              decoration: BoxDecoration(
+                borderRadius: borderRadius,
+                image: DecorationImage(
+                  image: provider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            );
+          },
         ),
       );
     }

@@ -44,23 +44,23 @@ class CommuFeedVM extends ChangeNotifier {
   bool isAcademyCommunity = false;
   int? latestCompetitionId;
   bool isLoadingStandings = false;
-  var _amityCommunityFeedPosts = <AmityPost>[];
+  final _amityCommunityFeedPosts = <AmityPost>[];
 
   var _communityEventList = <Event>[];
 
   late PagingController<AmityPost> _controllerCommu;
 
-  var _amityCommunityImageFeedPosts = <AmityPost>[];
+  final _amityCommunityImageFeedPosts = <AmityPost>[];
 
   late PagingController<AmityPost> _controllerImageCommu;
 
-  var _amityCommunityVideoFeedPosts = <AmityPost>[];
+  final _amityCommunityVideoFeedPosts = <AmityPost>[];
 
   late PagingController<AmityPost> _controllerVideoCommu;
 
   final scrollcontroller = ScrollController();
 
-  var _amityCommunityPendingFeedPosts = <AmityPost>[];
+  final _amityCommunityPendingFeedPosts = <AmityPost>[];
 
   late PagingController<AmityPost> _controllerPendingPost;
 
@@ -256,7 +256,7 @@ class CommuFeedVM extends ChangeNotifier {
       pageSize: 20,
     )..addListener(
         () async {
-          log("initAmityCommunityFeed ID: $communityId");
+          if (kDebugMode) log("initAmityCommunityFeed ID: $communityId");
           if (_controllerCommu.error == null) {
             //handle results, we suggest to clear the previous items
             //and add with the latest _controller.loadedItems
@@ -278,17 +278,12 @@ class CommuFeedVM extends ChangeNotifier {
       _controllerCommu.fetchNextPage();
     });
 
-    scrollcontroller.addListener(loadnextpage);
+    _attachFeedScrollListener();
 
-    //inititate the PagingController
-    await AmitySocialClient.newFeedRepository()
-        .getCommunityFeed(communityId)
-        .includeDeleted(false)
-        .getPagingData()
-        .then((value) {
-      _amityCommunityFeedPosts = value.data;
-    });
-    notifyListeners();
+    // The PagingController above already fetches this exact first page; the
+    // second unpaginated request that used to live here doubled the network
+    // cost of opening a community and raced the paged result (the two queries
+    // did not even use the same filters, so whichever landed last won).
     await checkIsCurrentUserIsAdmin(communityId);
   }
 
@@ -305,7 +300,7 @@ class CommuFeedVM extends ChangeNotifier {
       pageSize: 20,
     )..addListener(
         () async {
-          log(">>>PENDINGListener");
+          if (kDebugMode) log(">>>PENDINGListener");
           if (_controllerPendingPost.error == null) {
             //handle results, we suggest to clear the previous items
             //and add with the latest _controller.loadedItems
@@ -328,19 +323,12 @@ class CommuFeedVM extends ChangeNotifier {
       _controllerPendingPost.fetchNextPage();
     });
 
-    pendingScrollcontroller.addListener(loadnextpage);
+    _attachPendingScrollListener();
 
-    //inititate the PagingController
-    await AmitySocialClient.newPostRepository()
-        .getPosts()
-        .targetCommunity(communityId)
-        .includeDeleted(false)
-        .feedType(amityFeedType)
-        .getPagingData()
-        .then((value) {
-      _amityCommunityPendingFeedPosts = value.data;
-    });
-    notifyListeners();
+    // The PagingController above already fetches this exact first page; the
+    // second unpaginated request that used to live here doubled the network
+    // cost of opening a community and raced the paged result (the two queries
+    // did not even use the same filters, so whichever landed last won).
     await checkIsCurrentUserIsAdmin(communityId);
   }
 
@@ -357,7 +345,7 @@ class CommuFeedVM extends ChangeNotifier {
       pageSize: 20,
     )..addListener(
         () async {
-          log("communityListener");
+          if (kDebugMode) log("communityListener");
           if (_controllerVideoCommu.error == null) {
             //handle results, we suggest to clear the previous items
             //and add with the latest _controller.loadedItems
@@ -380,19 +368,12 @@ class CommuFeedVM extends ChangeNotifier {
       _controllerVideoCommu.fetchNextPage();
     });
 
-    scrollcontroller.addListener(loadnextpage);
+    _attachFeedScrollListener();
 
-    //inititate the PagingController
-    await AmitySocialClient.newPostRepository()
-        .getPosts()
-        .targetCommunity(communityId)
-        .includeDeleted(false)
-        .types([AmityDataType.VIDEO])
-        .getPagingData()
-        .then((value) {
-          _amityCommunityVideoFeedPosts = value.data;
-        });
-    notifyListeners();
+    // The PagingController above already fetches this exact first page; the
+    // second unpaginated request that used to live here doubled the network
+    // cost of opening a community and raced the paged result (the two queries
+    // did not even use the same filters, so whichever landed last won).
     await checkIsCurrentUserIsAdmin(communityId);
   }
 
@@ -411,7 +392,7 @@ class CommuFeedVM extends ChangeNotifier {
       pageSize: 20,
     )..addListener(
         () async {
-          log("communityListener");
+          if (kDebugMode) log("communityListener");
           if (_controllerImageCommu.error == null) {
             _amityCommunityImageFeedPosts.clear();
             _amityCommunityImageFeedPosts
@@ -432,20 +413,26 @@ class CommuFeedVM extends ChangeNotifier {
       _controllerImageCommu.fetchNextPage();
     });
 
-    scrollcontroller.addListener(loadnextpage);
+    _attachFeedScrollListener();
 
-    //inititate the PagingController
-    await AmitySocialClient.newPostRepository()
-        .getPosts()
-        .targetCommunity(communityId)
-        .includeDeleted(false)
-        .types([AmityDataType.IMAGE])
-        .getPagingData()
-        .then((value) {
-          _amityCommunityImageFeedPosts = value.data;
-        });
-    notifyListeners();
+    // The PagingController above already fetches this exact first page; the
+    // second unpaginated request that used to live here doubled the network
+    // cost of opening a community and raced the paged result (the two queries
+    // did not even use the same filters, so whichever landed last won).
     await checkIsCurrentUserIsAdmin(communityId);
+  }
+
+  /// Re-registering the same tear-off stacks duplicate entries on the
+  /// controller, so every feed initialiser used to add another copy of
+  /// [loadnextpage]. Detach first so the listener is attached exactly once.
+  void _attachFeedScrollListener() {
+    scrollcontroller.removeListener(loadnextpage);
+    scrollcontroller.addListener(loadnextpage);
+  }
+
+  void _attachPendingScrollListener() {
+    pendingScrollcontroller.removeListener(loadnextpage);
+    pendingScrollcontroller.addListener(loadnextpage);
   }
 
   void loadnextpage() {

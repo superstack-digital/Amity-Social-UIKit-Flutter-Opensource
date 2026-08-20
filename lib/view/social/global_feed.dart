@@ -28,7 +28,6 @@ import 'post_content_widget.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/people_profile_screen.dart';
 import 'package:mobile_app_padel/shared/constants.dart';
 import 'package:mobile_app_padel/shared/deeplink.dart';
-import 'package:mobile_app_padel/features/profile/data/repositories/match_repository.dart';
 import 'package:mobile_app_padel/features/play/presentation/widgets/court_match_item.dart';
 import 'package:mobile_app_padel/features/profile/data/match.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -36,9 +35,9 @@ import 'package:mobile_app_padel/shared/widgets/skeleton_container.dart';
 import 'package:mobile_app_padel/shared/styles.dart';
 import 'package:mobile_app_padel/shared/widgets/richtext_with_mention.dart';
 import 'package:mobile_app_padel/shared/widgets/create_post_text_field.dart';
+import 'package:amity_uikit_beta_service/v4/utils/post_extras_builder.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/models/event_standing.dart';
-import 'package:mobile_app_padel/features/community/data/repositories/event_repository.dart';
 import 'package:mobile_app_padel/features/play/presentation/widgets/upcoming_event_item.dart';
 import 'package:mobile_app_padel/features/profile/widgets/profile_score_set_item.dart';
 import 'package:mobile_app_padel/features/community/presentation/screens/ranking_leaderboard.dart';
@@ -140,56 +139,24 @@ class GlobalFeedScreenState extends State<GlobalFeedScreen>
                           physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: vm.getAmityPosts.length,
                           itemBuilder: (context, index) {
-                            print("HIHI");
                             return StreamBuilder<AmityPost>(
                               key: Key(vm.getAmityPosts[index].postId!),
                               stream: vm.getAmityPosts[index].listen.stream,
                               initialData: vm.getAmityPosts[index],
                               builder: (context, snapshot) {
                                 final metadata = snapshot.data?.metadata;
-                                final matchId = metadata?["matchId"];
-                                final matchResultId = metadata?["matchResultId"];
-                                final eventId = metadata?["eventId"];
 
-                                _getMatchDetails(int? matchId) async {
-                                  if (matchId != null) {
-                                    return await MatchRepository
-                                        .getInstance()
-                                        .getMatchDetails(
-                                        matchId);
-                                  }
-                                  return null;
-                                }
-
-                                _getMatchResultDetails(int? matchResultId) async {
-                                  if (matchResultId != null) {
-                                    return await MatchRepository
-                                        .getInstance()
-                                        .getMatchDetails(
-                                        matchResultId);
-                                  }
-                                  return null;
-                                }
-
-                                _getEventDetails(int? eventId) async {
-                                  if (eventId != null) {
-                                    return await EventRepository
-                                        .getInstance()
-                                        .getEventDetails(eventId);
-                                  }
-                                  return null;
-                                }
-
-                                return FutureBuilder<List<dynamic>>(
-                                    future: Future.wait([
-                                      _getMatchDetails(matchId),
-                                      _getEventDetails(eventId),
-                                      _getMatchResultDetails(matchResultId),
-                                    ]),
-                                    builder: (context, snapshot1) {
-                                      final match = snapshot1.data?[0] as IMatch?;
-                                      final event = snapshot1.data?[1] as Event?;
-                                      final matchResult = snapshot1.data?[2] as IMatch?;
+                                // PostExtrasBuilder resolves these once per
+                                // post instead of re-issuing the match/event
+                                // requests on every rebuild of this list.
+                                return PostExtrasBuilder(
+                                    matchId: metadata?["matchId"],
+                                    eventId: metadata?["eventId"],
+                                    matchResultId: metadata?["matchResultId"],
+                                    builder: (context, extras) {
+                                      final match = extras.match;
+                                      final event = extras.event;
+                                      final matchResult = extras.matchResult;
 
                                       return Column(
                                         children: [

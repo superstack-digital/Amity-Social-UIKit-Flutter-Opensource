@@ -14,12 +14,10 @@ class ExplorePageVM with ChangeNotifier {
   final categoryScrollcontroller = ScrollController();
 
   void getRecommendedCommunities() async {
-    print("getRecommendedCommunities...");
     await AmitySocialClient.newCommunityRepository()
         .getRecommendedCommunities()
         .then((List<AmityCommunity> communities) {
       _recommendedCommunities = communities.take(5).toList();
-      print(_recommendedCommunities);
       notifyListeners();
     }).onError((error, stackTrace) {
       // handle error
@@ -27,7 +25,6 @@ class ExplorePageVM with ChangeNotifier {
   }
 
   void getTrendingCommunities() {
-    print("getTrendingCommunities...");
     AmitySocialClient.newCommunityRepository()
         .getTrendingCommunities()
         .then((List<AmityCommunity> communities) => {
@@ -74,6 +71,10 @@ class ExplorePageVM with ChangeNotifier {
 
     _communityController.fetchNextPage();
 
+    // getCommunitiesInCategory runs again on every category tap, so the
+    // listener has to be detached first or it stacks up and runs N times per
+    // scroll notification.
+    communityScrollcontroller.removeListener(communityPagination);
     communityScrollcontroller.addListener(communityPagination);
   }
 
@@ -81,7 +82,6 @@ class ExplorePageVM with ChangeNotifier {
     if ((communityScrollcontroller.position.pixels >=
         (communityScrollcontroller.position.maxScrollExtent - 100))) {
       if (isLoadingFinish) {
-        print("load more");
         _communityController.fetchNextPage();
         isLoadingFinish = false;
         notifyListeners();
@@ -92,7 +92,6 @@ class ExplorePageVM with ChangeNotifier {
   void queryCommunityCategories(
       {required AmityCommunityCategorySortOption sortOption,
       bool enablenotifylistener = false}) async {
-    print("queryCommunityCategories");
     _communityCategoryController = PagingController(
       pageFuture: (token) => AmitySocialClient.newCommunityRepository()
           .getCategories()
@@ -122,6 +121,7 @@ class ExplorePageVM with ChangeNotifier {
     // fetch the data for the first page
     _communityCategoryController.fetchNextPage();
 
+    categoryScrollcontroller.removeListener(categoryPagination);
     categoryScrollcontroller.addListener(categoryPagination);
   }
 
@@ -130,7 +130,6 @@ class ExplorePageVM with ChangeNotifier {
     if ((categoryScrollcontroller.position.pixels >=
         (categoryScrollcontroller.position.maxScrollExtent - 100))) {
       if (isLoadingFinish) {
-        print("load more");
         _communityCategoryController.fetchNextPage();
         isLoadingFinish = false;
         notifyListeners();

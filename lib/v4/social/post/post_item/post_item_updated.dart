@@ -357,20 +357,20 @@ class PostItem extends NewBaseComponent {
         // Check if the URL contains deeplink host
         if (element.url.contains(deeplinkHost)) {
           // Return WidgetSpan for deeplink handling with loading state
+          // The Consumer here never read any model state, it only called
+          // setLoadingValue on tap - yet it subscribed every link span in
+          // every post to the whole feed model.
           return WidgetSpan(
-            child: Consumer<CommuFeedVM>(
-              builder: (context, vm, _) {
-                return InkWell(
-                  onTap: () {
-                    vm.setLoadingValue(true);
-                    FlutterBranchSdk.handleDeepLink(element.url);
-                    Future.delayed(Duration(seconds: 3), () {
-                      vm.setLoadingValue(false);
-                    });
-                  },
-                  child: Text(element.text, style: linkStyle),
-                );
+            child: InkWell(
+              onTap: () {
+                final vm = Provider.of<CommuFeedVM>(context, listen: false);
+                vm.setLoadingValue(true);
+                FlutterBranchSdk.handleDeepLink(element.url);
+                Future.delayed(Duration(seconds: 3), () {
+                  vm.setLoadingValue(false);
+                });
               },
+              child: Text(element.text, style: linkStyle),
             ),
           );
         } else {
@@ -434,34 +434,27 @@ class PostItem extends NewBaseComponent {
     return "";
   }
 
-  /// Check if post contains a valid URL
-  bool _urlValidation(AmityPost post) {
-    final url = _extractLink(post);
-    return AnyLinkPreview.isValidLink(url);
-  }
-
   /// Render link preview thumbnail
   Widget _getLinkPreview(BuildContext context, AmityPost post) {
-    if (!_urlValidation(post)) {
+    // This used to linkify the post text twice per build - once through
+    // _urlValidation and once to read the url back out - and wrap the result
+    // in a Consumer that only needed the model to handle a tap.
+    final url = _extractLink(post);
+    if (!AnyLinkPreview.isValidLink(url)) {
       return const SizedBox();
     }
 
-    final url = _extractLink(post);
-    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Consumer<CommuFeedVM>(
-        builder: (context, vm, _) {
-          return LinkPreviewImage(
-            url: url.toLowerCase(),
-            onTap: () {
-              vm.setLoadingValue(true);
-              FlutterBranchSdk.handleDeepLink(url);
-              Future.delayed(Duration(seconds: 3), () {
-                vm.setLoadingValue(false);
-              });
-            },
-          );
+      child: LinkPreviewImage(
+        url: url.toLowerCase(),
+        onTap: () {
+          final vm = Provider.of<CommuFeedVM>(context, listen: false);
+          vm.setLoadingValue(true);
+          FlutterBranchSdk.handleDeepLink(url);
+          Future.delayed(Duration(seconds: 3), () {
+            vm.setLoadingValue(false);
+          });
         },
       ),
     );
