@@ -3,6 +3,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 
+import '../../../../native_social_override.dart';
+
 part 'global_feed_event.dart';
 part 'global_feed_state.dart';
 
@@ -81,13 +83,39 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
 
     on<GlobalFeedInit>((event, emit) async {
       hasInitialized = true;
-      _controller.reset();
-      _controller.fetchNextPage();
       localCreatedPost.clear();
       posts.clear();
+
+      // TPS-0 native social pilot: posts come from our own Postgres. Every
+      // widget below this bloc is untouched — only the source changes.
+      if (NativeSocialOverride.isActive) {
+        emit(state.copyWith(isFetching: true, hasError: false));
+        try {
+          final native = await NativeSocialOverride.globalFeedFetcher!(limit: pageSize);
+          posts.addAll(native);
+          emit(state.copyWith(
+              list: List<AmityPost>.from(posts),
+              hasMoreItems: false,
+              isFetching: false,
+              hasError: false));
+        } catch (e) {
+          // Never strand the user on a skeleton: drop the override and fall
+          // straight back to Amity for the rest of the session.
+          NativeSocialOverride.reset();
+          _controller.reset();
+          _controller.fetchNextPage();
+        }
+        return;
+      }
+
+      _controller.reset();
+      _controller.fetchNextPage();
     });
 
     on<GlobalFeedFetch>((event, emit) async {
+      // Native path currently returns a single page; paging lands with the
+      // keyset cursor in the next iteration.
+      if (NativeSocialOverride.isActive) return;
       if (_controller.hasMoreItems && !_controller.isFetching) {
         _controller.fetchNextPage();
       }

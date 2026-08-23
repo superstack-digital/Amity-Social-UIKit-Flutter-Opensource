@@ -5,6 +5,7 @@ import 'package:amity_sdk/amity_sdk.dart';
 import 'package:flutter/material.dart';
 
 import '../../components/alert_dialog.dart';
+import '../native_social_override.dart';
 
 enum Feedtype { global, commu }
 
@@ -52,6 +53,27 @@ class FeedVM extends ChangeNotifier {
   Future<void> initAmityGlobalfeed({bool isCustomPostRanking = false}) async {
     isCustomPostRanking = isCustomPostRanking;
     isLoading = true;
+
+    // TPS-0 native social pilot. When the host app has injected a fetcher, the
+    // posts come from our own Postgres instead of an Amity live collection.
+    // Everything below this block — every widget, every card — is untouched.
+    if (NativeSocialOverride.isActive) {
+      try {
+        final posts = await NativeSocialOverride.globalFeedFetcher!(limit: 20);
+        _amityGlobalFeedPosts
+          ..clear()
+          ..addAll(posts);
+        isLoading = false;
+        notifyListeners();
+      } catch (e) {
+        log('native feed failed, falling back to Amity: $e');
+        NativeSocialOverride.reset();
+        isLoading = false;
+        notifyListeners();
+      }
+      return;
+    }
+
     if (isCustomPostRanking) {
       customRankingLiveCollection = AmitySocialClient.newFeedRepository()
           .getCustomRankingGlobalFeed()
