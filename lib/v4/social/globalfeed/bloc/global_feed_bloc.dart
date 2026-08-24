@@ -11,6 +11,11 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
 
   late List<AmityPost> posts = [];
   late List<AmityPost> localCreatedPost = [];
+
+  /// True once the paging controller has reported an in-flight fetch. Guards
+  /// hasSettled so a pre-fetch notification cannot look like a finished load.
+  bool _fetchStarted = false;
+
   bool hasInitialized = false;
 
   final int pageSize = 20;
@@ -29,6 +34,7 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
         () {
           if (_controller.isFetching == true &&
               _controller.loadedItems.isEmpty) {
+            _fetchStarted = true;
             emit(state.copyWith(isFetching: true, hasError: false));
           } else if (_controller.error == null) {
             // Distinct post list
@@ -41,7 +47,8 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
             // the UI is stuck on the skeleton forever. Clear it and flag the error
             // so the component drops out of the skeleton and auto-retries on
             // reconnect (see AmityGlobalFeedComponent).
-            emit(state.copyWith(isFetching: false, hasError: true));
+            emit(state.copyWith(
+                isFetching: false, hasError: true, hasSettled: true));
           }
         },
       );
@@ -59,7 +66,11 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
           list: allPost,
           hasMoreItems: _controller.hasMoreItems,
           isFetching: _controller.isFetching,
-          hasError: false));
+          hasError: false,
+          // Only settled once a fetch has both begun and ended. A reset()
+          // notification arrives with isFetching false and no items, and must
+          // not be mistaken for "loaded, and genuinely empty".
+          hasSettled: _fetchStarted && !_controller.isFetching));
     });
 
     on<GlobalFeedAddLocalPost>((event, emit) async {

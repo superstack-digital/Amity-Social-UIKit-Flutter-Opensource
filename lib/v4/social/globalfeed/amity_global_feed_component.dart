@@ -43,107 +43,136 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
     return Container(
       color: theme.backgroundColor,
       child: BlocBuilder<GlobalFeedBloc, GlobalFeedState>(
-        buildWhen: (previous, current) {
-          // Always rebuild - needed for GlobalFeedReloadThePost to update individual posts
-          // Optimization happens at PostItem level via proper keys
-          return true;
-        },
-        builder: (context, state) {
-        if (state.isFetching && state.list.isEmpty) {
+          buildWhen: (previous, current) {
+        // Always rebuild - needed for GlobalFeedReloadThePost to update individual posts
+        // Optimization happens at PostItem level via proper keys
+        return true;
+      }, builder: (context, state) {
+        // Skeleton until the feed has SETTLED, not merely until isFetching
+        // goes false. The paging controller reports not-fetching with zero
+        // items before the first fetch starts, which used to fall through to
+        // the "no posts" empty state for a frame on every open.
+        if (!state.hasSettled && state.list.isEmpty) {
           viewedPost = [];
           return skeletonList();
         } else {
           // Feed renders with ${state.list.length} posts
           return BaseComponent(
               child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(color: Styles.grayD5D5D5),
-            child: RefreshIndicator(
-              onRefresh: () async {
-                context.read<GlobalFeedBloc>().add(GlobalFeedInit());
-                context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
-              },
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (ScrollNotification scrollInfo) {
-                  onScroll?.call(scrollInfo.metrics.pixels);
-                  if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 500) {
-                    context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
-                  }
-                  return false;
-                },
-                child: CustomScrollView(
-                  slivers: [
-                  if(isNestedScroll == true) SliverOverlapInjector(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                  ),
-                  SliverToBoxAdapter(
-                    child: AmityStoryTabComponent(
-                      type: GlobalFeedStoryTab(),
-                    ),
-                  ),
-                  if (state.list.isNotEmpty)
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final amityPost = state.list[index];
+                  width: double.infinity,
+                  decoration: BoxDecoration(color: Styles.grayD5D5D5),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<GlobalFeedBloc>().add(GlobalFeedInit());
+                      context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
+                    },
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        onScroll?.call(scrollInfo.metrics.pixels);
+                        if (scrollInfo.metrics.pixels >=
+                            scrollInfo.metrics.maxScrollExtent - 500) {
+                          context.read<GlobalFeedBloc>().add(GlobalFeedFetch());
+                        }
+                        return false;
+                      },
+                      child: CustomScrollView(
+                        slivers: [
+                          if (isNestedScroll == true)
+                            SliverOverlapInjector(
+                              handle: NestedScrollView
+                                  .sliverOverlapAbsorberHandleFor(context),
+                            ),
+                          SliverToBoxAdapter(
+                            child: AmityStoryTabComponent(
+                              type: GlobalFeedStoryTab(),
+                            ),
+                          ),
+                          if (state.list.isNotEmpty)
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final amityPost = state.list[index];
 
-                          if (((amityPost.children?.isNotEmpty ?? false) && (amityPost.children!.first.type == AmityDataType.FILE || amityPost.children!.first.type == AmityDataType.POLL || amityPost.children!.first.type == AmityDataType.LIVESTREAM)) || (amityPost.isDeleted ?? false)) {
-                            return Container();
-                          } else {
-                            return BlocProvider(
-                              create: (context) => PostItemBloc(),
-                              child: VisibilityDetector(
-                                key: Key(amityPost.postId ?? ''),
-                                onVisibilityChanged: (VisibilityInfo info) {
-                                  final visiblePercentage = info.visibleFraction * 100;
-                                  if (visiblePercentage > 60) {
-                                    checkVisibilityAndMarkSeen(amityPost, visiblePercentage);
+                                  if (((amityPost.children?.isNotEmpty ??
+                                              false) &&
+                                          (amityPost.children!.first.type ==
+                                                  AmityDataType.FILE ||
+                                              amityPost.children!.first.type ==
+                                                  AmityDataType.POLL ||
+                                              amityPost.children!.first.type ==
+                                                  AmityDataType.LIVESTREAM)) ||
+                                      (amityPost.isDeleted ?? false)) {
+                                    return Container();
+                                  } else {
+                                    return BlocProvider(
+                                      create: (context) => PostItemBloc(),
+                                      child: VisibilityDetector(
+                                        key: Key(amityPost.postId ?? ''),
+                                        onVisibilityChanged:
+                                            (VisibilityInfo info) {
+                                          final visiblePercentage =
+                                              info.visibleFraction * 100;
+                                          if (visiblePercentage > 60) {
+                                            checkVisibilityAndMarkSeen(
+                                                amityPost, visiblePercentage);
+                                          }
+                                        },
+                                        child: Column(
+                                          children: [
+                                            AmityPostContentComponent(
+                                              style:
+                                                  AmityPostContentComponentStyle
+                                                      .feed,
+                                              post: amityPost,
+                                              action: AmityPostAction(
+                                                onAddReaction: (String) {},
+                                                onRemoveReaction: (String) {},
+                                                onPostDeleted:
+                                                    (AmityPost post) {
+                                                  context
+                                                      .read<GlobalFeedBloc>()
+                                                      .add(
+                                                          GlobalFeedReloadThePost(
+                                                              post: post));
+                                                },
+                                                onPostUpdated: (post) {},
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
                                   }
                                 },
-                                child: Column(
-                                  children: [
-                                    AmityPostContentComponent(
-                                      style: AmityPostContentComponentStyle.feed,
-                                      post: amityPost,
-                                      action: AmityPostAction(
-                                        onAddReaction: (String) {},
-                                        onRemoveReaction: (String) {},
-                                        onPostDeleted: (AmityPost post) {
-                                          context.read<GlobalFeedBloc>().add(GlobalFeedReloadThePost(post: post));
-                                        },
-                                        onPostUpdated: (post) {},
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                childCount: state.list.length,
                               ),
-                            );
-                          }
-                        },
-                        childCount: state.list.length,
-                      ),
-                    )
-                  else
-                    SliverFillRemaining(
-                      child: Container(
-                        width: double.infinity,
-                        color: theme.backgroundColor,
-                        alignment: Alignment.center,
-                        child: state.isFetching ? const CircularProgressIndicator() : AmityEmptyNewsFeedComponent(elementId: "amity_empty_newsfeed_component"),
+                            )
+                          else
+                            SliverFillRemaining(
+                              child: Container(
+                                width: double.infinity,
+                                color: theme.backgroundColor,
+                                alignment: Alignment.center,
+                                child: !state.hasSettled
+                                    ? const CircularProgressIndicator()
+                                    : AmityEmptyNewsFeedComponent(
+                                        elementId:
+                                            "amity_empty_newsfeed_component"),
+                              ),
+                            ),
+                          if (state.isFetching && state.list.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: Container(
+                                alignment: Alignment.center,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: const CircularProgressIndicator(),
+                              ),
+                            )
+                        ],
                       ),
                     ),
-                  if (state.isFetching && state.list.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Container(
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: const CircularProgressIndicator(),
-                      ),
-                    )
-                ],
-              ),
-            ),
-          )));
+                  )));
         }
       }),
     );
@@ -223,19 +252,22 @@ class AmityGlobalFeedComponent extends NewBaseComponent {
                 Container(
                   width: 48,
                   height: 60,
-                  padding: const EdgeInsets.only(top: 12, left: 0, right: 8, bottom: 8),
+                  padding: const EdgeInsets.only(
+                      top: 12, left: 0, right: 8, bottom: 8),
                   child: const SkeletonImage(
                     height: 40,
                     width: 40,
                     borderRadius: 40,
                   ),
                 ),
-                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  SizedBox(height: 6.0),
-                  SkeletonText(width: 120),
-                  SizedBox(height: 12.0),
-                  SkeletonText(width: 88),
-                ]),
+                const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 6.0),
+                      SkeletonText(width: 120),
+                      SizedBox(height: 12.0),
+                      SkeletonText(width: 88),
+                    ]),
               ],
             ),
             const SizedBox(height: 14.0),

@@ -18,6 +18,7 @@ class GlobalFeedAddLocalPost extends GlobalFeedEvent {
 }
 
 class GlobalFeedFetch extends GlobalFeedEvent {}
+
 class GlobalFeedFetched extends GlobalFeedEvent {
   final List<AmityPost> list;
 
@@ -42,5 +43,5 @@ class GlobalFeedReactToPost extends GlobalFeedEvent {
 class GlobalFeedReloadThePost extends GlobalFeedEvent {
   final AmityPost post;
 
-  GlobalFeedReloadThePost({ required this.post });
+  GlobalFeedReloadThePost({required this.post});
 }
