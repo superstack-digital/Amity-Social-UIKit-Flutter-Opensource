@@ -60,9 +60,31 @@ class PostContentImage extends StatelessWidget {
       }
     }
 
+    /// Natural aspect ratio of a single attachment, so one image fills the
+    /// post width at its own shape instead of being cropped to a square.
+    ///
+    /// Amity already carries the dimensions in file properties, so this needs
+    /// no async measurement and the layout never jumps. Clamped to the same
+    /// band Instagram uses -- 4:5 portrait to 1.91:1 landscape -- so a very
+    /// tall or very wide upload cannot take over the feed.
+    double singleImageRatio(AmityPost post) {
+      final data = post.data;
+      int? w;
+      int? h;
+      if (data is ImageData) {
+        w = data.image?.getWidth();
+        h = data.image?.getHeight();
+      } else if (data is VideoData) {
+        w = data.thumbnail?.getWidth();
+        h = data.thumbnail?.getHeight();
+      }
+      if (w == null || h == null || w <= 0 || h <= 0) return 1;
+      return (w / h).clamp(0.8, 1.91);
+    }
+
     Widget buildSingleImage(List<AmityPost> posts) {
       return AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: singleImageRatio(posts[0]),
         child: GestureDetector(
           onTap: () {
             Navigator.push(
@@ -118,8 +140,8 @@ class PostContentImage extends StatelessWidget {
             },
             child: backgroundImage(getURL(posts[1].data!), 1,
                 borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(8),
-                  bottomRight: Radius.circular(8))),
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8))),
           ))
         ]),
       );
@@ -145,8 +167,8 @@ class PostContentImage extends StatelessWidget {
               },
               child: backgroundImage(getURL(posts[0].data!), 0,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    topRight: Radius.circular(8))),
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8))),
             )),
             Expanded(
               child: Row(
