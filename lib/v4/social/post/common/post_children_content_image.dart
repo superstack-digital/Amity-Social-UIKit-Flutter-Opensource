@@ -33,14 +33,41 @@ class PostContentImage extends StatelessWidget {
               );
             }
 
-            return Container(
-              padding: const EdgeInsets.all(2.0),
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                image: DecorationImage(
-                  image: provider,
-                  fit: BoxFit.cover,
-                ),
+            // DecorationImage paints NOTHING until the bytes arrive, so a
+            // post's photo was a hole in the feed and then popped in. Paint a
+            // neutral block immediately and fade the image over it.
+            //
+            // Deliberately not ShimmerLoading: it needs an ancestor Shimmer,
+            // and one repeating AnimationController per tile in a scrolling
+            // feed would undo the render work. AnimatedOpacity runs once per
+            // image and costs nothing afterwards.
+            return ClipRRect(
+              borderRadius: borderRadius ?? BorderRadius.zero,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const ColoredBox(color: Color(0xFFEBECEF)),
+                  Image(
+                    image: provider,
+                    fit: BoxFit.cover,
+                    // Keeps the previous frame while a re-resolve is in
+                    // flight, so scrolling back never flashes the placeholder.
+                    gaplessPlayback: true,
+                    frameBuilder:
+                        (context, child, frame, wasSynchronouslyLoaded) {
+                      if (wasSynchronouslyLoaded) return child;
+                      return AnimatedOpacity(
+                        opacity: frame == null ? 0 : 1,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        child: child,
+                      );
+                    },
+                    // A failed load leaves the neutral block rather than a
+                    // broken-image glyph.
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ],
               ),
             );
           },
