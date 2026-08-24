@@ -52,7 +52,6 @@ import 'package:mobile_app_padel/shared/widgets/link_preview_image.dart';
 import 'package:any_link_preview/any_link_preview.dart';
 import 'package:mobile_app_padel/shared/font_mapper.dart';
 
-
 class PostItem extends NewBaseComponent {
   final AmityPost post;
   final AmityPostAction? action;
@@ -82,7 +81,6 @@ class PostItem extends NewBaseComponent {
 
   @override
   Widget buildComponent(BuildContext context) {
-
     return BlocBuilder<PostItemBloc, PostItemState>(builder: (context, state) {
       if (state is PostItemStateLoaded) {
         return renderPost(context: context, post: state.post);
@@ -116,7 +114,9 @@ class PostItem extends NewBaseComponent {
 
     var postAction = (action != null)
         ? action!.copyWith(
-            onAddReaction: onAddReaction, onRemoveReaction: onRemoveReaction, onPostUpdated: onPostUpdated)
+            onAddReaction: onAddReaction,
+            onRemoveReaction: onRemoveReaction,
+            onPostUpdated: onPostUpdated)
         : AmityPostAction(
             onAddReaction: onAddReaction,
             onRemoveReaction: onRemoveReaction,
@@ -125,29 +125,36 @@ class PostItem extends NewBaseComponent {
 
     return GestureDetector(
       onTap: isPostDetail ||
-          getGeneratePostType(post) == GeneratePostType.start_following_user ? null : () {
-        // Use the latest post from state instead of closure
-        final latestPost = context.read<PostItemBloc>().state is PostItemStateLoaded
-            ? (context.read<PostItemBloc>().state as PostItemStateLoaded).post
-            : post;
-        
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => CommentScreenV2(
-            amityPost: latestPost,
-            theme: ThemeData(),
-            isFromFeed: true,
-            feedType: FeedType.community,
-            eventStanding: eventStanding,
-            event: event,
-            match: match,
-            matchResult: matchResult,
-          ),
-        ));
-      },
+              getGeneratePostType(post) == GeneratePostType.start_following_user
+          ? null
+          : () {
+              // Use the latest post from state instead of closure
+              final latestPost = context.read<PostItemBloc>().state
+                      is PostItemStateLoaded
+                  ? (context.read<PostItemBloc>().state as PostItemStateLoaded)
+                      .post
+                  : post;
+
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => CommentScreenV2(
+                  amityPost: latestPost,
+                  theme: ThemeData(),
+                  isFromFeed: true,
+                  feedType: FeedType.community,
+                  eventStanding: eventStanding,
+                  event: event,
+                  match: match,
+                  matchResult: matchResult,
+                ),
+              ));
+            },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.only(top: 10),
-        decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Styles.grayD5D5D5, width: 1))),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            border:
+                Border(bottom: BorderSide(color: Styles.grayD5D5D5, width: 1))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -175,9 +182,13 @@ class PostItem extends NewBaseComponent {
             //     return const SizedBox();
             //   },
             // ),
+            // Attachments run edge to edge. The post's text stays inset, but a
+            // photo is the content itself and reads better full bleed, the way
+            // every social feed presents one. Only the vertical rhythm is kept.
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: post.children?.isEmpty == true ? 0 : 4),
+              padding: EdgeInsets.symmetric(
+                  vertical: post.children?.isEmpty == true ? 0 : 4),
               child: getChildrenPostContent(context, post),
             ),
             // Add custom components for match, matchResult, event, eventStanding
@@ -197,20 +208,18 @@ class PostItem extends NewBaseComponent {
         type == GeneratePostType.match_completed ||
         type == GeneratePostType.event_standing ||
         type == GeneratePostType.start_following_user ||
-        type == GeneratePostType.level_up || 
+        type == GeneratePostType.level_up ||
         type == GeneratePostType.joined_event ||
         type == GeneratePostType.joined_match ||
         type == GeneratePostType.weekly_ranking) {
-
       return Container();
     }
-
 
     String textContent = "";
     if (post.data is TextData) {
       textContent = (post.data as TextData).text ?? "";
     }
-    
+
     if (textContent.isEmpty) {
       return Container();
     }
@@ -229,15 +238,17 @@ class PostItem extends NewBaseComponent {
                   text: TextSpan(
                     children: _buildTextSpansWithLinks(
                       textContent,
-                      Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacing: 0, lineHeightInPxl: 21),
+                      Styles.fontInterRegular(15,
+                          color: Styles.gray2E3944,
+                          letterSpacing: 0,
+                          lineHeightInPxl: 21),
                       TextStyle(
-                        color: Styles.green,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        decoration: TextDecoration.underline,
-                        fontFamily: FontFamily.interRegular,
-                        height: 1.5
-                      ),
+                          color: Styles.green,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          decoration: TextDecoration.underline,
+                          fontFamily: FontFamily.interRegular,
+                          height: 1.5),
                       context,
                     ),
                   ),
@@ -248,7 +259,8 @@ class PostItem extends NewBaseComponent {
   }
 
   /// Build text with mentions support
-  Widget _buildTextWithMentions(BuildContext context, String text, List<dynamic> mentionsData) {
+  Widget _buildTextWithMentions(
+      BuildContext context, String text, List<dynamic> mentionsData) {
     final mentionsList = mentionsData
         .map((mention) => Mention(
               index: mention['index'] as int,
@@ -265,8 +277,14 @@ class PostItem extends NewBaseComponent {
         context,
         text,
         mentionsList,
-        Styles.fontInterRegular(15, color: Styles.gray2E3944, letterSpacingInPercent: -1, lineHeightInPxl: 21),
-        Styles.fontInterSemiBold(15, color: Styles.green, letterSpacingInPercent: -1, lineHeightInPxl: 21),
+        Styles.fontInterRegular(15,
+            color: Styles.gray2E3944,
+            letterSpacingInPercent: -1,
+            lineHeightInPxl: 21),
+        Styles.fontInterSemiBold(15,
+            color: Styles.green,
+            letterSpacingInPercent: -1,
+            lineHeightInPxl: 21),
       ),
     );
   }
@@ -293,12 +311,11 @@ class PostItem extends NewBaseComponent {
           currentText.substring(currentPos, mention.index),
           textStyle,
           TextStyle(
-            color: Styles.green,
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-            decoration: TextDecoration.underline,
-            height: 1.5
-          ),
+              color: Styles.green,
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              decoration: TextDecoration.underline,
+              height: 1.5),
           context,
         );
         children.addAll(textSpans);
@@ -418,7 +435,7 @@ class PostItem extends NewBaseComponent {
   /// Extract link from post text
   String _extractLink(AmityPost post) {
     if (post.data is! TextData) return "";
-    
+
     final textdata = post.data as TextData;
     final text = textdata.text ?? "";
     var elements = linkify(text,
@@ -499,29 +516,28 @@ class PostItem extends NewBaseComponent {
 
     return Container(
       width: double.infinity,
-      padding: metadata['eventId'] != null ? EdgeInsets.zero : const EdgeInsets.symmetric(
-          horizontal: 20),
+      padding: metadata['eventId'] != null
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           // Match component
           if (metadata['matchId'] != null)
             match != null
                 ? match!.status == MatchStatus.cancelled
-                ? DeletedContentPlaceholder(
-              type: DeletedContentType.match,
-              subtitle: _formatMatchDateTime(match!),
-            )
-                :
-            PostMatchItem(
-                margin: EdgeInsets.only(top: 5),
-                match: match!,
-                onInvitePlayer: () {}
-            )
+                    ? DeletedContentPlaceholder(
+                        type: DeletedContentType.match,
+                        subtitle: _formatMatchDateTime(match!),
+                      )
+                    : PostMatchItem(
+                        margin: EdgeInsets.only(top: 5),
+                        match: match!,
+                        onInvitePlayer: () {})
                 : Container(
-              height: 100,
-              alignment: Alignment.center,
-              child: CupertinoActivityIndicator(color: Styles.green),
-            ),
+                    height: 100,
+                    alignment: Alignment.center,
+                    child: CupertinoActivityIndicator(color: Styles.green),
+                  ),
 
           // Match Result component
           if (metadata['matchResultId'] != null)
@@ -544,10 +560,10 @@ class PostItem extends NewBaseComponent {
                         ),
                       )
                 : Container(
-                  height: 100,
-                  alignment: Alignment.center,
-                  child: CupertinoActivityIndicator(color: Styles.green),
-                ),
+                    height: 100,
+                    alignment: Alignment.center,
+                    child: CupertinoActivityIndicator(color: Styles.green),
+                  ),
 
           // Event Standing component
           if (metadata['eventStandingId'] != null)
@@ -573,83 +589,98 @@ class PostItem extends NewBaseComponent {
                         ),
                       )
                 : Container(
-                  height: 100,
-                  alignment: Alignment.center,
-                  child: CupertinoActivityIndicator(color: Styles.green),
-                ),
+                    height: 100,
+                    alignment: Alignment.center,
+                    child: CupertinoActivityIndicator(color: Styles.green),
+                  ),
 
           // Following user
           if (metadata['followingUserId'] != null && followingUser != null)
             FollowingUserPostItem(
-                user: followingUser!,
-                currentUser: currentUser
-            ),
-          if(metadata?['type'] == 'level_up')
-            LeveledUpPostItem(user: post.postedUser,
-                oldLevel: double.tryParse(metadata?["oldLevel"]?.toString() ?? "") ?? 0,
-                newLevel: double.tryParse(metadata?["newLevel"]?.toString() ?? "") ?? 0),
-          if (metadata['eventId'] != null && metadata?["type"] == "joined_event")
+                user: followingUser!, currentUser: currentUser),
+          if (metadata?['type'] == 'level_up')
+            LeveledUpPostItem(
+                user: post.postedUser,
+                oldLevel:
+                    double.tryParse(metadata?["oldLevel"]?.toString() ?? "") ??
+                        0,
+                newLevel:
+                    double.tryParse(metadata?["newLevel"]?.toString() ?? "") ??
+                        0),
+          if (metadata['eventId'] != null &&
+              metadata?["type"] == "joined_event")
             event != null
                 ? event!.deleted == true
-                ? Padding(padding: EdgeInsets.symmetric(horizontal: 20),
-                child: DeletedContentPlaceholder(
-                  type: DeletedContentType.event,
-                  subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
-                ))
-                : PostEventItem(event: event!,
-                communityName: (post.target as CommunityTarget).targetCommunity
-                    ?.displayName ?? "",
-                margin: EdgeInsets.only(top: 10))
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: DeletedContentPlaceholder(
+                          type: DeletedContentType.event,
+                          subtitle:
+                              '${event!.name}\n${_formatEventDateTime(event!)}',
+                        ))
+                    : PostEventItem(
+                        event: event!,
+                        communityName: (post.target as CommunityTarget)
+                                .targetCommunity
+                                ?.displayName ??
+                            "",
+                        margin: EdgeInsets.only(top: 10))
                 : SizedBox.shrink()
 
           // Event component
-          else
-            if (metadata['eventId'] != null)
-              event != null
-                  ? event!.deleted == true
-                  ? Padding(padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: DeletedContentPlaceholder(
-                    type: DeletedContentType.event,
-                    subtitle: '${event!.name}\n${_formatEventDateTime(event!)}',
-                  ))
-                  : PostEventItem(event: event!,
-                  communityName: (post.target as CommunityTarget).targetCommunity
-                      ?.displayName ?? "")
-                  : SizedBox.shrink(),
+          else if (metadata['eventId'] != null)
+            event != null
+                ? event!.deleted == true
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: DeletedContentPlaceholder(
+                          type: DeletedContentType.event,
+                          subtitle:
+                              '${event!.name}\n${_formatEventDateTime(event!)}',
+                        ))
+                    : PostEventItem(
+                        event: event!,
+                        communityName: (post.target as CommunityTarget)
+                                .targetCommunity
+                                ?.displayName ??
+                            "")
+                : SizedBox.shrink(),
 
           // Weekly Ranking component
           if (metadata?['type'] == 'weekly_ranking')
             communityRanking != null && communityRanking!.isNotEmpty
                 ? Stack(
-              children: [
-                CommunityRankingLeaderboard(
-                    isSharing: true,
-                    flexibleWidth: true,
-                    title: "${(post.target as CommunityTarget).targetCommunity?.displayName ??
-                        ""} Rankings",
-                    community: (post.target as CommunityTarget).targetCommunity,
-                    data: communityRanking!.take(3).toList(),
-                    leaderboardType: LeaderboardType.team),
-                Positioned.fill(
-                  child: Container(decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      Colors.white.withOpacity(0.0),
-                      Colors.white.withOpacity(0.4),
-                      Colors.white,
+                    children: [
+                      CommunityRankingLeaderboard(
+                          isSharing: true,
+                          flexibleWidth: true,
+                          title:
+                              "${(post.target as CommunityTarget).targetCommunity?.displayName ?? ""} Rankings",
+                          community:
+                              (post.target as CommunityTarget).targetCommunity,
+                          data: communityRanking!.take(3).toList(),
+                          leaderboardType: LeaderboardType.team),
+                      Positioned.fill(
+                        child: Container(
+                            decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.0),
+                                Colors.white.withOpacity(0.4),
+                                Colors.white,
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: [0.6, 0.7, 1.0]),
+                        )),
+                      )
                     ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.6, 0.7, 1.0]
-                    ),
-                  )),
-                )
-              ],
-            )
+                  )
                 : Container(
-                  height: 100,
-                  alignment: Alignment.center,
-                  child: CupertinoActivityIndicator(color: Styles.green),
-                ),
+                    height: 100,
+                    alignment: Alignment.center,
+                    child: CupertinoActivityIndicator(color: Styles.green),
+                  ),
         ],
       ),
     );
@@ -658,15 +689,15 @@ class PostItem extends NewBaseComponent {
   Widget getPostBottom(
       {required AmityPost post,
       required AmityPostAction action,
-        bool isReacting = false}) {
+      bool isReacting = false}) {
     final matchCancelled = match?.status == MatchStatus.cancelled;
     final eventDeleted = event?.deleted == true;
     final eventStandingDeleted = eventStanding != null &&
         eventStanding!.isNotEmpty &&
         eventStanding!.first.event.deleted == true;
 
-    final isStatusUpdatePost = matchCancelled ||
-        eventDeleted || eventStandingDeleted;
+    final isStatusUpdatePost =
+        matchCancelled || eventDeleted || eventStandingDeleted;
 
     return PostItemBottom(
         post: post,
@@ -675,8 +706,7 @@ class PostItem extends NewBaseComponent {
         componentId: '',
         isOptimisticUi: true,
         hideDivider: true,
-        isStatusUpdatePost: isStatusUpdatePost
-    );
+        isStatusUpdatePost: isStatusUpdatePost);
   }
 
   // Helper methods from global_feed.dart
@@ -721,7 +751,20 @@ class PostItem extends NewBaseComponent {
   String _formatDate(DateTime date, String format) {
     if (format == 'EEE, dd MMM') {
       final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       final weekday = weekdays[date.weekday - 1];
       final day = date.day.toString().padLeft(2, '0');
       final month = months[date.month - 1];
@@ -790,7 +833,8 @@ class PostItem extends NewBaseComponent {
                 type: RankingAvatarType.first,
                 players: [
                   _convertUserToDisplayUser(top3[0].user),
-                  if (top3[0].partner != null) _convertUserToDisplayUser(top3[0].partner!),
+                  if (top3[0].partner != null)
+                    _convertUserToDisplayUser(top3[0].partner!),
                 ],
                 points: top3[0].points.toDouble(),
               ),
@@ -803,7 +847,8 @@ class PostItem extends NewBaseComponent {
                     type: RankingAvatarType.second,
                     players: [
                       _convertUserToDisplayUser(top3[1].user),
-                      if (top3[1].partner != null) _convertUserToDisplayUser(top3[1].partner!),
+                      if (top3[1].partner != null)
+                        _convertUserToDisplayUser(top3[1].partner!),
                     ],
                     points: top3[1].points.toDouble(),
                   ),
@@ -812,7 +857,8 @@ class PostItem extends NewBaseComponent {
                     type: RankingAvatarType.third,
                     players: [
                       _convertUserToDisplayUser(top3[2].user),
-                      if (top3[2].partner != null) _convertUserToDisplayUser(top3[2].partner!),
+                      if (top3[2].partner != null)
+                        _convertUserToDisplayUser(top3[2].partner!),
                     ],
                     points: top3[2].points.toDouble(),
                   ),
@@ -822,20 +868,25 @@ class PostItem extends NewBaseComponent {
         ),
       );
     } else {
-      final firstNationalityCode = Country.tryParse(top3.isNotEmpty ? top3[0].user.country ?? "" : "")?.countryCode;
-      final secondNationalityCode = Country.tryParse(top3.length > 1 ? top3[1].user.country ?? "" : "")?.countryCode;
-      final thirdNationalityCode = Country.tryParse(top3.length > 2 ? top3[2].user.country ?? "" : "")?.countryCode;
+      final firstNationalityCode =
+          Country.tryParse(top3.isNotEmpty ? top3[0].user.country ?? "" : "")
+              ?.countryCode;
+      final secondNationalityCode =
+          Country.tryParse(top3.length > 1 ? top3[1].user.country ?? "" : "")
+              ?.countryCode;
+      final thirdNationalityCode =
+          Country.tryParse(top3.length > 2 ? top3[2].user.country ?? "" : "")
+              ?.countryCode;
 
       return Container(
         decoration: BoxDecoration(
-            color: Styles.green20,
-            borderRadius: BorderRadius.circular(8)
-        ),
+            color: Styles.green20, borderRadius: BorderRadius.circular(8)),
         margin: EdgeInsets.only(top: 12),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Column(
           children: [
-            Text('${eventStanding?.first?.event?.tournament?.toUpperCase()} WINNER',
+            Text(
+                '${eventStanding?.first?.event?.tournament?.toUpperCase()} WINNER',
                 style: Styles.fontInterMedium(14, lineHeightInPxl: 21)),
             const SizedBox(height: 10),
             Row(
@@ -846,23 +897,26 @@ class PostItem extends NewBaseComponent {
                   Column(
                     children: [
                       RankingAvatar(
-                        type: RankingAvatarType.second,
-                        avatarUrl: top3[1].user.avatar ?? '',
-                        nationalityCode: secondNationalityCode,
-                        fullName: top3[1].user.fullName,
-                        borderSize: 2,
-                        size: 43
-                      ),
+                          type: RankingAvatarType.second,
+                          avatarUrl: top3[1].user.avatar ?? '',
+                          nationalityCode: secondNationalityCode,
+                          fullName: top3[1].user.fullName,
+                          borderSize: 2,
+                          size: 43),
                       const SizedBox(height: 6),
                       Text(
                         _getUserDisplayName(top3[1].user),
                         style: Styles.fontSFProRegular(12,
-                            letterSpacingInPercent: -2, color: Styles.primaryGrayColor, lineHeightInPxl: 20),
+                            letterSpacingInPercent: -2,
+                            color: Styles.primaryGrayColor,
+                            lineHeightInPxl: 20),
                       ),
                       Text(
                         '${top3[1].points} pts',
                         style: Styles.fontSFProSemiBold(12,
-                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                            color: Styles.green,
+                            lineHeightInPxl: 24,
+                            letterSpacingInPercent: -2),
                       ),
                     ],
                   ),
@@ -876,19 +930,22 @@ class PostItem extends NewBaseComponent {
                             avatarUrl: top3[0].user.avatar ?? '',
                             nationalityCode: firstNationalityCode,
                             fullName: top3[0].user.fullName,
-                            size: 56
-                        ),
+                            size: 56),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         _getUserDisplayName(top3[0].user),
                         style: Styles.fontSFProRegular(12,
-                            letterSpacingInPercent: -2, color: Styles.primaryGrayColor, lineHeightInPxl: 20),
+                            letterSpacingInPercent: -2,
+                            color: Styles.primaryGrayColor,
+                            lineHeightInPxl: 20),
                       ),
                       Text(
                         '${top3[0].points} pts',
                         style: Styles.fontSFProSemiBold(12,
-                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                            color: Styles.green,
+                            lineHeightInPxl: 24,
+                            letterSpacingInPercent: -2),
                       ),
                     ],
                   ),
@@ -896,23 +953,26 @@ class PostItem extends NewBaseComponent {
                   Column(
                     children: [
                       RankingAvatar(
-                        type: RankingAvatarType.third,
-                        avatarUrl: top3[2].user.avatar ?? '',
-                        nationalityCode: thirdNationalityCode,
-                        fullName: top3[2].user.fullName,
-                        borderSize: 2,
-                        size: 43
-                      ),
+                          type: RankingAvatarType.third,
+                          avatarUrl: top3[2].user.avatar ?? '',
+                          nationalityCode: thirdNationalityCode,
+                          fullName: top3[2].user.fullName,
+                          borderSize: 2,
+                          size: 43),
                       const SizedBox(height: 6),
                       Text(
                         _getUserDisplayName(top3[2].user),
                         style: Styles.fontSFProRegular(12,
-                            letterSpacingInPercent: -2, color: Styles.primaryGrayColor, lineHeightInPxl: 20),
+                            letterSpacingInPercent: -2,
+                            color: Styles.primaryGrayColor,
+                            lineHeightInPxl: 20),
                       ),
                       Text(
                         '${top3[2].points} pts',
                         style: Styles.fontSFProSemiBold(12,
-                            color: Styles.green, lineHeightInPxl: 24, letterSpacingInPercent: -2),
+                            color: Styles.green,
+                            lineHeightInPxl: 24,
+                            letterSpacingInPercent: -2),
                       ),
                     ],
                   ),
@@ -924,7 +984,8 @@ class PostItem extends NewBaseComponent {
     }
   }
 
-  List<CommunityLeaderboardData> _convertEventStandingsToLeaderboardData(List<EventStanding> standings) {
+  List<CommunityLeaderboardData> _convertEventStandingsToLeaderboardData(
+      List<EventStanding> standings) {
     if (standings.isEmpty) return [];
 
     final tournamentType = standings.first.event.tournamentType ?? 'americano';
@@ -1002,7 +1063,20 @@ class PostItem extends NewBaseComponent {
   String _formatDate2(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       return '${date.day} ${months[date.month - 1]}';
     } catch (e) {
       return dateStr;
@@ -1011,7 +1085,7 @@ class PostItem extends NewBaseComponent {
 
   Widget _buildRankingRow(CommunityRankingData ranking, int rank) {
     final isTeam = ranking.partnerId != null;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -1044,7 +1118,8 @@ class PostItem extends NewBaseComponent {
                     const SizedBox(width: 4),
                     Text(
                       '(${ranking.userLevel ?? 0})',
-                      style: Styles.fontInterRegular(12, color: Styles.trafficGrey),
+                      style: Styles.fontInterRegular(12,
+                          color: Styles.trafficGrey),
                     ),
                   ],
                 ),
@@ -1054,12 +1129,14 @@ class PostItem extends NewBaseComponent {
                     children: [
                       Text(
                         'Partner ${ranking.partnerId}',
-                        style: Styles.fontInterRegular(12, color: Styles.trafficGrey),
+                        style: Styles.fontInterRegular(12,
+                            color: Styles.trafficGrey),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '(${ranking.partnerLevel ?? 0})',
-                        style: Styles.fontInterRegular(12, color: Styles.trafficGrey),
+                        style: Styles.fontInterRegular(12,
+                            color: Styles.trafficGrey),
                       ),
                     ],
                   ),
@@ -1119,8 +1196,8 @@ class PostItem extends NewBaseComponent {
                     files[index].data!.fileInfo.fileUrl!,
                   );
                 },
-                contentPadding: const EdgeInsets.symmetric(
-                    vertical: 8, horizontal: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
                 tileColor: Colors.white.withOpacity(0.0),
                 leading: Container(
                   height: 100,
@@ -1203,13 +1280,13 @@ class PostItem extends NewBaseComponent {
     if (user == null) return "Unknown User";
     final splittedName = user.fullName?.split(' ') ?? [];
     if (splittedName.length > 1) {
-      if(splittedName.first.isNotEmpty){
+      if (splittedName.first.isNotEmpty) {
         return splittedName.first;
-       } else if(splittedName.last.isNotEmpty){
+      } else if (splittedName.last.isNotEmpty) {
         return splittedName.last;
-       } else {
-         return "Unknown User";
-       }
+      } else {
+        return "Unknown User";
+      }
     } else {
       return user.fullName ?? "Unknown User";
     }

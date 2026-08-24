@@ -11,7 +11,7 @@ class PostContentImage extends StatelessWidget {
     if (posts.isEmpty) return Container();
 
     Widget backgroundImage(String fileUrl, int index,
-        {BorderRadius? borderRadius}) {
+        {BorderRadius? borderRadius, double gap = 2.0}) {
       // The grid paints these tiles at anything from a third of the screen
       // (four-up) to full width, but every tile used to be decoded at the
       // source resolution. Decode to the tile's real painted width instead.
@@ -19,7 +19,7 @@ class PostContentImage extends StatelessWidget {
       // size cannot affect layout, and allowUpscaling stays off so a source
       // that is already smaller than the tile is left alone.
       return Padding(
-        padding: const EdgeInsets.all(2.0),
+        padding: EdgeInsets.all(gap),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final maxWidth = constraints.maxWidth;
@@ -97,8 +97,10 @@ class PostContentImage extends StatelessWidget {
               ),
             );
           },
+          // Full bleed: no inter-tile gap and square corners, so the photo
+          // meets both screen edges. Grids below keep their gap and radius.
           child: backgroundImage(getURL(posts[0].data!), 0,
-              borderRadius: BorderRadius.circular(8)),
+              borderRadius: BorderRadius.zero, gap: 0),
         ),
       );
     }
