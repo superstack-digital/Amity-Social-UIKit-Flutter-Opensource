@@ -34,6 +34,15 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
       pageSize: pageSize,
     )..addListener(
         () {
+          // TPS-0 native social pilot: this listener is wired to Amity's own
+          // paging controller, which wraps a live/reactive collection that can
+          // push updates (new joins, new posts) via its own socket regardless
+          // of whether fetchNextPage() was ever called on it. Without this
+          // guard, any such push unconditionally appends Amity data into
+          // `posts` even while the native override is active — leaking Amity
+          // items into an otherwise all-Postgres feed, out of sort order,
+          // since they land via addAll() instead of the query's own ORDER BY.
+          if (NativeSocialOverride.isActive) return;
           if (_controller.isFetching == true &&
               _controller.loadedItems.isEmpty) {
             _fetchStarted = true;
@@ -88,6 +97,17 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
 
       // TPS-0 native social pilot: posts come from our own Postgres. Every
       // widget below this bloc is untouched — only the source changes.
+      //
+      // The host app's install() decides isActive, but it runs deep in the
+      // post-login bootstrap chain — a fast tap into Feed right after cold
+      // start can fire this Init before install() finishes, read isActive
+      // too early, and (since GlobalFeedInit only reruns on error or manual
+      // refresh) latch onto Amity for the rest of the session. Give install()
+      // a short window to finish first; if it never does, fall through to
+      // Amity exactly as before rather than stranding the user.
+      await NativeSocialOverride.ready.timeout(
+          const Duration(seconds: 3), onTimeout: () {});
+
       if (NativeSocialOverride.isActive) {
         emit(state.copyWith(isFetching: true, hasError: false));
         try {

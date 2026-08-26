@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:amity_sdk/amity_sdk.dart';
 
 /// Injection seam for the TPS-0 native social pilot.
@@ -25,4 +27,19 @@ class NativeSocialOverride {
 
   /// Cleared on sign-out / flag-off so a stale session can never leak.
   static void reset() => globalFeedFetcher = null;
+
+  /// Signals when the host app's install() has finished deciding whether the
+  /// override applies. Feed screens can render (and fire GlobalFeedInit)
+  /// before install() — which runs deep in the post-login bootstrap chain —
+  /// has had a chance to run, so a fast tap into Feed right after cold start
+  /// used to race ahead of it and permanently latch onto Amity for the rest
+  /// of the session. Awaiting this (with a timeout, so a stuck install()
+  /// never strands the feed) closes that window.
+  static final Completer<void> _ready = Completer<void>();
+  static Future<void> get ready => _ready.future;
+
+  /// Called by the host app at the end of install(), success or failure.
+  static void markReady() {
+    if (!_ready.isCompleted) _ready.complete();
+  }
 }
