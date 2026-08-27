@@ -105,8 +105,8 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
       // refresh) latch onto Amity for the rest of the session. Give install()
       // a short window to finish first; if it never does, fall through to
       // Amity exactly as before rather than stranding the user.
-      await NativeSocialOverride.ready.timeout(
-          const Duration(seconds: 3), onTimeout: () {});
+      await NativeSocialOverride.ready
+          .timeout(const Duration(seconds: 3), onTimeout: () {});
 
       if (NativeSocialOverride.isActive) {
         emit(state.copyWith(isFetching: true, hasError: false));
@@ -135,6 +135,19 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
     on<GlobalFeedFetch>((event, emit) async {
       // Native path currently returns a single page; paging lands with the
       // keyset cursor in the next iteration.
+      //
+      // bloc processes events concurrently by default, and
+      // AmityGlobalFeedComponent fires this right after GlobalFeedInit via
+      // addPostFrameCallback — the very next frame, well before install()
+      // has necessarily run. Without the same ready gate GlobalFeedInit
+      // waits on, this read isActive as false, fetched Amity's own page,
+      // and appended it into `posts` — and since GlobalFeedInit only
+      // clears `posts` once at its own start (already past by the time
+      // this ran), the native fetch that lands moments later just appends
+      // on top instead of replacing it. Result: Amity's page sits ahead of
+      // the native page in the merged list, sorted order be damned.
+      await NativeSocialOverride.ready
+          .timeout(const Duration(seconds: 3), onTimeout: () {});
       if (NativeSocialOverride.isActive) return;
       if (_controller.hasMoreItems && !_controller.isFetching) {
         _controller.fetchNextPage();

@@ -16,6 +16,14 @@ typedef NativeFeedFetcher = Future<List<AmityPost>> Function({
   String? token,
 });
 
+/// Same idea as [NativeFeedFetcher], scoped to one community's own timeline
+/// (community_feed_viewmodel.dart) rather than the global feed.
+typedef NativeCommunityFeedFetcher = Future<List<AmityPost>> Function({
+  required String communityId,
+  int limit,
+  String? token,
+});
+
 class NativeSocialOverride {
   NativeSocialOverride._();
 
@@ -23,10 +31,16 @@ class NativeSocialOverride {
   /// signed-in user. Null means "use Amity", which is the default everywhere.
   static NativeFeedFetcher? globalFeedFetcher;
 
+  /// Same gate, for a single community's timeline.
+  static NativeCommunityFeedFetcher? communityFeedFetcher;
+
   static bool get isActive => globalFeedFetcher != null;
 
   /// Cleared on sign-out / flag-off so a stale session can never leak.
-  static void reset() => globalFeedFetcher = null;
+  static void reset() {
+    globalFeedFetcher = null;
+    communityFeedFetcher = null;
+  }
 
   /// Signals when the host app's install() has finished deciding whether the
   /// override applies. Feed screens can render (and fire GlobalFeedInit)

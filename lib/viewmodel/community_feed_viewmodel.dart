@@ -5,6 +5,7 @@ import 'package:amity_uikit_beta_service/view/user/medie_component.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../native_social_override.dart';
 import '../../components/alert_dialog.dart';
 import 'package:mobile_app_padel/features/community/data/models/event.dart';
 import 'package:mobile_app_padel/features/community/data/repositories/community_repository.dart';
@@ -45,6 +46,17 @@ class CommuFeedVM extends ChangeNotifier {
   int? latestCompetitionId;
   bool isLoadingStandings = false;
   final _amityCommunityFeedPosts = <AmityPost>[];
+
+  /// True only once a native community-feed fetch has actually succeeded for
+  /// *this* screen instance — deliberately not the same thing as
+  /// NativeSocialOverride.isActive, which just means the user is enrolled
+  /// in the feed cohort generally. If a native fetch fails and
+  /// initAmityCommunityFeed falls back to _controllerCommu.fetchNextPage(),
+  /// that Amity result has to reach _amityCommunityFeedPosts too — guarding
+  /// the listener on the global isActive instead of this would silently
+  /// swallow the fallback's own results, leaving the timeline blank
+  /// forever with nothing to show and nothing to explain why.
+  bool _usingNativeFeed = false;
 
   var _communityEventList = <Event>[];
 
@@ -245,6 +257,8 @@ class CommuFeedVM extends ChangeNotifier {
   }
 
   Future<void> initAmityCommunityFeed(String communityId) async {
+    _usingNativeFeed = false;
+
     //inititate the PagingController
     _controllerCommu = PagingController(
       pageFuture: (token) => AmitySocialClient.newFeedRepository()
@@ -256,6 +270,18 @@ class CommuFeedVM extends ChangeNotifier {
       pageSize: 20,
     )..addListener(
         () async {
+          // TPS-0 native social pilot: same live-collection leak as
+          // GlobalFeedBloc's own paging controller — Amity's collection can
+          // push updates via its own socket independent of fetchNextPage(),
+          // so this must stay silent whenever native is actually serving
+          // this community's feed. Deliberately _usingNativeFeed, not the
+          // global NativeSocialOverride.isActive: that only means the user
+          // is enrolled in the cohort, not that the native fetch below
+          // succeeded for *this* community — guarding on the global flag
+          // swallowed this listener's own fallback results too, leaving
+          // the timeline blank with nothing to show and nothing to explain
+          // why.
+          if (_usingNativeFeed) return;
           if (kDebugMode) log("initAmityCommunityFeed ID: $communityId");
           if (_controllerCommu.error == null) {
             //handle results, we suggest to clear the previous items
@@ -274,9 +300,39 @@ class CommuFeedVM extends ChangeNotifier {
         },
       );
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      _controllerCommu.fetchNextPage();
-    });
+    // TPS-0 native social pilot: give install() a short window to finish
+    // deciding isActive first — same race NativeSocialOverride.ready guards
+    // against in GlobalFeedInit. A community screen opens well after login
+    // in practice (the user has to navigate there), so this rarely actually
+    // waits; it's cheap insurance against a fast navigation right after
+    // cold start.
+    await NativeSocialOverride.ready
+        .timeout(const Duration(seconds: 3), onTimeout: () {});
+
+    if (NativeSocialOverride.isActive &&
+        NativeSocialOverride.communityFeedFetcher != null) {
+      try {
+        final native = await NativeSocialOverride.communityFeedFetcher!(
+            communityId: communityId, limit: 20);
+        _usingNativeFeed = true;
+        _amityCommunityFeedPosts.clear();
+        _amityCommunityFeedPosts.addAll(native);
+        notifyListeners();
+      } catch (e) {
+        // Never strand the user on a blank timeline: fall back to Amity
+        // for this community exactly as before the pilot existed.
+        // _usingNativeFeed stays false, so the listener above actually
+        // processes this fallback's results instead of discarding them.
+        debugPrint('native community feed failed for $communityId: $e');
+        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+          _controllerCommu.fetchNextPage();
+        });
+      }
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        _controllerCommu.fetchNextPage();
+      });
+    }
 
     _attachFeedScrollListener();
 
@@ -436,6 +492,12 @@ class CommuFeedVM extends ChangeNotifier {
   }
 
   void loadnextpage() {
+    // TPS-0 native social pilot: native path currently returns a single
+    // page (see initAmityCommunityFeed) — without this guard, scrolling to
+    // the bottom of a native-sourced timeline would fetch an Amity page 2
+    // and mix it into _amityCommunityFeedPosts via the listener above.
+    // _usingNativeFeed, not the global isActive — see that field's comment.
+    if (_usingNativeFeed) return;
     if ((scrollcontroller.position.pixels ==
             scrollcontroller.position.maxScrollExtent) &&
         _controllerCommu.hasMoreItems) {
