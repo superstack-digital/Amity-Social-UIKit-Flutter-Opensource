@@ -59,10 +59,13 @@ class FeedVM extends ChangeNotifier {
     // Everything below this block — every widget, every card — is untouched.
     if (NativeSocialOverride.isActive) {
       try {
-        final posts = await NativeSocialOverride.globalFeedFetcher!(limit: 20);
+        // Single page here on purpose: this legacy view-model has no paging
+        // path of its own to hang the cursor off. The v4 GlobalFeedBloc is
+        // what actually pages the native feed.
+        final page = await NativeSocialOverride.globalFeedFetcher!(limit: 20);
         _amityGlobalFeedPosts
           ..clear()
-          ..addAll(posts);
+          ..addAll(page.posts);
         isLoading = false;
         notifyListeners();
       } catch (e) {

@@ -11,18 +11,43 @@ import 'package:amity_sdk/amity_sdk.dart';
 /// The fetcher is injected by the host app (mobile-app-padel) so this package
 /// gains no new dependency and no knowledge of Supabase. If nothing injects,
 /// behaviour is byte-identical to today.
-typedef NativeFeedFetcher = Future<List<AmityPost>> Function({
+typedef NativeFeedFetcher = Future<NativeFeedPage> Function({
   int limit,
   String? token,
 });
 
 /// Same idea as [NativeFeedFetcher], scoped to one community's own timeline
 /// (community_feed_viewmodel.dart) rather than the global feed.
-typedef NativeCommunityFeedFetcher = Future<List<AmityPost>> Function({
+typedef NativeCommunityFeedFetcher = Future<NativeFeedPage> Function({
   required String communityId,
   int limit,
   String? token,
 });
+
+/// One page of natively-served posts, plus the cursor that fetches the next.
+///
+/// The fetchers used to return a bare list, which threw away the envelope's
+/// `paging.next` and left the native feed with no way to ask for a second
+/// page — so it stopped dead at [GlobalFeedBloc.pageSize] posts while the
+/// Amity path scrolled indefinitely. The SQL had been returning the cursor
+/// all along; only this side was missing.
+class NativeFeedPage {
+  const NativeFeedPage({required this.posts, this.nextToken});
+
+  final List<AmityPost> posts;
+
+  /// Opaque keyset cursor (`"<micros>:<id>"`) for the page after this one, or
+  /// null when this is the last page.
+  ///
+  /// The server hands back a cursor whenever the page has any rows at all,
+  /// including the final one — it cannot know it is the last. The host app
+  /// resolves that by nulling this when a page comes back shorter than the
+  /// limit it asked for, so "null means done" holds here without every caller
+  /// having to re-derive it.
+  final String? nextToken;
+
+  bool get hasMore => nextToken != null;
+}
 
 class NativeSocialOverride {
   NativeSocialOverride._();

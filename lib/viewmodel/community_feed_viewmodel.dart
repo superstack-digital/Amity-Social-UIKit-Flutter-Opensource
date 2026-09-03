@@ -312,11 +312,11 @@ class CommuFeedVM extends ChangeNotifier {
     if (NativeSocialOverride.isActive &&
         NativeSocialOverride.communityFeedFetcher != null) {
       try {
-        final native = await NativeSocialOverride.communityFeedFetcher!(
+        final page = await NativeSocialOverride.communityFeedFetcher!(
             communityId: communityId, limit: 20);
         _usingNativeFeed = true;
         _amityCommunityFeedPosts.clear();
-        _amityCommunityFeedPosts.addAll(native);
+        _amityCommunityFeedPosts.addAll(page.posts);
         notifyListeners();
       } catch (e) {
         // Never strand the user on a blank timeline: fall back to Amity

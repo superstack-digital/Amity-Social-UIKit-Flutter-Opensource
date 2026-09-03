@@ -1,6 +1,7 @@
 import 'package:amity_sdk/amity_sdk.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 import '../../../../native_social_override.dart';
@@ -19,6 +20,14 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
   bool _fetchStarted = false;
 
   bool hasInitialized = false;
+
+  /// Keyset cursor for the next native page, or null when the native feed has
+  /// no more to give. Only meaningful while NativeSocialOverride.isActive.
+  String? _nativeToken;
+
+  /// Guards against the scroll listener firing GlobalFeedFetch repeatedly
+  /// while a native page is already in flight.
+  bool _nativeFetching = false;
 
   final int pageSize = 20;
   GlobalFeedBloc()
@@ -109,18 +118,30 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
           .timeout(const Duration(seconds: 3), onTimeout: () {});
 
       if (NativeSocialOverride.isActive) {
+        _nativeToken = null;
+        _nativeFetching = false;
         emit(state.copyWith(isFetching: true, hasError: false));
         try {
-          final native = await NativeSocialOverride.globalFeedFetcher!(limit: pageSize);
-          posts.addAll(native);
+          final page =
+              await NativeSocialOverride.globalFeedFetcher!(limit: pageSize);
+          posts.addAll(page.posts);
+          _nativeToken = page.nextToken;
           emit(state.copyWith(
               list: List<AmityPost>.from(posts),
-              hasMoreItems: false,
+              hasMoreItems: page.hasMore,
               isFetching: false,
-              hasError: false));
+              hasError: false,
+              // Without this a genuinely empty native feed keeps painting the
+              // skeleton forever: the builder shows it while hasSettled is
+              // false and the list is empty, and nothing else ever sets it on
+              // this path.
+              hasSettled: true));
         } catch (e) {
           // Never strand the user on a skeleton: drop the override and fall
-          // straight back to Amity for the rest of the session.
+          // straight back to Amity for the rest of the session. Logged rather
+          // than silent — while this catch said nothing, a failing native feed
+          // was indistinguishable from one that had never been installed.
+          debugPrint('native feed failed, falling back to Amity: $e');
           NativeSocialOverride.reset();
           _controller.reset();
           _controller.fetchNextPage();
@@ -133,9 +154,6 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
     });
 
     on<GlobalFeedFetch>((event, emit) async {
-      // Native path currently returns a single page; paging lands with the
-      // keyset cursor in the next iteration.
-      //
       // bloc processes events concurrently by default, and
       // AmityGlobalFeedComponent fires this right after GlobalFeedInit via
       // addPostFrameCallback — the very next frame, well before install()
@@ -148,7 +166,42 @@ class GlobalFeedBloc extends Bloc<GlobalFeedEvent, GlobalFeedState> {
       // the native page in the merged list, sorted order be damned.
       await NativeSocialOverride.ready
           .timeout(const Duration(seconds: 3), onTimeout: () {});
-      if (NativeSocialOverride.isActive) return;
+
+      if (NativeSocialOverride.isActive) {
+        // Page forward through Postgres. The scroll listener in
+        // AmityGlobalFeedComponent fires this on every notification within
+        // 500px of the bottom, so without _nativeFetching the same page would
+        // be requested several times over and appended more than once.
+        if (_nativeToken == null || _nativeFetching) return;
+        _nativeFetching = true;
+        final token = _nativeToken;
+        try {
+          final page = await NativeSocialOverride.globalFeedFetcher!(
+              limit: pageSize, token: token);
+          // Init may have run while this was in flight (a pull-to-refresh
+          // mid-scroll), which clears posts and resets the cursor. Appending
+          // this page then would splice an old page onto a fresh list.
+          if (_nativeToken != token) return;
+          posts.addAll(page.posts);
+          _nativeToken = page.nextToken;
+          emit(state.copyWith(
+              list: List<AmityPost>.from(posts),
+              hasMoreItems: page.hasMore,
+              isFetching: false,
+              hasError: false,
+              hasSettled: true));
+        } catch (e) {
+          // A failed page is not worth dropping the whole override for — the
+          // posts already on screen are fine. Stop paging and leave it.
+          debugPrint('native feed: paging failed, stopping here: $e');
+          _nativeToken = null;
+          emit(state.copyWith(hasMoreItems: false, isFetching: false));
+        } finally {
+          _nativeFetching = false;
+        }
+        return;
+      }
+
       if (_controller.hasMoreItems && !_controller.isFetching) {
         _controller.fetchNextPage();
       }
