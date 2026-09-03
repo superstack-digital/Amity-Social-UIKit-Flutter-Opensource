@@ -63,6 +63,18 @@ class AmityPostHeader extends StatefulWidget {
 }
 
 class _AmityPostHeaderState extends State<AmityPostHeader> {
+  /// The post's top standing, or null when the list is absent *or empty*.
+  ///
+  /// `widget.eventStanding?.first` only guards the null case. An empty but
+  /// non-null list throws Bad state: No element before any `??` fallback can
+  /// run — and getEventStandingById() returns [] for every failed fetch, not
+  /// only for "this event has no standings", so the empty case is reachable
+  /// whenever that request errors or a single row fails to parse.
+  EventStanding? get _topStanding {
+    final standings = widget.eventStanding;
+    return (standings == null || standings.isEmpty) ? null : standings.first;
+  }
+
   List<User>? _joinedUsers;
   bool _isLoadingUsers = false;
 
@@ -658,7 +670,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
       case GeneratePostType.weekly_ranking:
         return (widget.post.target as CommunityTarget).targetCommunity?.displayName ?? "";
       case GeneratePostType.event_standing:
-        return widget.eventStanding?.first.user.fullName ?? "";
+        return _topStanding?.user.fullName ?? "";
       default:
         return widget.post.postedUser?.displayName ?? "";
     }
@@ -893,7 +905,7 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                 alignment: PlaceholderAlignment.middle,
                   child:
                 InkWell(
-                      onTap: () => goToUserProfile(widget.eventStanding?.first.user.id?.toString()),
+                      onTap: () => goToUserProfile(_topStanding?.user.id?.toString()),
                       child: Text(
                         getPostOwnerName(type),
                         style: Styles.fontInterSemiBold(
@@ -902,12 +914,12 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
                     ),
               ),
               TextSpan(
-                text: ' won the ${widget.eventStanding?.first.event?.tournament ?? "event"} tournament in ',
+                text: ' won the ${_topStanding?.event?.tournament ?? "event"} tournament in ',
                 style: Styles.fontInterRegular(
                     14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
               TextSpan(
-                text: widget.eventStanding?.first.event.club?.name ?? "",
+                text: _topStanding?.event.club?.name ?? "",
                 style: Styles.fontInterSemiBold(
                     14, lineHeightInPxl: 21, color: Styles.gray2E3944),
               ),
@@ -1405,8 +1417,8 @@ class _AmityPostHeaderState extends State<AmityPostHeader> {
             borderWidth: 0,
             height: 32,
             width: 32,
-            url: widget.eventStanding?.first.user.avatar ?? "",
-            fullName: widget.eventStanding?.first.user.fullName ?? ""),
+            url: _topStanding?.user.avatar ?? "",
+            fullName: _topStanding?.user.fullName ?? ""),
       );
     }
 
