@@ -49,6 +49,21 @@ class NativeFeedPage {
   bool get hasMore => nextToken != null;
 }
 
+/// Records a reaction in Postgres alongside the one just written to Amity.
+///
+/// Mirrored posts stay canonical in Amity — this does not replace that write, it
+/// follows it. Without it the reaction is correct in Amity but invisible on the
+/// next feed load: the envelope computes myReactions from post_reactions, which is
+/// empty for mirrored content, so the heart un-fills after a refresh.
+///
+/// `postId` is whatever the envelope supplied — an Amity id for a mirrored post, a
+/// Postgres integer for a native one. The host app's RPC resolves either.
+typedef NativeReactionMirror = Future<void> Function({
+  required String postId,
+  required String kind,
+  required bool on,
+});
+
 class NativeSocialOverride {
   NativeSocialOverride._();
 
@@ -60,6 +75,10 @@ class NativeSocialOverride {
   static NativeCommunityFeedFetcher? communityFeedFetcher;
 
   static bool get isActive => globalFeedFetcher != null;
+
+  /// Set alongside the feed fetchers when the flag is on. Null means reactions
+  /// go to Amity alone, exactly as before the pilot existed.
+  static NativeReactionMirror? reactionMirror;
 
   /// Post ids that exist only in Postgres, so Amity has never heard of them.
   ///
@@ -85,6 +104,7 @@ class NativeSocialOverride {
   static void reset() {
     globalFeedFetcher = null;
     communityFeedFetcher = null;
+    reactionMirror = null;
     _nativePostIds.clear();
   }
 
