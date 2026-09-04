@@ -1,8 +1,10 @@
 import 'package:amity_sdk/amity_sdk.dart';
+import 'package:amity_uikit_beta_service/native_social_override.dart';
 import 'package:amity_uikit_beta_service/v4/core/toast/amity_uikit_toast.dart';
 import 'package:amity_uikit_beta_service/v4/core/toast/bloc/amity_uikit_toast_bloc.dart';
 import 'package:amity_uikit_beta_service/v4/social/post/common/post_action.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'post_item_events.dart';
@@ -18,6 +20,16 @@ class PostItemBloc extends Bloc<PostItemEvent, PostItemState> {
 
     on<AddReactionToPost>((event, emit) async {
       AmityPost post = event.post;
+      // A natively-created post exists only in Postgres, so react() would hand
+      // Amity an id it has never seen and the call fails — as would the
+      // getPost() refresh below it. Reacting is not wired to Postgres yet, so
+      // the honest thing is to do nothing rather than throw. The affordance
+      // itself should be hidden for these posts; that is follow-up work.
+      if (NativeSocialOverride.isNativePost(post.postId)) {
+        debugPrint('native post ${post.postId}: reactions not supported yet');
+        emit(PostItemStateLoaded(post: post));
+        return;
+      }
       emit(PostItemStateReacting(post: post));
       if (post.myReactions?.isNotEmpty ?? false) {
         await post.react().removeReaction(post.myReactions!.first);
@@ -33,6 +45,11 @@ class PostItemBloc extends Bloc<PostItemEvent, PostItemState> {
 
     on<RemoveReactionToPost>((event, emit) async {
       AmityPost post = event.post;
+      if (NativeSocialOverride.isNativePost(post.postId)) {
+        debugPrint('native post ${post.postId}: reactions not supported yet');
+        emit(PostItemStateLoaded(post: post));
+        return;
+      }
       emit(PostItemStateReacting(post: post));
       if (post.myReactions?.isNotEmpty ?? false) {
         await post.react().removeReaction(event.reactionType);

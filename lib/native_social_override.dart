@@ -61,10 +61,31 @@ class NativeSocialOverride {
 
   static bool get isActive => globalFeedFetcher != null;
 
+  /// Post ids that exist only in Postgres, so Amity has never heard of them.
+  ///
+  /// The envelope sets `postId` to `coalesce(legacy_amity_id, id::text)`: a
+  /// mirrored post therefore carries a genuine Amity id and every existing
+  /// write path works against it untouched, while a natively-created post
+  /// carries a Postgres integer and those same calls fail. The host app
+  /// registers the latter as it parses each page, from the envelope's own
+  /// `origin` field rather than by guessing at the shape of the id.
+  ///
+  /// Reads are unaffected — the feed renders both kinds identically. This
+  /// exists so the write paths can tell them apart.
+  static final Set<String> _nativePostIds = <String>{};
+
+  static void markNativePost(String postId) {
+    if (postId.isNotEmpty) _nativePostIds.add(postId);
+  }
+
+  static bool isNativePost(String? postId) =>
+      postId != null && _nativePostIds.contains(postId);
+
   /// Cleared on sign-out / flag-off so a stale session can never leak.
   static void reset() {
     globalFeedFetcher = null;
     communityFeedFetcher = null;
+    _nativePostIds.clear();
   }
 
   /// Signals when the host app's install() has finished deciding whether the
