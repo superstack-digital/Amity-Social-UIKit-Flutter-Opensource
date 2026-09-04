@@ -64,6 +64,23 @@ typedef NativeReactionMirror = Future<void> Function({
   required bool on,
 });
 
+/// Comments for native-origin posts, served from Postgres.
+///
+/// The fork declares this; the host app implements it against Supabase, so this
+/// package still knows nothing about Supabase. Only ever used for posts
+/// registered by [NativeSocialOverride.isNativePost] — mirrored posts keep
+/// Amity's own comment path untouched.
+abstract class NativeCommentGateway {
+  Future<List<AmityComment>> list(String postId);
+
+  Future<AmityComment> create(String postId, String text,
+      {String? parentId, List<String>? mentions});
+
+  Future<void> edit(String commentId, String text);
+
+  Future<void> delete(String commentId);
+}
+
 class NativeSocialOverride {
   NativeSocialOverride._();
 
@@ -79,6 +96,24 @@ class NativeSocialOverride {
   /// Set alongside the feed fetchers when the flag is on. Null means reactions
   /// go to Amity alone, exactly as before the pilot existed.
   static NativeReactionMirror? reactionMirror;
+
+  /// Set alongside the feed fetchers when the flag is on. Null means comments
+  /// go to Amity alone, exactly as before the pilot existed.
+  static NativeCommentGateway? commentGateway;
+
+  static final StreamController<AmityComment> _nativeCommentCreated =
+      StreamController<AmityComment>.broadcast();
+
+  /// Comments created on native posts, so an open thread can append one without
+  /// refetching. The Amity path gets this from its live collection; there is no
+  /// equivalent here, and the creating and listing blocs are siblings rather
+  /// than nested, so they cannot reach each other through the widget tree.
+  static Stream<AmityComment> get nativeCommentCreated =>
+      _nativeCommentCreated.stream;
+
+  static void publishNativeComment(AmityComment comment) {
+    if (!_nativeCommentCreated.isClosed) _nativeCommentCreated.add(comment);
+  }
 
   /// Post ids that exist only in Postgres, so Amity has never heard of them.
   ///
@@ -105,6 +140,7 @@ class NativeSocialOverride {
     globalFeedFetcher = null;
     communityFeedFetcher = null;
     reactionMirror = null;
+    commentGateway = null;
     _nativePostIds.clear();
   }
 
