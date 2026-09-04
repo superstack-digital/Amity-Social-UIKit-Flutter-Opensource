@@ -60,31 +60,10 @@ class CommentListBloc extends Bloc<CommentListEvent, CommentListState> {
         }
       });
 
-      // Kick off the initial load without adding an event ahead of the
-      // on<>() registrations below — flutter_bloc throws if an event is
-      // added before its handler is registered. The await yields control
-      // back to this constructor first, so by the time this resolves every
-      // handler is already wired up.
-      () async {
-        try {
-          final comments =
-              await NativeSocialOverride.commentGateway!.list(referenceId);
-          // `post_comment_list` returns a flat list for the whole post —
-          // every comment and every reply together, with no server-side
-          // parent filter. Filter here so a top-level thread (parentId ==
-          // null) only shows top-level comments and a reply thread only
-          // shows replies to its own parent.
-          final scoped = comments.where((c) => c.parentId == parentId).toList();
-          if (!isClosed) {
-            commentCount = scoped.length;
-            add(CommentListEventChanged(comments: scoped, isFetching: false));
-          }
-        } catch (e) {
-          if (!isClosed) {
-            add(CommentListEventChanged(comments: const [], isFetching: false));
-          }
-        }
-      }();
+      // No initial fetch here: comment_list.dart and reply_list.dart both
+      // dispatch CommentListEventRefresh on first build (state is
+      // CommentListStateInitial), which already has the native branch below
+      // and toasts on failure. A second fetch here would race it.
     }
 
     on<CommentListEventRefresh>((event, emit) async {
@@ -101,7 +80,18 @@ class CommentListBloc extends Bloc<CommentListEvent, CommentListState> {
         if (collection == null) {
           final comments = await NativeSocialOverride.commentGateway!
               .list(state.referenceId);
+          // `post_comment_list` returns a flat list for the whole post —
+          // every comment and every reply together, with no server-side
+          // parent filter and no reply count. Scope to this thread (parentId
+          // == null for the top-level thread, the parent's commentId for a
+          // reply thread) and derive childrenNumber from the full flat list
+          // so comment_item.dart's "View N replies" affordance still appears
+          // for top-level comments that have replies.
           final scoped = comments.where((c) => c.parentId == parentId).toList();
+          for (final c in scoped) {
+            c.childrenNumber =
+                comments.where((x) => x.parentId == c.commentId).length;
+          }
           commentCount = scoped.length;
           emit(CommentListStateChanged(
             referenceId: state.referenceId,
@@ -175,6 +165,12 @@ class CommentListBloc extends Bloc<CommentListEvent, CommentListState> {
       _nativeCreatedSub?.cancel();
       liveCollection?.getStreamController().close();
     });
+  }
+
+  @override
+  Future<void> close() {
+    _nativeCreatedSub?.cancel();
+    return super.close();
   }
 
   CommentLiveCollection getNewLiveCollection(String referenceId,
