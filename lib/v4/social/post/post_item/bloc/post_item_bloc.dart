@@ -34,6 +34,27 @@ class PostItemBloc extends Bloc<PostItemEvent, PostItemState> {
     }
   }
 
+  /// Applies a reaction to the in-memory post for the native path.
+  ///
+  /// The Amity path re-fetches with getPost() to pick up the new state, which is
+  /// not available for a post Amity has never seen. AmityPost is a plain mutable
+  /// class that this pilot constructs itself, so updating it directly is exactly
+  /// as truthful as a refetch would be — and post_reactions is already the source
+  /// the next feed load reads from.
+  ///
+  /// The count shown is optimistic. bump_post_counters maintains the real one, and
+  /// for native posts it is the only thing that does, since the mirror never
+  /// touches them.
+  static void _applyReactionLocally(AmityPost post, String kind,
+      {required bool on}) {
+    final reactions = List<String>.from(post.myReactions ?? const <String>[])
+      ..remove(kind);
+    if (on) reactions.add(kind);
+    post.myReactions = reactions;
+    post.reactionCount =
+        ((post.reactionCount ?? 0) + (on ? 1 : -1)).clamp(0, 1 << 31);
+  }
+
   PostItemBloc() : super(PostItemStateInitial()) {
     on<PostItemLoading>((event, emit) async {
       var post =
@@ -43,13 +64,15 @@ class PostItemBloc extends Bloc<PostItemEvent, PostItemState> {
 
     on<AddReactionToPost>((event, emit) async {
       AmityPost post = event.post;
-      // A natively-created post exists only in Postgres, so react() would hand
-      // Amity an id it has never seen and the call fails — as would the
-      // getPost() refresh below it. Reacting is not wired to Postgres yet, so
-      // the honest thing is to do nothing rather than throw. The affordance
-      // itself should be hidden for these posts; that is follow-up work.
+      // A natively-created post exists only in Postgres. Amity's react() would
+      // be handed an id it has never seen, and so would the getPost() refresh
+      // below — so this path skips Amity entirely and writes straight to
+      // Postgres, then updates the post in place rather than re-fetching.
       if (NativeSocialOverride.isNativePost(post.postId)) {
-        debugPrint('native post ${post.postId}: reactions not supported yet');
+        emit(PostItemStateReacting(post: post));
+        await _mirrorReaction(post.postId, event.reactionType, on: true);
+        _applyReactionLocally(post, event.reactionType, on: true);
+        event.action?.onPostUpdated(post);
         emit(PostItemStateLoaded(post: post));
         return;
       }
@@ -70,7 +93,10 @@ class PostItemBloc extends Bloc<PostItemEvent, PostItemState> {
     on<RemoveReactionToPost>((event, emit) async {
       AmityPost post = event.post;
       if (NativeSocialOverride.isNativePost(post.postId)) {
-        debugPrint('native post ${post.postId}: reactions not supported yet');
+        emit(PostItemStateReacting(post: post));
+        await _mirrorReaction(post.postId, event.reactionType, on: false);
+        _applyReactionLocally(post, event.reactionType, on: false);
+        event.action?.onPostUpdated(post);
         emit(PostItemStateLoaded(post: post));
         return;
       }
